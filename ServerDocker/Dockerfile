@@ -7,9 +7,6 @@ RUN apt-get upgrade -y
 RUN apt-get install -y iputils-ping bash
 RUN apt-get install -y g++
 
-# REMOVE UNNEEDED PACKAGES
-RUN apt-get remove openssh-server -y
-
 # Expose Needed Ports
 EXPOSE 80
 EXPOSE 11829
@@ -29,6 +26,11 @@ WORKDIR /usr/src/honeypi
 
 # This command compiles your app using GCC, adjust for your source code
 RUN g++ -o run home.cpp
+
+# REMOVE UNNEEDED PACKAGES
+RUN apt-get remove openssh-server -y
+RUN apt-get remove g++ -y
+RUN apt-get autoremove -y
 
 # This command runs your application, comment out this line to compile only
 ENTRYPOINT ["./run"]

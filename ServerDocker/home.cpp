@@ -9,6 +9,7 @@
 #include <fstream>
 #include <thread>
 #include <ctime>
+#include <random>
 
 using namespace std;
 
@@ -33,6 +34,7 @@ bool attacked = false;
 bool systemup = false;
 int heartbeat = 29;
 string erroroccurred = "";
+bool logfilepresent = false;
 
 
 bool serverdumpfilefound = false;
@@ -103,6 +105,8 @@ int timedetector() {
         return 1;
 
     }  else {
+        calculatingtime = true;
+
         // TIME
         currenttime = time(NULL);
 
@@ -135,9 +139,11 @@ int timedetector() {
             std::cout << currentyear << std::endl;
         }
 
+        calculatingtime = false;
         return 0;
     }
 
+    calculatingtime = false;
     return 1;
 }
 
@@ -173,9 +179,8 @@ void logcritical(string data2) {
 
 
 
-string generateRandomString(int length)
-{
-    loginfo("CREATING NEW API KEY");
+string generateRandomStringHoneyPI() {
+    loginfo("CREATING NEW HoneyPi API KEY");
 
     // Define the list of possible characters
     const string CHARACTERS
@@ -191,10 +196,37 @@ string generateRandomString(int length)
     uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
 
     // Generate the random string
-    string random_string;
-    for (int i = 0; i < length; ++i) {
-        random_string
-            += CHARACTERS[distribution(generator)];
+    string random_string = "PI";
+    for (int i = 0; i < 62; ++i) {
+        random_string += CHARACTERS[distribution(generator)];
+    }
+
+    loginfo(random_string);
+
+    return random_string;
+}
+
+
+string generateRandomStringRouterAPI() {
+    loginfo("CREATING NEW ROUTER API KEY");
+
+    // Define the list of possible characters
+    const string CHARACTERS
+        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
+          "wxyz0123456789";
+
+    // Create a random number generator
+    random_device rd;
+    mt19937 generator(rd());
+
+    // Create a distribution to uniformly select from all
+    // characters
+    uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
+
+    // Generate the random string
+    string random_string = "RO";
+    for (int i = 0; i < 62; ++i) {
+        random_string += CHARACTERS[distribution(generator)];
     }
 
     loginfo(random_string);
@@ -217,17 +249,12 @@ void handleConnections(int server_fd) {
     std::string hello = "Hello from server";
 
     if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
-        if (SSHDockerActive == false) {
-            logcritical("SSH Docker Container Dead, Closing Port");
-            return;
-        }
         perror("accept");
         exit(EXIT_FAILURE);
     }
 
     timers[1] = time(NULL);
 
-    while(SSHDockerActive == true) {
         read(new_socket, buffer, 1024);
         if (debug == true) {
             sendtologopen(buffer);
@@ -247,7 +274,6 @@ void handleConnections(int server_fd) {
                 } else {
                     heartbeat = heartbeat + 1;
                 }
-                SSHDockerActive = true;
             }
 
             if(strcmp(buffer, "attacked") == 0) {
@@ -270,11 +296,15 @@ void handleConnections(int server_fd) {
 //        send(new_socket, hello.c_str(), hello.size(), 0);
 //        std::cout << "Hello message sent" << std::endl;
 
-        if (SSHDockerActive == false) {
-            logcritical("No SSH Docker Container/Killing Thread");
-        }
 
         // ANTI-CRASH PACKET FLOW CHECK
+
+
+
+        // NEED EXPANDED FOR SERVER APPLICATION!!!
+
+
+        /*
         if (timers[1] == time(NULL)) {
             packetsreceivedSSH = packetsreceivedSSH + 1;
             if (packetsreceivedSSH >= 10) {
@@ -291,7 +321,8 @@ void handleConnections(int server_fd) {
             timers[1] = time(NULL);
             packetsreceivedSSH = 0;
         }
-    }
+        */    
+
 }
 
 
@@ -343,6 +374,12 @@ void handle11535Connections(int server_fd2) {
 
 
         // ANTI-CRASH PACKET FLOW CHECK
+
+
+        // NEED EXPANDED FOR SERVER APPLICATION!!!
+
+
+        /*
         if (timers[2] == time(NULL)) {
             packetsreceivedAPI = packetsreceivedAPI + 1;
             if (packetsreceivedAPI >= 10) {
@@ -354,6 +391,7 @@ void handle11535Connections(int server_fd2) {
             timers[2] = time(NULL);
             packetsreceivedAPI = 0;
         }
+        */
 
 
 
@@ -464,7 +502,7 @@ int setup() {
     // DELAY FOR SYSTEM TO START FURTHER (FIGURE OUT CURRENT TIME)
     sleep(1);
 
-    generateRandomString(64);
+    generateRandomStringHoneyPI();
 
     startuptime = time(NULL);
     startupchecks = startupchecks + timedetector();
@@ -590,13 +628,13 @@ int setup() {
     if (severitylist.is_open() != true) {
         startupchecks = startupchecks + 1;
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN SEVERITY IP LIST FILE")
+        logcritical("UNABLE TO OPEN SEVERITY IP LIST FILE");
     } 
 
-    if (acpmac.is_open != true) {
+    if (acpmac.is_open() != true) {
         startupchecks = startupchecks + 1;
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN ACCOUNTS AND MACS FILE")
+        logcritical("UNABLE TO OPEN ACCOUNTS AND MACS FILE");
     }
 
     if (blockedipstream.is_open() != true) {
@@ -657,9 +695,11 @@ int setup() {
     // START THE SERVER VARIABLES CORRECTLY
     std::string ipaddress;
     if (iplist.is_open() == true) {
+        /*
         while (getline(iplist, line)) {
             
         }
+        */
     }
     
 
@@ -824,53 +864,9 @@ int main() {
     // MAIN RUNNING LOOP
     while(true && startupchecks == 0 && encounterederrors == 0) {
 
-        if (attacked == false) {
-            sleep(2);
-        } else {
-            sleep(0.25);
-            logwarning("Guest VM has been attacked, reporting...");
-        }
+        sleep(6);
+        loginfo("Awaiting Connection...");
 
-
-        // WATCHDOG IN MAIN LOOP
-        int differenceintimeSSH = time(NULL) - lastcheckinSSH;
-        if (SSHDockerActive == true) {
-            if (differenceintimeSSH >= 30) {
-                logwarning("30 seconds since last SSH Heartbeat received");
-            }
-
-            if (differenceintimeSSH >= 45) {
-                logcritical("45 seconds since last SSH Heartbeat received, assuming dead");
-                close(server_fd);
-                SSHDockerActive = false;
-    //            system(dockerkillguestssh);
-                sleep(3);
-    //            system(dockerremoveguestssh);
-                timers[0] = time(NULL);
-            }
-        } else {
-            if (timers[0] != 0) {
-                long long int changeintime = time(NULL) - timers[0];
-
-                if (changeintime >= 60) {
-                    logwarning("Attempting to restart SSH VM");
-      //              system(dockerkillguestssh);
-                    sleep(3);
-        //            system(dockerremoveguestssh);
-                    sleep(3);
-          //          system(dockerstartguestssh);
-                    SSHDockerActive = true;
-                    lastcheckinSSH = time(NULL) + 10;
-                    port1 = createnetworkport63599();
-                    sleep(2);
-                    std::thread acceptingClientsThread(handleConnections, port1);
-                    acceptingClientsThread.detach();
-                }
-            } else {
-                logwarning("Attempting to restart in 60 seconds!");
-                timers[0] = time(NULL);
-            }
-        }
 
     }
 
