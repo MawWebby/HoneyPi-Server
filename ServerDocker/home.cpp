@@ -33,8 +33,7 @@ bool attacked = false;
 bool systemup = false;
 int heartbeat = 29;
 string erroroccurred = "";
-int packetsreceivedSSH = 0;
-int packetsreceivedAPI = 0;
+
 
 bool serverdumpfilefound = false;
 
@@ -43,11 +42,6 @@ int timesincelastcheckinSSH = 0;
 long int lastcheckinSSH = 0;
 
 
-// REPORT VARIABLES - SSH
-bool SSHDockerActive = false;
-bool generatingreportSSH = false;
-string pubipSSH = "0.0.0.0";
-int portSSH = 0;
 
 // NETWORK VARIABLES
 const int serverport1 = 80;
@@ -59,6 +53,7 @@ int server_fd, new_socket;
 int port1;
 int server_fd2, new_socket2;
 bool packetactive = false;
+bool runningnetworksportAPI = true;
 
 // FILES 
 fstream iplist;             // IP BLOCKLIST TABLE
@@ -68,7 +63,8 @@ fstream acpmac;             // JSON LIST OF ACCOUNTS/MAC/API/ETC.
 fstream blockedipstream;    // SERVER IP BLOCKLIST
 fstream config1;            // serverconfig1
 fstream logfile[256];       // Crashlogs
-fstream passstream;         // USERNAME/PASSWORD JSON STREAM
+fstream userstream;         // USERNAME JSON STREAM
+fstream passstream;         // PASSWORD JSON STREAM
 fstream serverdump;         // SERVER DUMP FILE
 fstream serverlogfile;            // SERVER LOG FILE
 
@@ -175,6 +171,36 @@ void logcritical(string data2) {
     sendtolog(data2);
 }
 
+
+
+string generateRandomString(int length)
+{
+    loginfo("CREATING NEW API KEY");
+
+    // Define the list of possible characters
+    const string CHARACTERS
+        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
+          "wxyz0123456789";
+
+    // Create a random number generator
+    random_device rd;
+    mt19937 generator(rd());
+
+    // Create a distribution to uniformly select from all
+    // characters
+    uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
+
+    // Generate the random string
+    string random_string;
+    for (int i = 0; i < length; ++i) {
+        random_string
+            += CHARACTERS[distribution(generator)];
+    }
+
+    loginfo(random_string);
+
+    return random_string;
+}
 
 
 
@@ -438,6 +464,8 @@ int setup() {
     // DELAY FOR SYSTEM TO START FURTHER (FIGURE OUT CURRENT TIME)
     sleep(1);
 
+    generateRandomString(64);
+
     startuptime = time(NULL);
     startupchecks = startupchecks + timedetector();
 
@@ -521,6 +549,7 @@ int setup() {
     blockedipstream.open("/home/listfiles/ipsafety.txt");
     config1.open("/home/listfiles/serverconfig1.txt");
     // NO SETUP FOR LOGFILE
+    userstream.open("/home/listfiles/userstream.json");
     passstream.open("/home/listfiles/passstream.json");
     serverdump.open("/home/serverdump/serverdump.txt");
     serverlogfile.open("/home/serverdump/log.txt");
@@ -552,11 +581,64 @@ int setup() {
         sendtolog("Done");
     }
 
+    if (maclist.is_open() != true) {
+        startupchecks = startupchecks + 1;
+        sendtolog("ERROR");
+        logcritical("UNABLE TO OPEN MAC LIST FILE");
+    }
 
-    // ADD THE REST OF THE CHECKS AND MAKE SURE THAT THEY WORK HERE!
+    if (severitylist.is_open() != true) {
+        startupchecks = startupchecks + 1;
+        sendtolog("ERROR");
+        logcritical("UNABLE TO OPEN SEVERITY IP LIST FILE")
+    } 
+
+    if (acpmac.is_open != true) {
+        startupchecks = startupchecks + 1;
+        sendtolog("ERROR");
+        logcritical("UNABLE TO OPEN ACCOUNTS AND MACS FILE")
+    }
+
+    if (blockedipstream.is_open() != true) {
+        sendtolog("ERROR");
+        logcritical("UNABLE TO OPEN BLOCKED IP STREAM FILE!");
+        logcritical("STARTING WITHOUT NETWORK API PORT!");
+    }
+
+    if (config1.is_open() != true) {
+        startupchecks = startupchecks + 1;
+        sendtolog("ERROR");
+        logcritical("UNABLE TO OPEN CONFIG1 FILE!");
+    }
+
+    if (userstream.is_open() != true) {
+        startupchecks = startupchecks + 1;
+        sendtolog("ERROR");
+        logcritical("UNABLE TO OPEN USER STREAM FILE!");
+    }
+
+    if (passstream.is_open() != true) {
+        startupchecks = startupchecks + 1;
+        sendtolog("ERROR");
+        logcritical("UNABLE TO OPEN PASS STREAM FILE!");
+    }
+
+    if (serverlogfile.is_open() != true) {
+        startupchecks = startupchecks + 1;
+        sendtolog("ERROR");
+        logcritical("UNABLE TO OPEN SERVER LOG FILE!");
+        logfilepresent = false;
+    } else {
+        logfilepresent = true;
+    }
+
+    sendtolog("Done");
 
 
 
+
+
+    loginfo("Searching for Server Dump File");
 
     // SEARCH FOR SERVER DUMP FILE
     if (serverdump.is_open() == true) {
@@ -565,6 +647,19 @@ int setup() {
     } else {
         loginfo("No Server Dump File Found, Starting as BLANK SERVER");
         serverdumpfilefound = false;
+    }
+
+
+
+
+
+
+    // START THE SERVER VARIABLES CORRECTLY
+    std::string ipaddress;
+    if (iplist.is_open() == true) {
+        while (getline(iplist, line)) {
+            
+        }
     }
     
 
