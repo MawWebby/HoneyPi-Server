@@ -1,5 +1,6 @@
 # From Base Image
-FROM debian:bookworm-slim
+#FROM debian:bookworm-slim
+FROM gcc:latest
 
 # INSTALL NEEDED PACKAGES (DISABLE FOR SPEED BUILDING)
 RUN apt-get update
@@ -20,12 +21,19 @@ RUN mkdir /home/crashlogs
 # MKDIR FOR SERVER SAVE/LOG DUMP
 RUN mkdir /home/savedump
 
+# MKDIR FOR HTML MAIN WEBPAGE
+RUN mkdir /home/htmlmainweb
+
 # Set Working Directory
 COPY . /usr/src/honeypi
 WORKDIR /usr/src/honeypi
 
+# DEBUG SCRIPTS
+RUN ls && cp listfiles/* /home/listfiles/*
+
 # This command compiles your app using GCC, adjust for your source code
 RUN g++ -o run home.cpp
+RUN g++ -o test servertest.cpp
 
 # REMOVE UNNEEDED PACKAGES
 RUN apt-get remove openssh-server -y
@@ -33,7 +41,8 @@ RUN apt-get remove g++ -y
 RUN apt-get autoremove -y
 
 # This command runs your application, comment out this line to compile only
-ENTRYPOINT ["./run"]
+#ENTRYPOINT ["./run"]
+CMD ["./usr/src/honeypi/run"]
 
 # Versions and Labels
-LABEL Name=honeypotpi-SERVER Versions=0.1A
+LABEL Name=honeypotpi-SERVER Versions=0.1

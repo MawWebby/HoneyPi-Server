@@ -58,17 +58,25 @@ bool packetactive = false;
 bool runningnetworksportAPI = true;
 
 // FILES 
-fstream iplist;             // IP BLOCKLIST TABLE
-fstream maclist;            // MAC ADDRESSES FOR HONEYPIS
-fstream severitylist;       // SEVERITY LIST OF OP ATTACKS
-fstream acpmac;             // JSON LIST OF ACCOUNTS/MAC/API/ETC.
-fstream blockedipstream;    // SERVER IP BLOCKLIST
-fstream config1;            // serverconfig1
-fstream logfile[256];       // Crashlogs
-fstream userstream;         // USERNAME JSON STREAM
-fstream passstream;         // PASSWORD JSON STREAM
-fstream serverdump;         // SERVER DUMP FILE
-fstream serverlogfile;            // SERVER LOG FILE
+fstream ipliststrict;         // IP BLOCKLIST TABLE (STRICT 90 DAY REMOVAL W/O EXCEPTIONS)
+fstream ipliststandard;       // IP BLOCKLIST TABLE (STANDARD 45 DAY REMOVAL W/ EXCEPTIONS)
+fstream iplistsmoreinfo;      // INFO ABOUT IP REPORTED/REPORTS/LATEST REPORT/EXPIRATION DATE
+fstream maclist;              // MAC ADDRESSES FOR HONEYPIS
+fstream severitylist;         // SEVERITY LIST OF OP ATTACKS
+fstream acpmac;               // JSON LIST OF ACCOUNTS/MAC/API/ETC.
+fstream blockedipstream;      // SERVER IP BLOCKLIST
+fstream config1;              // serverconfig1
+fstream cogfile[256];         // Crashlogs
+fstream userstream;           // USERNAME JSON STREAM
+fstream passstream;           // PASSWORD JSON STREAM
+fstream serverdump;           // SERVER DUMP FILE
+fstream serverlogfile;        // SERVER LOG FILE
+
+// FILE LOCATIONS
+const char* ipliststrictfile = "/home/";
+
+const char* filearguments = "ios::in | ios::out | ios::app";
+
 
 // TIME VARIABLES
 long long int startuptime = 0;
@@ -92,9 +100,7 @@ int hoursperday = 24;
 
 long long int timers[10] = {};
 bool calculatingtime = false;
-// 0 - RESTART SSH DOCKER VARIABLE
-// 1 - TIMER TO STOP BUFFER OVERFLOW ON SSH (80) DOCKER AND CAUSE CPU CRASH
-// 2 - TIMER TO STOP BUFFER OVERFLOW ON ROUTER API (11829) PORT
+// 0 - 
 
 
 
@@ -503,7 +509,7 @@ int setup() {
     sleep(1);
 
     generateRandomStringHoneyPI();
-
+    generateRandomStringRouterAPI();
     startuptime = time(NULL);
     startupchecks = startupchecks + timedetector();
 
@@ -578,17 +584,18 @@ int setup() {
 
     // OPEN SERVER FILES
     sendtologopen("[INFO] - Open IP LIST File...");
-
     int statuses = system("ls");
-    iplist.open("/home/listfiles/iplist.json");
-    maclist.open("home/listfiles/maclist.json");
-    severitylist.open("/home/listfiles/severitylist.json");
-    acpmac.open("/home/listfiles/acpmac.json");
-    blockedipstream.open("/home/listfiles/ipsafety.txt");
+    ipliststrict.open("/home/listfiles/ipliststrict.txt", ios::in | ios::out | ios::app);
+    ipliststandard.open("/home/listfiles/ipliststandard.txt",  ios::in | ios::out);
+    iplistsmoreinfo.open("/home/listfiles/iplistsmoreinfo.txt",  ios::in | ios::out | ios::app);
+    maclist.open("/home/listfiles/maclist.txt",  ios::in | ios::out | ios::app);
+    severitylist.open("/home/listfiles/severitylist.txt");
+    acpmac.open("/home/listfiles/acpmac.txt");
+    blockedipstream.open("/home/listfiles/ipsafety.txt", ios::in | ios::out | ios::app);
     config1.open("/home/listfiles/serverconfig1.txt");
-    // NO SETUP FOR LOGFILE
-    userstream.open("/home/listfiles/userstream.json");
-    passstream.open("/home/listfiles/passstream.json");
+    // NO SETUP FOR COGFILE
+    userstream.open("/home/listfiles/userstream.txt");
+    passstream.open("/home/listfiles/passstream.txt");
     serverdump.open("/home/serverdump/serverdump.txt");
     serverlogfile.open("/home/serverdump/log.txt");
 
@@ -609,12 +616,26 @@ int setup() {
         }
     }
 
-
-
-    if (iplist.is_open() != true) {
+    if (ipliststrict.is_open() != true) {
         startupchecks = startupchecks + 1;
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN IP LIST FILE");
+        logcritical("UNABLE TO OPEN STRICT IP LIST FILE");
+    } else {
+        sendtolog("Done");
+    }
+
+    if (ipliststandard.is_open() != true) {
+        startupchecks = startupchecks + 1;
+        sendtolog("ERROR");
+        logcritical("UNABLE TO OPEN STANDARD IP LIST FILE");
+    } else {
+        sendtolog("Done");
+    }
+
+    if (iplistsmoreinfo.is_open() != true) {
+        startupchecks = startupchecks + 1;
+        sendtolog("ERROR");
+        logcritical("UNABLE TO OPEN MORE INFO IP LIST FILE");
     } else {
         sendtolog("Done");
     }
@@ -675,10 +696,8 @@ int setup() {
 
 
 
-
-    loginfo("Searching for Server Dump File");
-
     // SEARCH FOR SERVER DUMP FILE
+    loginfo("Searching for Server Dump File");
     if (serverdump.is_open() == true) {
         logwarning("SERVER DUMP FILE FOUND, ATTEMPTING TO RECOVER");
         serverdumpfilefound = true;
@@ -688,48 +707,365 @@ int setup() {
     }
 
 
-
-
-
-
-    // START THE SERVER VARIABLES CORRECTLY
-    std::string ipaddress;
-    if (iplist.is_open() == true) {
-        /*
-        while (getline(iplist, line)) {
-            
-        }
-        */
+    if (ipliststandard.fail()) {
+        std::cerr << "Stream is in a failed state before writing." << std::endl;
+        blockedipstream.clear();  // Clear error state
     }
+
+
+    // UPDATE THE SERVER FILES IF NEEDED
+    std::string versionID;
+    std::string currentversionID = "Version: " + honeyversion + "\n";
+    std::string compressed;
+    int migration = 0;
+    logcritical(currentversionID);
+
+    // IPLIST STRICT
+    std::getline(ipliststrict, versionID);
+    if (versionID != "") {
+        compressed = versionID.substr(9,10);
+    } else {
+        compressed = "";
+    }
+    logwarning(compressed);
+    if (compressed == "") {
+        logwarning("No Version Found, Installing New Version IPLIST STRICT");
+        ipliststandard << currentversionID << endl;
+    } else {
+        if (compressed != honeyversion) {
+            migration = migration + 1;
+            logwarning("Detected Different IP List Strict Version, Attempting to Update!");
+            /*
+            // MIGRATION STEPS
+            if (float(compressed) > float(honeyversion)) {
+                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
+                startupchecks = startupchecks + 1;
+            }
+
+            if (float(compressed) = 0.1) {
+                loginfo("No Update Required");
+            }
+            */
+
+        } else {
+            loginfo("Detected Correct IP List Strict Version, Continuing");
+        }
+    }
+
+    // IP LIST STANDARD
+    std::getline(ipliststandard, versionID);
+    if (versionID != "") {
+        compressed = versionID.substr(9,10);
+    } else {
+        compressed = "";
+    }
+    logwarning(compressed);
+    if (compressed == "") {
+        logwarning("No Version Found, Installing New Version123");
+        ipliststrict << currentversionID << "\n";
+        ipliststandard << currentversionID << "\n";
+        sleep(1);
+        ipliststrict.flush();
+        ipliststandard.flush();
+        if (ipliststrict.fail()) {
+            std::cerr << "Write operation failed." << std::endl;
+            logcritical("AN ERROR OCCURRED");
+        }
+
+        sleep(1);
+        ipliststandard.close();
+    } else {
+        if (compressed != honeyversion) {
+            migration = migration + 1;
+            logwarning("Detected Different IP List Standard Version, Attempting to Update!");
+            /*
+            // MIGRATION STEPS
+            if (float(compressed) > float(honeyversion)) {
+                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
+                startupchecks = startupchecks + 1;
+            }
+
+            if (float(compressed) = 0.1) {
+                loginfo("No Update Required");
+            }
+            */
+
+        } else {
+            loginfo("Detected Correct IP List Standard Version, Continuing");
+        }
+    }
+
+    // IP LIST MORE INFO
+    std::getline(iplistsmoreinfo, versionID);
+    if (versionID != "") {
+        compressed = versionID.substr(9,10);
+    } else {
+        compressed = "";
+    }
+    logwarning(compressed);
+    if (compressed == "") {
+        logwarning("No Version Found, Installing New Version");
+        iplistsmoreinfo << currentversionID << endl;
+    } else {
+        if (compressed != honeyversion) {
+            migration = migration + 1;
+            logwarning("Detected Different IP List Standard Version, Attempting to Update!");
+            /*
+            // MIGRATION STEPS
+            if (float(compressed) > float(honeyversion)) {
+                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
+                startupchecks = startupchecks + 1;
+            }
+
+            if (float(compressed) = 0.1) {
+                loginfo("No Update Required");
+            }
+            */
+
+        } else {
+            loginfo("Detected Correct IP List More Info Version, Continuing");
+        }
+    }
+
+    // MAC LIST INFO
+    std::getline(maclist, versionID);
+    if (versionID != "") {
+        compressed = versionID.substr(9,10);
+    } else {
+        compressed = "";
+    }
+    logwarning(compressed);
+    if (compressed == "") {
+        logwarning("No Version Found, Installing New Version");
+        maclist << currentversionID << endl;
+    } else {
+        if (compressed != honeyversion) {
+            migration = migration + 1;
+            logwarning("Detected Different Mac List Version, Attempting to Update!");
+            /*
+            // MIGRATION STEPS
+            if (float(compressed) > float(honeyversion)) {
+                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
+                startupchecks = startupchecks + 1;
+            }
+
+            if (float(compressed) = 0.1) {
+                loginfo("No Update Required");
+            }
+            */
+
+        } else {
+            loginfo("Detected Correct Mac List Version, Continuing");
+        }
+    }
+
+    // SEVERITY LIST INFO
+    std::getline(severitylist, versionID);
+    if (versionID != "") {
+        compressed = versionID.substr(9,10);
+    } else {
+        compressed = "";
+    }
+    logwarning(compressed);
+    if (compressed == "") {
+        logwarning("No Version Found, Installing New Version");
+        severitylist << currentversionID << endl;
+    } else {
+        if (compressed != honeyversion) {
+            migration = migration + 1;
+            logwarning("Detected Different Severity List Version, Attempting to Update!");
+            /*
+            // MIGRATION STEPS
+            if (float(compressed) > float(honeyversion)) {
+                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
+                startupchecks = startupchecks + 1;
+            }
+
+            if (float(compressed) = 0.1) {
+                loginfo("No Update Required");
+            }
+            */
+
+        } else {
+            loginfo("Detected Correct Severity List Version, Continuing");
+        }
+    }
+
+    // Accounts/Macs/APIs INFO
+    std::getline(acpmac, versionID);
+    if (versionID != "") {
+        compressed = versionID.substr(9,10);
+    } else {
+        compressed = "";
+    }
+    logwarning(compressed);
+    if (compressed == "") {
+        logwarning("No Version Found, Installing New Version");
+        acpmac << currentversionID << endl;
+    } else {
+        if (compressed != honeyversion) {
+            migration = migration + 1;
+            logwarning("Detected Different ACPMAC Version, Attempting to Update!");
+            /*
+            // MIGRATION STEPS
+            if (float(compressed) > float(honeyversion)) {
+                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
+                startupchecks = startupchecks + 1;
+            }
+
+            if (float(compressed) = 0.1) {
+                loginfo("No Update Required");
+            }
+            */
+
+        } else {
+            loginfo("Detected Correct ACPMAC Version, Continuing");
+        }
+    }
+
+    // SEVERITY LIST INFO
+    std::getline(blockedipstream, versionID);
+    if (versionID != "") {
+        compressed = versionID.substr(9,10);
+    } else {
+        compressed = "";
+    }
+    logwarning(compressed);
+    if (compressed == "") {
+        logwarning("No Version Found, Installing New Version");
+        blockedipstream << currentversionID << endl;
+    } else {
+        if (compressed != honeyversion) {
+            migration = migration + 1;
+            logwarning("Detected Different IPSAFETY Version, Attempting to Update!");
+            /*
+            // MIGRATION STEPS
+            if (float(compressed) > float(honeyversion)) {
+                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
+                startupchecks = startupchecks + 1;
+            }
+
+            if (float(compressed) = 0.1) {
+                loginfo("No Update Required");
+            }
+            */
+
+        } else {
+            loginfo("Detected Correct IPSAFETY Version, Continuing");
+        }
+    }
+
+    // CONFIG1 INFO
+    std::getline(config1, versionID);
+    if (versionID != "") {
+        compressed = versionID.substr(9,10);
+    } else {
+        compressed = "";
+    }
+    logwarning(compressed);
+    if (compressed == "") {
+        logwarning("No Version Found, Installing New Version");
+        config1 << currentversionID << endl;
+    } else {
+        if (compressed != honeyversion) {
+            migration = migration + 1;
+            logwarning("Detected Different Config1 Version, Attempting to Update!");
+            /*
+            // MIGRATION STEPS
+            if (float(compressed) > float(honeyversion)) {
+                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
+                startupchecks = startupchecks + 1;
+            }
+
+            if (float(compressed) = 0.1) {
+                loginfo("No Update Required");
+            }
+            */
+
+        } else {
+            loginfo("Detected Correct Config1 Version, Continuing");
+        }
+    }
+
+    // USERSTREAM INFO
+    std::getline(userstream, versionID);
+    if (versionID != "") {
+        compressed = versionID.substr(9,10);
+    } else {
+        compressed = "";
+    }
+    logwarning(compressed);
+    if (compressed == "") {
+        logwarning("No Version Found, Installing New Version");
+        userstream << currentversionID << endl;
+    } else {
+        if (compressed != honeyversion) {
+            migration = migration + 1;
+            logwarning("Detected Different USERSTREAM Version, Attempting to Update!");
+            /*
+            // MIGRATION STEPS
+            if (float(compressed) > float(honeyversion)) {
+                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
+                startupchecks = startupchecks + 1;
+            }
+
+            if (float(compressed) = 0.1) {
+                loginfo("No Update Required");
+            }
+            */
+
+        } else {
+            loginfo("Detected Correct USERSTREAM Version, Continuing");
+        }
+    }
+
+    // PASSSTREAM INFO
+    std::getline(passstream, versionID);
+    if (versionID != "") {
+        compressed = versionID.substr(9,10);
+    } else {
+        compressed = "";
+    }
+    logwarning(compressed);
+    if (compressed == "") {
+        logwarning("No Version Found, Installing New Version");
+        passstream << currentversionID << endl;
+    } else {
+        if (compressed != honeyversion) {
+            migration = migration + 1;
+            logwarning("Detected Different PASSSTREAM Version, Attempting to Update!");
+            /*
+            // MIGRATION STEPS
+            if (float(compressed) > float(honeyversion)) {
+                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
+                startupchecks = startupchecks + 1;
+            }
+
+            if (float(compressed) = 0.1) {
+                loginfo("No Update Required");
+            }
+            */
+
+        } else {
+            loginfo("Detected Correct PASSSTREAM Version, Continuing");
+        }
+    }
+
+
+
+    // START NETWORK PORTS CONFIGURATION
     
-
-
-
-
-
-
-
-
-
-    int PORT = 63599;
-
     // OPEN NETWORK SERVER PORTS (1/3)
+    int PORT = 63599;
     sendtologopen("[INFO] - Opening Server Ports (1/3)");
-
     port1 = createnetworkport63599();
-
     sendtologclosed("Done");
     sleep(2);
-
-
-
-
     sleep(3);
-    PORT = 11535;
 
     // OPEN NETWORK SERVER PORTS (2/3)
+    PORT = 11535;
     sendtologopen("[INFO] - Opening Server Ports (2/3)...");
-
     int server_fd2, new_socket2;
     ssize_t valread2;
     struct sockaddr_in address2;
@@ -843,18 +1179,8 @@ int main() {
         return(1);
     }
 
-    
 
-    if (testing == true) {
-        sendtologopen("[INFO] - Beta Testing Active...");
-        sleep(1);
-        sendtologclosed("Nothing to Test");
-    } else {
-        sendtolog("[INFO] - Not beta testing/Removing beta file...");
-        startupchecks = startupchecks + system("rm test");
-    }
-
-    loginfo("Main HoneyPi has started successfully");
+    loginfo("HoneyPi Server has started successfully");
 
     // NETWORK INFORMATION
     char buffer[BUFFER_SIZE];
@@ -862,10 +1188,10 @@ int main() {
     socklen_t clientAddrLen = sizeof(clientAddr);
 
     // MAIN RUNNING LOOP
-    while(true && startupchecks == 0 && encounterederrors == 0) {
+    while(startupchecks == 0 && encounterederrors == 0) {
 
-        sleep(6);
-        loginfo("Awaiting Connection...");
+        sleep(60);
+        loginfo("Running = TRUE...");
 
 
     }

@@ -11,5 +11,5 @@
 #include <ctime>
 
 int main() {
-
+    sleep(2);
 }
