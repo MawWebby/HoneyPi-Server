@@ -838,17 +838,8 @@ int setup() {
         if (compressed != honeyversion) {
             migration = migration + 1;
             logwarning("Detected Different IP List Standard Version, Attempting to Update!");
-            /*
-            // MIGRATION STEPS
-            if (float(compressed) > float(honeyversion)) {
-                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
-                startupchecks = startupchecks + 1;
-            }
 
-            if (float(compressed) = 0.1) {
-                loginfo("No Update Required");
-            }
-            */
+            // MIGRATION STEPS
 
         } else {
             loginfo("Detected Correct IP List More Info Version, Continuing");

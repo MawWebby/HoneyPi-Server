@@ -1,6 +1,6 @@
 # From Base Image
-#FROM debian:bookworm-slim
-FROM gcc:latest
+FROM debian:bookworm-slim
+#FROM gcc:latest
 
 # INSTALL NEEDED PACKAGES (DISABLE FOR SPEED BUILDING)
 RUN apt-get update
