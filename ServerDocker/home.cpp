@@ -11,8 +11,6 @@
 #include <ctime>
 #include <random>
 
-using namespace std;
-
 const bool debug = false;
 const bool testing = false;
 
@@ -23,7 +21,7 @@ const bool testing = false;
 /////////////////
 
 // CONSTANT VARIABLES
-const string honeyversion = "0.1";
+const std::string honeyversion = "0.1";
 const int heartbeattime = 10;
 
 // SYSTEM VARIABLES
@@ -33,7 +31,7 @@ int encounterederrors = 0;
 bool attacked = false;
 bool systemup = false;
 int heartbeat = 29;
-string erroroccurred = "";
+std::string erroroccurred = "";
 bool logfilepresent = false;
 
 
@@ -58,24 +56,34 @@ bool packetactive = false;
 bool runningnetworksportAPI = true;
 
 // FILES 
-fstream ipliststrict;         // IP BLOCKLIST TABLE (STRICT 90 DAY REMOVAL W/O EXCEPTIONS)
-fstream ipliststandard;       // IP BLOCKLIST TABLE (STANDARD 45 DAY REMOVAL W/ EXCEPTIONS)
-fstream iplistsmoreinfo;      // INFO ABOUT IP REPORTED/REPORTS/LATEST REPORT/EXPIRATION DATE
-fstream maclist;              // MAC ADDRESSES FOR HONEYPIS
-fstream severitylist;         // SEVERITY LIST OF OP ATTACKS
-fstream acpmac;               // JSON LIST OF ACCOUNTS/MAC/API/ETC.
-fstream blockedipstream;      // SERVER IP BLOCKLIST
-fstream config1;              // serverconfig1
-fstream cogfile[256];         // Crashlogs
-fstream userstream;           // USERNAME JSON STREAM
-fstream passstream;           // PASSWORD JSON STREAM
-fstream serverdump;           // SERVER DUMP FILE
-fstream serverlogfile;        // SERVER LOG FILE
+//std::fstream ipliststrict;         // IP BLOCKLIST TABLE (STRICT 90 DAY REMOVAL W/O EXCEPTIONS)
+std::fstream ipliststandard;       // IP BLOCKLIST TABLE (STANDARD 45 DAY REMOVAL W/ EXCEPTIONS)
+//std::fstream iplistsmoreinfo;      // INFO ABOUT IP REPORTED/REPORTS/LATEST REPORT/EXPIRATION DATE
+std::fstream maclist;              // MAC ADDRESSES FOR HONEYPIS
+std::fstream severitylist;         // SEVERITY LIST OF OP ATTACKS
+std::fstream acpmac;               // JSON LIST OF ACCOUNTS/MAC/API/ETC.
+std::fstream blockedipstream;      // SERVER IP BLOCKLIST
+std::fstream config1;              // serverconfig1
+std::fstream cogfile[256];         // Crashlogs
+std::fstream userstream;           // USERNAME JSON STREAM
+std::fstream passstream;           // PASSWORD JSON STREAM
+std::fstream serverdump;           // SERVER DUMP FILE
+std::fstream serverlogfile;        // SERVER LOG FILE
 
 // FILE LOCATIONS
-const char* ipliststrictfile = "/home/";
-
-const char* filearguments = "ios::in | ios::out | ios::app";
+const char* ipliststrictfile = "/home/listfiles/ipliststrict.txt";
+const char* ipliststandardfile = "/home/listfiles/ipliststandard.txt";
+const char* iplistsmoreinfofile = "/home/listfiles/iplistsmoreinfo.txt";
+const char* maclistfile = "/home/listfiles/maclist.txt";
+const char* severitylistfile = "/home/listfiles/severitylist.txt";
+const char* acpmacfile = "/home/listfiles/acpmac.txt";
+const char* blokedipstreamfile = "/home/listfiles/ipsafety.txt";
+const char* config1file = "/home/listfiles/serverconfig1.txt";
+const char* userstreamfile = "/home/listfiles/userstream.txt";
+const char* passstreamfile = "/home/lsitfiles/passstream.txt";
+const char* serverdumpfile = "/home/serverdump/serverdump.txt";
+const char* serverlogfilefile = "/home/serverdump/log.txt";
+const char* filearguments = "ios::in | ios::out";
 
 
 // TIME VARIABLES
@@ -161,48 +169,48 @@ int timedetector() {
 ////////////////////////////
 // Send to Logger Scripts //
 ////////////////////////////
-void sendtolog(string data2) {
+void sendtolog(std::string data2) {
     std::cout << data2 << std::endl;
 }
-void sendtologopen(string data2) {
+void sendtologopen(std::string data2) {
     std::cout << data2;
 }
-void sendtologclosed(string data2) {
+void sendtologclosed(std::string data2) {
     std::cout << data2 << std::endl;
 }
-void loginfo(string data2) {
+void loginfo(std::string data2) {
     data2 = "[INFO] - " + data2;
     sendtolog(data2);
 }
-void logwarning(string data2) {
+void logwarning(std::string data2) {
     data2 = "[WARNING] - " + data2;
     sendtolog(data2);
 }
-void logcritical(string data2) {
+void logcritical(std::string data2) {
     data2 = "[CRITICAL] - " + data2;
     sendtolog(data2);
 }
 
 
 
-string generateRandomStringHoneyPI() {
+std::string generateRandomStringHoneyPI() {
     loginfo("CREATING NEW HoneyPi API KEY");
 
     // Define the list of possible characters
-    const string CHARACTERS
+    const std::string CHARACTERS
         = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
           "wxyz0123456789";
 
     // Create a random number generator
-    random_device rd;
-    mt19937 generator(rd());
+    std::random_device rd;
+    std::mt19937 generator(rd());
 
     // Create a distribution to uniformly select from all
     // characters
-    uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
+    std::uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
 
     // Generate the random string
-    string random_string = "PI";
+    std::string random_string = "PI";
     for (int i = 0; i < 62; ++i) {
         random_string += CHARACTERS[distribution(generator)];
     }
@@ -213,24 +221,24 @@ string generateRandomStringHoneyPI() {
 }
 
 
-string generateRandomStringRouterAPI() {
+std::string generateRandomStringRouterAPI() {
     loginfo("CREATING NEW ROUTER API KEY");
 
     // Define the list of possible characters
-    const string CHARACTERS
+    const std::string CHARACTERS
         = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
           "wxyz0123456789";
 
     // Create a random number generator
-    random_device rd;
-    mt19937 generator(rd());
+    std::random_device rd;
+    std::mt19937 generator(rd());
 
     // Create a distribution to uniformly select from all
     // characters
-    uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
+    std::uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
 
     // Generate the random string
-    string random_string = "RO";
+    std::string random_string = "RO";
     for (int i = 0; i < 62; ++i) {
         random_string += CHARACTERS[distribution(generator)];
     }
@@ -584,14 +592,15 @@ int setup() {
 
     // OPEN SERVER FILES
     sendtologopen("[INFO] - Open IP LIST File...");
-    int statuses = system("ls");
-    ipliststrict.open("/home/listfiles/ipliststrict.txt", ios::in | ios::out | ios::app);
-    ipliststandard.open("/home/listfiles/ipliststandard.txt",  ios::in | ios::out);
-    iplistsmoreinfo.open("/home/listfiles/iplistsmoreinfo.txt",  ios::in | ios::out | ios::app);
-    maclist.open("/home/listfiles/maclist.txt",  ios::in | ios::out | ios::app);
+  //  std::ifstream ipliststrict;
+  //  ipliststrict.open(ipliststrict);
+  //  ipliststrict.open(ipliststrictfile);
+    ipliststandard.open(ipliststandardfile);
+  //  iplistsmoreinfo.open(iplistsmoreinfofile);
+    maclist.open("/home/listfiles/maclist.txt",  std::ios::in | std::ios::out | std::ios::app);
     severitylist.open("/home/listfiles/severitylist.txt");
     acpmac.open("/home/listfiles/acpmac.txt");
-    blockedipstream.open("/home/listfiles/ipsafety.txt", ios::in | ios::out | ios::app);
+    blockedipstream.open("/home/listfiles/ipsafety.txt", std::ios::in | std::ios::out | std::ios::app);
     config1.open("/home/listfiles/serverconfig1.txt");
     // NO SETUP FOR COGFILE
     userstream.open("/home/listfiles/userstream.txt");
@@ -616,6 +625,7 @@ int setup() {
         }
     }
 
+/*
     if (ipliststrict.is_open() != true) {
         startupchecks = startupchecks + 1;
         sendtolog("ERROR");
@@ -623,6 +633,7 @@ int setup() {
     } else {
         sendtolog("Done");
     }
+    */
 
     if (ipliststandard.is_open() != true) {
         startupchecks = startupchecks + 1;
@@ -632,6 +643,7 @@ int setup() {
         sendtolog("Done");
     }
 
+/*
     if (iplistsmoreinfo.is_open() != true) {
         startupchecks = startupchecks + 1;
         sendtolog("ERROR");
@@ -639,6 +651,7 @@ int setup() {
     } else {
         sendtolog("Done");
     }
+    */
 
     if (maclist.is_open() != true) {
         startupchecks = startupchecks + 1;
@@ -721,31 +734,41 @@ int setup() {
     logcritical(currentversionID);
 
     // IPLIST STRICT
+    std::ifstream ipliststrict;
+    ipliststrict.open(ipliststrictfile);
+
     std::getline(ipliststrict, versionID);
     if (versionID != "") {
         compressed = versionID.substr(9,10);
     } else {
         compressed = "";
     }
-    logwarning(compressed);
     if (compressed == "") {
-        logwarning("No Version Found, Installing New Version IPLIST STRICT");
-        ipliststandard << currentversionID << endl;
+        logwarning("No Version Found, Installing New Version123");
+        //
+        ipliststrict.close();
+        std::ofstream ipliststrict;
+        ipliststrict.open(ipliststrictfile);
+        //
+
+        ipliststrict.seekp(0);
+        ipliststrict << currentversionID << '\n';
+        ipliststrict.flush();
+        if (ipliststrict.fail() == true) {
+            logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTRICT");
+            if (ipliststrict.bad() == true) {
+                logcritical("THIS APPEARS TRUE");
+            }
+            startupchecks = startupchecks + 1;
+        }
+        sleep(1);
+        ipliststandard.close();
     } else {
         if (compressed != honeyversion) {
             migration = migration + 1;
             logwarning("Detected Different IP List Strict Version, Attempting to Update!");
-            /*
+            
             // MIGRATION STEPS
-            if (float(compressed) > float(honeyversion)) {
-                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
-                startupchecks = startupchecks + 1;
-            }
-
-            if (float(compressed) = 0.1) {
-                loginfo("No Update Required");
-            }
-            */
 
         } else {
             loginfo("Detected Correct IP List Strict Version, Continuing");
@@ -759,53 +782,58 @@ int setup() {
     } else {
         compressed = "";
     }
-    logwarning(compressed);
     if (compressed == "") {
         logwarning("No Version Found, Installing New Version123");
-        ipliststrict << currentversionID << "\n";
-        ipliststandard << currentversionID << "\n";
-        sleep(1);
-        ipliststrict.flush();
+        ipliststandard << "Version: " << 1.0 << std::endl;
+        sleep(0.5);
         ipliststandard.flush();
-        if (ipliststrict.fail()) {
-            std::cerr << "Write operation failed." << std::endl;
-            logcritical("AN ERROR OCCURRED");
+        sleep(0.5);
+        if (ipliststandard.fail()) {
+            logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTANDARD");
+            startupchecks = startupchecks + 1;
         }
-
         sleep(1);
         ipliststandard.close();
     } else {
         if (compressed != honeyversion) {
             migration = migration + 1;
             logwarning("Detected Different IP List Standard Version, Attempting to Update!");
-            /*
+
             // MIGRATION STEPS
-            if (float(compressed) > float(honeyversion)) {
-                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
-                startupchecks = startupchecks + 1;
-            }
-
-            if (float(compressed) = 0.1) {
-                loginfo("No Update Required");
-            }
-            */
-
+           
         } else {
             loginfo("Detected Correct IP List Standard Version, Continuing");
         }
     }
 
     // IP LIST MORE INFO
+    std::ifstream iplistsmoreinfo;
+    iplistsmoreinfo.open(iplistsmoreinfofile);
     std::getline(iplistsmoreinfo, versionID);
     if (versionID != "") {
         compressed = versionID.substr(9,10);
     } else {
         compressed = "";
     }
-    logwarning(compressed);
     if (compressed == "") {
-        logwarning("No Version Found, Installing New Version");
-        iplistsmoreinfo << currentversionID << endl;
+        logwarning("No Version Found, Installing New Version123");
+
+        //
+        iplistsmoreinfo.close();
+        std::ofstream iplistsmoreinfo;
+        iplistsmoreinfo.open(iplistsmoreinfofile);
+        //
+        
+        iplistsmoreinfo << currentversionID << std::endl;
+        sleep(0.5);
+        iplistsmoreinfo.flush();
+        sleep(0.5);
+        if (iplistsmoreinfo.fail()) {
+            logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTANDARD");
+            startupchecks = startupchecks + 1;
+        }
+        sleep(1);
+        iplistsmoreinfo.close();
     } else {
         if (compressed != honeyversion) {
             migration = migration + 1;
@@ -834,10 +862,9 @@ int setup() {
     } else {
         compressed = "";
     }
-    logwarning(compressed);
     if (compressed == "") {
         logwarning("No Version Found, Installing New Version");
-        maclist << currentversionID << endl;
+        maclist << currentversionID << std::endl;
     } else {
         if (compressed != honeyversion) {
             migration = migration + 1;
@@ -866,10 +893,9 @@ int setup() {
     } else {
         compressed = "";
     }
-    logwarning(compressed);
     if (compressed == "") {
         logwarning("No Version Found, Installing New Version");
-        severitylist << currentversionID << endl;
+        severitylist << currentversionID <<std::endl;
     } else {
         if (compressed != honeyversion) {
             migration = migration + 1;
@@ -898,10 +924,9 @@ int setup() {
     } else {
         compressed = "";
     }
-    logwarning(compressed);
     if (compressed == "") {
         logwarning("No Version Found, Installing New Version");
-        acpmac << currentversionID << endl;
+        acpmac << currentversionID << std::endl;
     } else {
         if (compressed != honeyversion) {
             migration = migration + 1;
@@ -930,10 +955,9 @@ int setup() {
     } else {
         compressed = "";
     }
-    logwarning(compressed);
     if (compressed == "") {
         logwarning("No Version Found, Installing New Version");
-        blockedipstream << currentversionID << endl;
+        blockedipstream << currentversionID << std::endl;
     } else {
         if (compressed != honeyversion) {
             migration = migration + 1;
@@ -962,10 +986,9 @@ int setup() {
     } else {
         compressed = "";
     }
-    logwarning(compressed);
     if (compressed == "") {
         logwarning("No Version Found, Installing New Version");
-        config1 << currentversionID << endl;
+        config1 << currentversionID << std::endl;
     } else {
         if (compressed != honeyversion) {
             migration = migration + 1;
@@ -994,10 +1017,9 @@ int setup() {
     } else {
         compressed = "";
     }
-    logwarning(compressed);
     if (compressed == "") {
         logwarning("No Version Found, Installing New Version");
-        userstream << currentversionID << endl;
+        userstream << currentversionID << std::endl;
     } else {
         if (compressed != honeyversion) {
             migration = migration + 1;
@@ -1026,10 +1048,9 @@ int setup() {
     } else {
         compressed = "";
     }
-    logwarning(compressed);
     if (compressed == "") {
         logwarning("No Version Found, Installing New Version");
-        passstream << currentversionID << endl;
+        passstream << currentversionID << std::endl;
     } else {
         if (compressed != honeyversion) {
             migration = migration + 1;
@@ -1049,6 +1070,17 @@ int setup() {
         } else {
             loginfo("Detected Correct PASSSTREAM Version, Continuing");
         }
+    }
+
+
+
+    // CHECK BEFORE REST OF SERVER STARTUP IF FILES WERE NOT CONFIGURED CORRECTLY
+    if (startupchecks != 0) {
+        logcritical("STARTUP CHECKS DOES NOT EQUAL 0!");
+        logcritical("STOPPING SERVER!");
+        return 1;
+        return 1;
+        return 1;
     }
 
 
@@ -1166,12 +1198,9 @@ int main() {
         logcritical("THE SYSTEM COULD NOT CONTINUE!");
         logcritical("ALL DOCKER CONTAINERS WILL BE STOPPED");
 
-        // ADD FUTURE DOCKER CONTAINER INFORMATION
         close(serverport1);
         close(serverport2);
-        sleep(10);
-        int completion = system("docker kill * > nul:");
-        sleep(10);
+        sleep(5);
 
         // EXIT AND STOP PROCESSES
         return(1);

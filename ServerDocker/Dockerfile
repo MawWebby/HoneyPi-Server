@@ -28,9 +28,6 @@ RUN mkdir /home/htmlmainweb
 COPY . /usr/src/honeypi
 WORKDIR /usr/src/honeypi
 
-# DEBUG SCRIPTS
-RUN ls && cp listfiles/* /home/listfiles/*
-
 # This command compiles your app using GCC, adjust for your source code
 RUN g++ -o run home.cpp
 RUN g++ -o test servertest.cpp
@@ -40,9 +37,13 @@ RUN apt-get remove openssh-server -y
 RUN apt-get remove g++ -y
 RUN apt-get autoremove -y
 
+# REMOVE C++ SCRIPTS
+RUN rm home.cpp
+RUN rm servertest.cpp
+
 # This command runs your application, comment out this line to compile only
-#ENTRYPOINT ["./run"]
-CMD ["./usr/src/honeypi/run"]
+ENTRYPOINT ["./run"]
+#CMD ["./usr/src/honeypi/run"]
 
 # Versions and Labels
 LABEL Name=honeypotpi-SERVER Versions=0.1
