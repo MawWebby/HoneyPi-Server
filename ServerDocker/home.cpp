@@ -57,18 +57,18 @@ bool runningnetworksportAPI = true;
 
 // FILES 
 //std::fstream ipliststrict;         // IP BLOCKLIST TABLE (STRICT 90 DAY REMOVAL W/O EXCEPTIONS)
-std::fstream ipliststandard;       // IP BLOCKLIST TABLE (STANDARD 45 DAY REMOVAL W/ EXCEPTIONS)
+//std::fstream ipliststandard;       // IP BLOCKLIST TABLE (STANDARD 45 DAY REMOVAL W/ EXCEPTIONS)
 //std::fstream iplistsmoreinfo;      // INFO ABOUT IP REPORTED/REPORTS/LATEST REPORT/EXPIRATION DATE
-std::fstream maclist;              // MAC ADDRESSES FOR HONEYPIS
-std::fstream severitylist;         // SEVERITY LIST OF OP ATTACKS
-std::fstream acpmac;               // JSON LIST OF ACCOUNTS/MAC/API/ETC.
-std::fstream blockedipstream;      // SERVER IP BLOCKLIST
-std::fstream config1;              // serverconfig1
+//std::fstream maclist;              // MAC ADDRESSES FOR HONEYPIS
+//std::fstream severitylist;         // SEVERITY LIST OF OP ATTACKS
+//std::fstream acpmac;               // JSON LIST OF ACCOUNTS/MAC/API/ETC.
+//std::fstream blockedipstream;      // SERVER IP BLOCKLIST
+//std::fstream config1;              // serverconfig1
 std::fstream cogfile[256];         // Crashlogs
-std::fstream userstream;           // USERNAME JSON STREAM
-std::fstream passstream;           // PASSWORD JSON STREAM
-std::fstream serverdump;           // SERVER DUMP FILE
-std::fstream serverlogfile;        // SERVER LOG FILE
+//std::fstream userstream;           // USERNAME JSON STREAM
+//std::fstream passstream;           // PASSWORD JSON STREAM
+//std::fstream serverdump;           // SERVER DUMP FILE
+//std::fstream serverlogfile;        // SERVER LOG FILE
 
 // FILE LOCATIONS
 const char* ipliststrictfile = "/home/listfiles/ipliststrict.txt";
@@ -83,6 +83,9 @@ const char* userstreamfile = "/home/listfiles/userstream.txt";
 const char* passstreamfile = "/home/lsitfiles/passstream.txt";
 const char* serverdumpfile = "/home/serverdump/serverdump.txt";
 const char* serverlogfilefile = "/home/serverdump/log.txt";
+const char* foldersaccessedfile = "/home/listfiles/foldacc.txt";
+const char* filesaccessedfile = "/home/listfiles/fileacc.txt";
+const char* cmdrunfile = "/home/listfiles/cmdrun.txt";
 const char* filearguments = "ios::in | ios::out";
 
 
@@ -591,6 +594,7 @@ int setup() {
 
 
     // OPEN SERVER FILES
+    /*
     sendtologopen("[INFO] - Open IP LIST File...");
   //  std::ifstream ipliststrict;
   //  ipliststrict.open(ipliststrict);
@@ -606,7 +610,9 @@ int setup() {
     userstream.open("/home/listfiles/userstream.txt");
     passstream.open("/home/listfiles/passstream.txt");
     serverdump.open("/home/serverdump/serverdump.txt");
+    
     serverlogfile.open("/home/serverdump/log.txt");
+    */
 
 
 
@@ -634,7 +640,7 @@ int setup() {
         sendtolog("Done");
     }
     */
-
+/*
     if (ipliststandard.is_open() != true) {
         startupchecks = startupchecks + 1;
         sendtolog("ERROR");
@@ -643,7 +649,7 @@ int setup() {
         sendtolog("Done");
     }
 
-/*
+
     if (iplistsmoreinfo.is_open() != true) {
         startupchecks = startupchecks + 1;
         sendtolog("ERROR");
@@ -651,7 +657,7 @@ int setup() {
     } else {
         sendtolog("Done");
     }
-    */
+    
 
     if (maclist.is_open() != true) {
         startupchecks = startupchecks + 1;
@@ -709,6 +715,7 @@ int setup() {
 
 
 
+
     // SEARCH FOR SERVER DUMP FILE
     loginfo("Searching for Server Dump File");
     if (serverdump.is_open() == true) {
@@ -724,189 +731,305 @@ int setup() {
         std::cerr << "Stream is in a failed state before writing." << std::endl;
         blockedipstream.clear();  // Clear error state
     }
+    */
 
 
-    // UPDATE THE SERVER FILES IF NEEDED
+
+    // OPEN THE SERVER FILES NEW
     std::string versionID;
     std::string currentversionID = "Version: " + honeyversion + "\n";
     std::string compressed;
     int migration = 0;
     logcritical(currentversionID);
 
+
+
+
+
     // IPLIST STRICT
+    sendtologopen("[INFO] - Attempting to Read from IP LIST Strict TXT File...");
     std::ifstream ipliststrict;
     ipliststrict.open(ipliststrictfile);
-
-    std::getline(ipliststrict, versionID);
-    if (versionID != "") {
-        compressed = versionID.substr(9,10);
-    } else {
-        compressed = "";
-    }
-    if (compressed == "") {
-        logwarning("No Version Found, Installing New Version123");
-        //
-        ipliststrict.close();
-        std::ofstream ipliststrict;
-        ipliststrict.open(ipliststrictfile);
-        //
-
-        ipliststrict.seekp(0);
-        ipliststrict << currentversionID << '\n';
-        ipliststrict.flush();
-        if (ipliststrict.fail() == true) {
-            logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTRICT");
-            if (ipliststrict.bad() == true) {
-                logcritical("THIS APPEARS TRUE");
-            }
-            startupchecks = startupchecks + 1;
-        }
-        sleep(1);
-        ipliststandard.close();
-    } else {
-        if (compressed != honeyversion) {
-            migration = migration + 1;
-            logwarning("Detected Different IP List Strict Version, Attempting to Update!");
-            
-            // MIGRATION STEPS
-
+    if (ipliststrict.is_open() == true) {
+        std::getline(ipliststrict, versionID);
+        if (versionID != "") {
+            if (versionID.substr(1,0) == "V") {
+                compressed = versionID.substr(9,10);
+            } else {
+                compressed = "";
+            }            
         } else {
-            loginfo("Detected Correct IP List Strict Version, Continuing");
+            compressed = "";
         }
+        sendtolog("Done");
+        if (compressed == "") {
+            sendtologopen("[WARNING] - IP LIST STRICT - No Version Found, Writing New Version...");
+            ipliststrict.close();
+            std::ofstream ipliststrict;
+            ipliststrict.open(ipliststrictfile);
+            ipliststrict.seekp(0);
+            ipliststrict << currentversionID << '\n';
+            ipliststrict.flush();
+            if (ipliststrict.fail() == true) {
+                sendtolog("ERROR");
+                logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTRICT");
+                if (ipliststrict.bad() == true) {
+                    logcritical("I/O ERROR OCCURRED");
+                }
+                startupchecks = startupchecks + 1;
+                ipliststrict.close();
+            }
+            sleep(0.5);
+            sendtolog("Done");
+        } else {
+            if (compressed != honeyversion) {
+                migration = migration + 1;
+                logwarning("Detected Different IP List Strict Version, Attempting to Update!");
+                // MIGRATION STEPS
+                logwarning("No migration steps detected");
+            } else {
+                loginfo("IP LIST STRICT Started...");
+            }
+        }
+    } else {
+        sendtolog("ERROR!");
+        logcritical("UNABLE TO OPEN IP LIST Strict TXT File!");
+        startupchecks = startupchecks + 1;
+        return 1;
+        return 1;
+        return 1;
     }
+    ipliststrict.close();
+    
+
 
     // IP LIST STANDARD
-    std::getline(ipliststandard, versionID);
-    if (versionID != "") {
-        compressed = versionID.substr(9,10);
-    } else {
-        compressed = "";
-    }
-    if (compressed == "") {
-        logwarning("No Version Found, Installing New Version123");
-        ipliststandard << "Version: " << 1.0 << std::endl;
-        sleep(0.5);
-        ipliststandard.flush();
-        sleep(0.5);
-        if (ipliststandard.fail()) {
-            logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTANDARD");
-            startupchecks = startupchecks + 1;
-        }
-        sleep(1);
-        ipliststandard.close();
-    } else {
-        if (compressed != honeyversion) {
-            migration = migration + 1;
-            logwarning("Detected Different IP List Standard Version, Attempting to Update!");
-
-            // MIGRATION STEPS
-           
+    sendtologopen("[INFO] - Attempting to Read from IP List Standard File...");
+    std::ifstream ipliststandard;
+    ipliststandard.open(ipliststandardfile);
+    if(ipliststandard.is_open() == true) {
+        std::getline(ipliststandard, versionID);
+        if (versionID != "") {
+            if (versionID.substr(1,0) == "V") {
+                compressed = versionID.substr(9,10);
+            } else {
+                compressed = "";
+            }
         } else {
-            loginfo("Detected Correct IP List Standard Version, Continuing");
+            compressed = "";
         }
+        sendtolog("Done");
+        if (compressed == "") {
+            sendtologopen("[WARNING] - IP LIST STANDARD - No Version Found, Writing New Version...");
+            ipliststandard.close();
+            std::ofstream ipliststandard;
+            ipliststandard.open(ipliststandardfile);
+            ipliststandard.seekp(0);
+            ipliststandard << currentversionID << '\n';
+            ipliststandard.flush();
+            if (ipliststandard.fail()) {
+                sendtolog("ERROR");
+                logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTANDARD");
+                if (ipliststandard.bad() == true) {
+                    logcritical("I/O ERROR OCCURRED");
+                }
+                startupchecks = startupchecks + 1;
+                ipliststandard.close();
+            }
+            sleep(0.5);
+            sendtolog("Done");
+        } else {
+            if (compressed != honeyversion) {
+                migration = migration + 1;
+                logwarning("Detected Different IP List Standard Version, Attempting to Update!");
+                // MIGRATION STEPS
+                logwarning("NO Migration steps detected");
+            } else {
+                loginfo("IP LIST STANDARD Started...");
+            }
+        }
+    } else {
+        sendtolog("ERROR");
+        logcritical("UNABLE TO OPEN IP LIST Standard TXT File!");
+        startupchecks = startupchecks + 1;
+        return 1;
+        return 1;
+        return 1;
     }
+    ipliststandard.close();
+
+    
 
     // IP LIST MORE INFO
+    sendtologopen("[INFO] - Attempting to Read from IP LIST MORE INFO TXT FILE");
     std::ifstream iplistsmoreinfo;
     iplistsmoreinfo.open(iplistsmoreinfofile);
-    std::getline(iplistsmoreinfo, versionID);
-    if (versionID != "") {
-        compressed = versionID.substr(9,10);
-    } else {
-        compressed = "";
-    }
-    if (compressed == "") {
-        logwarning("No Version Found, Installing New Version123");
-
-        //
-        iplistsmoreinfo.close();
-        std::ofstream iplistsmoreinfo;
-        iplistsmoreinfo.open(iplistsmoreinfofile);
-        //
-        
-        iplistsmoreinfo << currentversionID << std::endl;
-        sleep(0.5);
-        iplistsmoreinfo.flush();
-        sleep(0.5);
-        if (iplistsmoreinfo.fail()) {
-            logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTANDARD");
-            startupchecks = startupchecks + 1;
-        }
-        sleep(1);
-        iplistsmoreinfo.close();
-    } else {
-        if (compressed != honeyversion) {
-            migration = migration + 1;
-            logwarning("Detected Different IP List Standard Version, Attempting to Update!");
-
-            // MIGRATION STEPS
-
+    if (iplistsmoreinfo.is_open() == true) {
+        std::getline(iplistsmoreinfo, versionID);
+        if (versionID != "") {
+            if (versionID.substr(1,0) == "V") {
+                compressed = versionID.substr(9,10);
+            } else {
+                compressed = "";
+            }            
         } else {
-            loginfo("Detected Correct IP List More Info Version, Continuing");
+            compressed = "";
         }
+        sendtolog("Done");
+        if (compressed == "") {
+            sendtologopen("[WARNING] - IP LIST MORE INFO - No Version Found, Writing New Version...");
+            iplistsmoreinfo.close();
+            std::ofstream iplistsmoreinfo;
+            iplistsmoreinfo.open(iplistsmoreinfofile);
+            iplistsmoreinfo.seekp(0);
+            iplistsmoreinfo << currentversionID << '\n';
+            iplistsmoreinfo.flush();
+            if (iplistsmoreinfo.fail() == true) {
+                sendtolog("ERROR");
+                logcritical("AN ERROR OCCURRED WRITING TO IP LIST MORE INFO");
+                if (iplistsmoreinfo.bad() == true) {
+                    logcritical("I/O ERROR");
+                }
+                startupchecks = startupchecks + 1;
+                iplistsmoreinfo.close();
+            }
+            sleep(0.5);
+            sendtolog("Done");
+        } else {
+            if (compressed != honeyversion) {
+                migration = migration + 1;
+                logwarning("Detected Different IP List Standard Version, Attempting to Update!");
+                // MIGRATION STEPS
+                logwarning("NO Migration steps detected");
+            } else {
+                loginfo("IP LIST MORE INFO Started...");
+            }
+        }
+    } else {
+        sendtolog("ERROR!");
+        logcritical("UNABLE TO OPEN IP LIST MORE INFO TXT File!");
+        startupchecks = startupchecks + 1;
+        return 1;
+        return 1;
+        return 1;
     }
+    iplistsmoreinfo.close();
+    
+
+
+
 
     // MAC LIST INFO
-    std::getline(maclist, versionID);
-    if (versionID != "") {
-        compressed = versionID.substr(9,10);
-    } else {
-        compressed = "";
-    }
-    if (compressed == "") {
-        logwarning("No Version Found, Installing New Version");
-        maclist << currentversionID << std::endl;
-    } else {
-        if (compressed != honeyversion) {
-            migration = migration + 1;
-            logwarning("Detected Different Mac List Version, Attempting to Update!");
-            /*
-            // MIGRATION STEPS
-            if (float(compressed) > float(honeyversion)) {
-                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
-                startupchecks = startupchecks + 1;
-            }
-
-            if (float(compressed) = 0.1) {
-                loginfo("No Update Required");
-            }
-            */
-
+    sendtologopen("[INFO] - Attempting to Read from MAC LIST TXT FILE...");
+    std::ifstream maclist;
+    maclist.open(maclistfile);
+    if (maclist.is_open() == true) {
+        std::getline(maclist, versionID);
+        if (versionID != "") {
+            if (versionID.substr(1,0) == "V") {
+                compressed = versionID.substr(9,10);
+            } else {
+                compressed = "";
+            }            
         } else {
-            loginfo("Detected Correct Mac List Version, Continuing");
+            compressed = "";
         }
+        sendtolog("Done");
+        if (compressed == "") {
+            sendtologopen("[WARNING] - MAC LIST - No Version Found, Writing New Version...");
+            maclist.close();
+            std::ofstream maclist;
+            maclist.open(maclistfile);
+            maclist.seekp(0);
+            maclist << currentversionID << '\n';
+            maclist.flush();
+            if (maclist.fail() == true) {
+                sendtolog("ERROR");
+                logcritical("AN ERROR OCCURRED WRITING TO MAC LIST FILE");
+                if (maclist.bad() == true) {
+                    logcritical("I/O ERROR OCCURRED");
+                }
+                startupchecks = startupchecks + 1;
+                maclist.close();
+            }
+            sleep(0.5);
+            sendtolog("Done");
+        } else {
+            if (compressed != honeyversion) {
+                migration = migration + 1;
+                logwarning("Detected Different Mac List Version, Attempting to Update!");
+                // MIGRATION STEPS
+                logwarning("No migration steps detected");
+            } else {
+                loginfo("MAC LIST Started...");
+            }
+        }
+    } else {
+        sendtolog("ERROR!");
+        logcritical("UNABLE TO OPEN MAC LIST TXT File!");
+        startupchecks = startupchecks + 1;
+        return 1;
+        return 1;
+        return 1;
     }
+    maclist.close();
+    
 
     // SEVERITY LIST INFO
-    std::getline(severitylist, versionID);
-    if (versionID != "") {
-        compressed = versionID.substr(9,10);
-    } else {
-        compressed = "";
-    }
-    if (compressed == "") {
-        logwarning("No Version Found, Installing New Version");
-        severitylist << currentversionID <<std::endl;
-    } else {
-        if (compressed != honeyversion) {
-            migration = migration + 1;
-            logwarning("Detected Different Severity List Version, Attempting to Update!");
-            /*
-            // MIGRATION STEPS
-            if (float(compressed) > float(honeyversion)) {
-                logcritical("Newer Version of File Detected than Server, Not Starting Server!");
-                startupchecks = startupchecks + 1;
-            }
-
-            if (float(compressed) = 0.1) {
-                loginfo("No Update Required");
-            }
-            */
-
+    sendtologopen("[INFO] - Attempting to Read from Severity List TXT File...");
+    std::ifstream severitylist;
+    severitylist.open(severitylistfile);
+    if (severitylist.is_open() == true) {
+        std::getline(severitylist, versionID);
+        if (versionID != "") {
+            if (versionID.substr(1,0) == "V") {
+                compressed = versionID.substr(9,10);
+            } else {
+                compressed = "";
+            }            
         } else {
-            loginfo("Detected Correct Severity List Version, Continuing");
+            compressed = "";
         }
+        sendtolog("Done");
+        if (compressed == "") {
+            sendtologopen("[WARNING] - SEVERITY LIST - No Version Found, Writing New Version...");
+            severitylist.close();
+            std::ofstream severitylist;
+            severitylist.open(severitylist);
+            severitylist.seekp(0);
+            severitylist << currentversionID << '\n';
+            severitylist.flush();
+            if (severitylist.fail() == true) {
+                sendtolog("ERROR");
+                logcritical("AN ERROR OCCURRED WRITING TO SEVERITYLIST");
+                if (severitylist.bad() == true) {
+                    logcritical("I/O ERROR OCCURRED");
+                }
+                startupchecks = startupchecks + 1;
+                severitylist.close();
+            }
+            sleep(0.5);
+            sendtolog("Done");
+        } else {
+            if (compressed != honeyversion) {
+                migration = migration + 1;
+                logwarning("Detected Different Severity List Version, Attempting to Update!");
+                // MIGRATION STEPS
+                logwarning("No migration steps detected");
+            } else {
+                loginfo("SEVERITY LIST Started...");
+            }
+        }
+    } else {
+        sendtolog("ERROR!");
+        logcritical("UNABLE TO OPEN IP LIST Strict TXT File!");
+        startupchecks = startupchecks + 1;
+        return 1;
+        return 1;
+        return 1;
     }
+    maclist.close();
+    
 
     // Accounts/Macs/APIs INFO
     std::getline(acpmac, versionID);
@@ -1171,20 +1294,9 @@ int setup() {
 int main() {
 
     // SETUP LOOP
-    setup();
+    int startup = setup();
 
-    // SERVER PORT LISTEN THREAD
-    sendtologopen("[INFO] - Creating server thread on port 63599 listen...");
-
-    sleep(2);
-    std::thread acceptingClientsThread(handleConnections, port1);
-    acceptingClientsThread.detach();
-    sleep(1);
-
-    sendtologclosed("Done");
-
-    // STARTUP CHECKS
-    if (startupchecks != 0) {
+    if (startup != 0) {
         logcritical("STARTUP CHECKS RETURNED EXIT CODE 1");
         logcritical("THE SYSTEM COULD NOT CONTINUE!");
         logcritical("ALL DOCKER CONTAINERS WILL BE STOPPED");
@@ -1197,36 +1309,49 @@ int main() {
         return(1);
         return(1);
         return(1);
-    }
+    } else {
 
 
-    loginfo("HoneyPi Server has started successfully");
+        // SERVER PORT LISTEN THREAD
+        sendtologopen("[INFO] - Creating server thread on port 63599 listen...");
 
-    // NETWORK INFORMATION
-    char buffer[BUFFER_SIZE];
-    sockaddr_in clientAddr;
-    socklen_t clientAddrLen = sizeof(clientAddr);
+        sleep(2);
+        std::thread acceptingClientsThread(handleConnections, port1);
+        acceptingClientsThread.detach();
+        sleep(1);
 
-    // MAIN RUNNING LOOP
-    while(startupchecks == 0 && encounterederrors == 0) {
-
-        sleep(60);
-        loginfo("Running = TRUE...");
+        sendtologclosed("Done");
 
 
-    }
 
-    // ENCOUNTERED ERRORS
-    if (encounterederrors != 0) {
-        logcritical("HONEYPI-SERVER HAS ENCOUNTERED UNRECOVERABLE ERRORS WHILE RUNNING!");
-        logcritical("HONEYPI-SERVER WILL NOW ATTEMPT A LOG DUMP!");
-        
+        loginfo("HoneyPi Server has started successfully");
+
+        // NETWORK INFORMATION
+        char buffer[BUFFER_SIZE];
+        sockaddr_in clientAddr;
+        socklen_t clientAddrLen = sizeof(clientAddr);
+
+        // MAIN RUNNING LOOP
+        while(startupchecks == 0 && encounterederrors == 0) {
+
+            sleep(60);
+            loginfo("Running = TRUE...");
 
 
-        logcritical("HONEYPI-SERVER WILL NOW ATTEMPT A SAVEFILE DUMP!");
+        }
 
-        logcritical("ATTEMPTING TO END SERVER!!!");
-        close(serverport1);
-        close(serverport2);
+        // ENCOUNTERED ERRORS
+        if (encounterederrors != 0) {
+            logcritical("HONEYPI-SERVER HAS ENCOUNTERED UNRECOVERABLE ERRORS WHILE RUNNING!");
+            logcritical("HONEYPI-SERVER WILL NOW ATTEMPT A LOG DUMP!");
+            
+
+
+            logcritical("HONEYPI-SERVER WILL NOW ATTEMPT A SAVEFILE DUMP!");
+
+            logcritical("ATTEMPTING TO END SERVER!!!");
+            close(serverport1);
+            close(serverport2);
+        }
     }
 }
