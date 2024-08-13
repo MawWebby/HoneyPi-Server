@@ -91,6 +91,10 @@ const char* mainhtml = "/home/htmlmainweb/index.html";
 const char* htmlfolder = "/home/htmlmainweb";
 const char* filearguments = "ios::in | ios::out";
 
+// FILE LOCK VARIABLES
+bool ipliststrictlock = false;
+
+
 
 // TIME VARIABLES
 long long int startuptime = 0;
@@ -181,9 +185,6 @@ void sendtolog(std::string data2) {
 void sendtologopen(std::string data2) {
     std::cout << data2;
 }
-void sendtologclosed(std::string data2) {
-    std::cout << data2 << std::endl;
-}
 void loginfo(std::string data2) {
     data2 = "[INFO] - " + data2;
     sendtolog(data2);
@@ -252,6 +253,13 @@ std::string generateRandomStringRouterAPI() {
     loginfo(random_string);
 
     return random_string;
+}
+
+
+
+
+int writetoipliststrict(std::string writedata, int position) {
+    
 }
 
 
@@ -532,9 +540,9 @@ int setup() {
     sendtologopen("[INFO] - Determining Network Connectivity...");
     int learnt = system("ping -c 5 8.8.8.8 > nul:");
     if (learnt == 0) {
-        sendtologclosed("Done");
+        sendtolog("Done");
     } else {
-        sendtologclosed("ERROR");
+        sendtolog("ERROR");
         logcritical("UNABLE TO DETERMINE NETWORK CONNECTIVITY!");
         logcritical("Killing");
         startupchecks = startupchecks + 1;
@@ -557,9 +565,9 @@ int setup() {
         // CHECK FOR SYSTEM UPDATES
         int returnedvalue = system("apt-get update > nul:");
         if (returnedvalue == 0) {
-            sendtologclosed("Done");
+            sendtolog("Done");
         } else {
-            sendtologclosed("ERROR");
+            sendtolog("ERROR");
             logcritical("UNABLE TO CHECK FOR SYSTEM UPDATES!");
             logcritical("This could be potentially dangerous!");
             logcritical("KILLING PROCESS!");
@@ -575,9 +583,9 @@ int setup() {
         sendtologopen("[INFO] - Updating System...");
         int returnedvalue2 = system("apt-get upgrade -y > nul:");
         if (returnedvalue2 == 0) {
-            sendtologclosed("Done");
+            sendtolog("Done");
         } else {
-            sendtologclosed("ERROR");
+            sendtolog("ERROR");
             logcritical("UNABLE TO UPGRADE SYSTEM!");
             logcritical("This could be potentially dangerous!");
             logcritical("KILLING PROCESS!");
@@ -588,7 +596,7 @@ int setup() {
         }
 
     } else {
-        sendtologclosed("disabled");
+        sendtolog("disabled");
         logwarning("UNABLE TO CHECK FOR UPDATES! (SYSTEM DISABLED)");
     }
 
@@ -1384,7 +1392,7 @@ int setup() {
     int PORT = 63599;
     sendtologopen("[INFO] - Opening Server Ports (1/3)");
     port1 = createnetworkport63599();
-    sendtologclosed("Done");
+    sendtolog("Done");
     sleep(2);
     sleep(3);
 
@@ -1426,7 +1434,7 @@ int setup() {
         exit(EXIT_FAILURE);
     }
 
-    sendtologclosed("Done");
+    sendtolog("Done");
     sleep(2);
 
 
@@ -1441,7 +1449,7 @@ int setup() {
     acceptingClientsThread2.detach();
     sleep(1);
 
-    sendtologclosed("Done");
+    sendtolog("Done");
 
 
 
@@ -1499,7 +1507,7 @@ int main() {
         acceptingClientsThread.detach();
         sleep(1);
 
-        sendtologclosed("Done");
+        sendtolog("Done");
 
 
 
