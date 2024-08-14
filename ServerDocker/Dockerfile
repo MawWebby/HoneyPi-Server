@@ -36,9 +36,10 @@ RUN g++ -o run home.cpp
 RUN g++ -o test servertest.cpp
 
 # REMOVE UNNEEDED PACKAGES
-RUN apt-get remove openssh-server -y
-RUN apt-get remove g++ -y
-RUN apt-get autoremove -y
+# SPEED BUILDING!!!
+#RUN apt-get remove openssh-server -y
+#RUN apt-get remove g++ -y
+#RUN apt-get autoremove -y
 
 # REMOVE C++ SCRIPTS
 RUN rm home.cpp

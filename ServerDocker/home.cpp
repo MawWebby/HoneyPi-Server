@@ -57,11 +57,18 @@ bool runningnetworksportAPI = true;
 std::string ipsafetyRAM[1];
 bool runningport80 = true;
 bool port80runningstatus = false;
-std::string mainhtmlpayload;
 int packetspam = 0;
 bool waiting230 = false;
+
+
+
+// HTML VARIABLES
+std::string mainhtmlpayload;
+std::string pricinghtmlpayload;
 std::string httpforbidden = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: 25\n\n<h1>504: Gateway Time-Out</h1>";
 std::string httpservererror = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
+
+
 
 // FILES 
 //std::fstream ipliststrict;         // IP BLOCKLIST TABLE (STRICT 90 DAY REMOVAL W/O EXCEPTIONS)
@@ -79,6 +86,8 @@ int cogswaiting = 0;
 //std::fstream passstream;           // PASSWORD JSON STREAM
 //std::fstream serverdump;           // SERVER DUMP FILE
 //std::fstream serverlogfile;        // SERVER LOG FILE
+
+
 
 // FILE LOCATIONS
 const char* ipliststrictfile = "/home/listfiles/ipliststrict.txt";
@@ -98,8 +107,11 @@ const char* filesaccessedfile = "/home/listfiles/fileacc.txt";
 const char* cmdrunfile = "/home/listfiles/cmdrun.txt";
 const char* cogfolder = "/home/crashlogs";
 const char* mainhtml = "/home/htmlmainweb/index.html";
+const char* pricehtml = "/home/htmlmainweb/pricing.html";
 const char* htmlfolder = "/home/htmlmainweb";
 const char* filearguments = "ios::in | ios::out";
+
+
 
 // FILE LOCK VARIABLES
 bool ipliststrictlock = false;
@@ -136,6 +148,8 @@ bool calculatingtime = false;
 // 3 - 1-Hour Maintenance Timer
 // 4 - 6-Hour Maintenance Timer
 // 5 - 30-Minute Wait for COGs
+
+
 
 
 //////////////////////
@@ -851,7 +865,7 @@ int loadipsafetyintoram() {
         while(completion1939 != true) {
             getline(ipsafetystream, nextipaddr);
             getline(ipsafetystream, nextipaddr);
-            logcritical(nextipaddr);
+//            logcritical(nextipaddr);
             numberofip = numberofip + 1;
             ipsafetyRAM->resize(numberofip + 1);
             if (numberofip >= 1000) {
@@ -860,7 +874,7 @@ int loadipsafetyintoram() {
             }
             if (timer2 >= timer2max) {
                 completion1939 = true;
-                loginfo("REACHED END OF LOADING IPSAFETY File!");
+                //loginfo("REACHED END OF LOADING IPSAFETY File!");
             }
             if (nextipaddr == "") {
                 timer2 = timer2 + 1;
@@ -877,9 +891,9 @@ int loadipsafetyintoram() {
     return 1;
 }
 
-/////////////////////////////////
-//// LOAD MAIN HTML INTO RAM ////
-///////////////////////////////// 
+////////////////////////////
+//// LOAD HTML INTO RAM ////
+//////////////////////////// 
 int loadmainHTMLintoram() {
     std::string templine;
     std::ifstream htmlmain;
@@ -903,20 +917,61 @@ int loadmainHTMLintoram() {
         std::string beforepayload = "\n\n";
         int length = mainhtmlpayload.length();
         mainhtmlpayload = httpsuccess + std::to_string(length) + beforepayload + mainhtmlpayload;
+        htmlmain.close();
         return 0;
     } else {
         mainhtmlpayload = "500: An Internal Server Error Occurred, Please Try Again Later";
+        htmlmain.close();
         return 1;
     }
     mainhtmlpayload = "500: An Internal Server Error Occurred, Please Try Again Later";
+    htmlmain.close();
+    return 1;
+}
+
+int loadpricingHTMLintoram() {
+    std::string templine;
+    std::ifstream htmlprice;
+    pricinghtmlpayload = "";
+    htmlprice.open(pricehtml);
+    bool completionht = false;
+    int timer7 = 0;
+    int timer7max = 5;
+    if (htmlprice.is_open() == true) {
+        while (completionht != true) {
+            getline(htmlprice, templine);
+            if (templine == "") {
+                timer7 = timer7 + 1;
+                if (timer7 >= timer7max) {
+                    completionht = true;
+                }
+            }
+            pricinghtmlpayload = pricinghtmlpayload + templine;
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = pricinghtmlpayload.length();
+        pricinghtmlpayload = httpsuccess + std::to_string(length) + beforepayload + pricinghtmlpayload;
+        htmlprice.close();
+        return 0;
+    } else {
+        pricinghtmlpayload = "500: An Internal Server Error Occurred, Please Try Again Later";
+        htmlprice.close();
+        return 1;
+    }
+    pricinghtmlpayload = "500: An Internal Server Error Occurred, Please Try Again Later";
+    htmlprice.close();
     return 1;
 }
 
 
 
-///////////////////////////////////////
-// HANDLE NETWORKED CONNECTIONS (80) //
-///////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////
+// HANDLE NETWORKED CONNECTIONS (80) - MAIN HTML SERVER!! //
+////////////////////////////////////////////////////////////
 void handleConnections80(int server_fd) { 
     while(runningport80 == true) {
         port80runningstatus = true;
@@ -960,20 +1015,63 @@ void handleConnections80(int server_fd) {
             logwarning("ALLOWING RESTART OF HTTP PROCESS!");
         }
 
-        if (waiting230 == true) {
+        if (waiting230 == false) {
+            // STANDARD OPERATION
             read(new_socket, buffer, 2048);
             sendtolog(buffer);
             int timer89 = 0;
             int timer89max = 5;
             bool completed23 = false;
-            while(completed23 == false) {
-                if (buffer != "") {
-                    int send_res=send(new_socket,mainhtmlpayload.c_str(),mainhtmlpayload.length(),0);
+            if (buffer != "" && sizeof(buffer) >= 7) {
+                std::string bufferstring = buffer;
+                std::string headerrequest = bufferstring.substr(0,5);
+                loginfo(headerrequest);
+                
+                if (bufferstring.length() >= 7) {
+                    // CHANGE HERE FROM GET: / TO GET /
+                    if (headerrequest == "GET /") {
+                        std::string maindirectory = bufferstring.substr(4,1);
+                        logwarning(maindirectory);
+
+                        // MAKE SURE THAT THE ADDRESS IS VALID
+                        if (maindirectory == "/") {
+                            std::string nextletter = bufferstring.substr(5,2);
+                            loginfo(nextletter);
+
+                            // MAIN PAGE
+                            if (nextletter == "\n") {
+                                int send_res=send(new_socket,mainhtmlpayload.c_str(),mainhtmlpayload.length(),0);
+                            }
+
+                            // INDEX.HTML
+                            if (nextletter == "in") {
+                                //index.html
+                                std::string indexfulldictionary = bufferstring.substr(5, 10);
+                                if (indexfulldictionary == "index.html") {
+                                    int send_res=send(new_socket,mainhtmlpayload.c_str(),mainhtmlpayload.length(),0);
+                                }
+                            }
+
+                            // PRICING.HTML
+                            if (nextletter == "pr") {
+                                // pricing.html
+                                std::string pricingfulldictionary = bufferstring.substr(5,12);
+                                if (pricingfulldictionary == "pricing.html") {
+                                    int send_res=send(new_socket,pricinghtmlpayload.c_str(),pricinghtmlpayload.length(),0);
+                                }
+                            }
+                        }
+                    } else {
+                        int send_res=send(new_socket,httpforbidden.c_str(),httpforbidden.length(),0);
+                    }
                 } else {
-                    // FUTURE TERMINATE COMMAND
                     int send_res=send(new_socket,httpforbidden.c_str(),httpforbidden.length(),0);
                 }
+            } else {
+                // FUTURE TERMINATE COMMAND
+                int send_res=send(new_socket,httpforbidden.c_str(),httpforbidden.length(),0);
             }
+            
         } else {
             int send_res=send(new_socket,httpforbidden.c_str(),httpforbidden.length(),0);
         }
@@ -1157,14 +1255,13 @@ int setup() {
 
     // DELAY FOR SYSTEM TO START FURTHER (FIGURE OUT CURRENT TIME)
     sleep(1);
-    loginfo(generateRandomFileName());
 
-    int test = writetoipliststrict("HELLO", 0, true, false);
-    test = writetoUSERStream("TEST", true);
-    test = writetoUSERStream("TEST", true);
-    if (test != 0) {
-        logcritical("AN ERROR OCCURRED TRYING TO WRITE TO END OF IPLISTSTRICT");
-    }
+//    int test = writetoipliststrict("HELLO", 0, true, false);
+//    test = writetoUSERStream("TEST", true);
+//    test = writetoUSERStream("TEST", true);
+//    if (test != 0) {
+//        logcritical("AN ERROR OCCURRED TRYING TO WRITE TO END OF IPLISTSTRICT");
+//    }
 
 //    generateRandomStringHoneyPI();
 //    generateRandomStringRouterAPI();
@@ -1173,7 +1270,7 @@ int setup() {
 
 
     // DETERMINE NETWORK CONNECTIVITY
-    sendtologopen("[INFO] - Determining Network Connectivity...");
+    sendtologopen("[INFO] - Checking Network Connectivity...");
     int learnt = system("ping -c 5 8.8.8.8 > nul:");
     if (learnt == 0) {
         sendtolog("Done");
@@ -2171,7 +2268,7 @@ int main() {
 
 
         // SERVER PORT LISTEN THREAD
-        sendtologopen("[INFO] - Creating server thread on port 63599 listen...");
+        sendtologopen("[INFO] - Creating server thread on port 80 listen...");
 
         sleep(2);
         std::thread acceptingClientsThread(handleConnections80, port1);
