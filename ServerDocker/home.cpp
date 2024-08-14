@@ -54,7 +54,7 @@ int port1;
 int server_fd2, new_socket2;
 bool packetactive = false;
 bool runningnetworksportAPI = true;
-std::string ipsafetyRAM[1] = "";
+std::string ipsafetyRAM[1];
 
 // FILES 
 //std::fstream ipliststrict;         // IP BLOCKLIST TABLE (STRICT 90 DAY REMOVAL W/O EXCEPTIONS)
@@ -65,7 +65,9 @@ std::string ipsafetyRAM[1] = "";
 //std::fstream acpmac;               // JSON LIST OF ACCOUNTS/MAC/API/ETC.
 //std::fstream blockedipstream;      // SERVER IP BLOCKLIST
 //std::fstream config1;              // serverconfig1
-std::fstream cogfile[256];         // Crashlogs
+std::fstream cogfile[256];           // Crashlogs
+std::string filenameforcogs[256];    // FILES NAMES FOR COGS (Crashlogs)
+int cogswaiting = 0;
 //std::fstream userstream;           // USERNAME JSON STREAM
 //std::fstream passstream;           // PASSWORD JSON STREAM
 //std::fstream serverdump;           // SERVER DUMP FILE
@@ -96,6 +98,7 @@ const char* filearguments = "ios::in | ios::out";
 bool ipliststrictlock = false;
 bool ipliststandardlock = false;
 bool ipsafetylock = false;
+bool userstreamlock = false;
 
 
 // TIME VARIABLES
@@ -121,6 +124,9 @@ int hoursperday = 24;
 long long int timers[10] = {};
 bool calculatingtime = false;
 // 0 - 
+// 3 - 1-Hour Maintenance Timer
+// 4 - 6-Hour Maintenance Timer
+// 5 - 30-Minute Wait for COGs
 
 
 //////////////////////
@@ -229,8 +235,6 @@ std::string generateRandomStringHoneyPI() {
         random_string += CHARACTERS[distribution(generator)];
     }
 
-    loginfo(random_string);
-
     return random_string;
 }
 
@@ -256,12 +260,35 @@ std::string generateRandomStringRouterAPI() {
         random_string += CHARACTERS[distribution(generator)];
     }
 
-    loginfo(random_string);
-
     return random_string;
 }
 
+std::string generateRandomFileName() {
+    loginfo("CREATING NEW RANDOM FILENAME");
 
+    timedetector();
+
+    // Define the list of possible characters
+    const std::string CHARACTERS
+        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
+          "wxyz0123456789";
+
+    // Create a random number generator
+    std::random_device rd;
+    std::mt19937 generator(rd());
+
+    // Create a distribution to uniformly select from all
+    // characters
+    std::uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
+
+    // Generate the random string
+    std::string random_string = std::to_string(currenthour) + "_" + std::to_string(currentdays) + "_" + std::to_string(currentyear);
+    for (int i = 0; i < 6; ++i) {
+        random_string += CHARACTERS[distribution(generator)];
+    }
+
+    return random_string;
+}
 
 
 
@@ -371,6 +398,43 @@ int checkstringinIPSAFETY(std::string stringtocheck) {
     return 2;
 }
 
+int checkstringinUSERStream(std::string stringtocheck) {
+    std::ifstream userstream;
+    userstream.open(userstreamfile);
+    int timer = 0;
+    int timermax = 5;
+    int runtime = 0;
+    if (userstream.is_open() != true) {
+        // UNABLE TO OPEN FILE, RETURN null;
+        userstream.close();
+        return -1;
+    } else {
+        std::string currentstring;
+        while (true) {
+            getline(userstream, currentstring);
+            if (currentstring == stringtocheck) {
+                // STRING MATCHES, RETURN VALUE
+                userstream.close();
+                return runtime;
+            } else {
+                if (currentstring == "") {
+                    timer = timer + 1;
+                    if (timer >= timermax) {
+                        // STRING NOT FOUND
+                        userstream.close();
+                        return 0;
+                    }
+                } else {
+                    timer = 0;
+                }
+            }
+            runtime = runtime + 1;
+        }
+    }
+    return -1;
+}
+
+
 
 
 
@@ -441,7 +505,7 @@ int writetoipliststandard(std::string writedata, int position, bool end, bool fo
     }
 
     if (ipliststandardlock == true) {
-        logcritical("UNABLE TO WRITE TO IP LIST STRICT FILE!");
+        logcritical("UNABLE TO WRITE TO IP LIST STANDARD FILE!");
         logcritical("ipliststrictlock = true");
         return 2;
     } else {
@@ -501,7 +565,7 @@ int writetoblockediplist(std::string writedata, bool end, bool forcelock) {
     }
 
     if (ipsafetylock == true) {
-        logcritical("UNABLE TO WRITE TO IP LIST STRICT FILE!");
+        logcritical("UNABLE TO WRITE TO IPSAFETY FILE!");
         logcritical("ipliststrictlock = true");
         return 2;
     } else {
@@ -553,6 +617,213 @@ int writetoblockediplist(std::string writedata, bool end, bool forcelock) {
     return 1;
 }
 
+int writetoUSERStream(std::string username, bool forcelock) {
+    if (forcelock == true) {
+        userstreamlock = false;
+    }
+
+    if (userstreamlock == true) {
+        logcritical("UNABLE TO WRITE TO USERSTREAM FILE!");
+        logcritical("ipliststrictlock = true");
+        return 2;
+    } else {
+        // CHECK FOR STRING TO ALREADY BE IN DB
+        userstreamlock = true;
+        int checkcommand = checkstringinUSERStream(username);
+        if (checkcommand == -1) {
+            logcritical("CHECK OPERATION FAILED!");
+            return 2;
+        } else {
+            std::ofstream userstream;
+            if (checkcommand == 0) {
+                userstream.open(userstreamfile, std::ios::app);
+                userstream << username << '\n';
+                if (userstream.fail()) {
+                    sendtolog("ERROR");
+                    logcritical("AN ERROR OCCURRED WRITING TO USERSTREAM");
+                    if (userstream.bad() == true) {
+                        logcritical("I/O ERROR OCCURRED");
+                    }
+                    startupchecks = startupchecks + 1;
+                    userstream.close();
+                    userstreamlock = false;
+                    return 1;
+                } else {
+                    // EXPECTED OUTCOME
+                    userstream.close();
+                    userstreamlock = false;
+                    return 0;
+                }
+            } else {
+                userstream.open(userstreamfile);
+                userstream.seekp(checkcommand + 8);
+                userstream << username << '\n';
+                if (userstream.fail()) {
+                    sendtolog("ERROR");
+                    logcritical("AN ERROR OCCURRED WRITING TO USERSTREAM");
+                    if (userstream.bad() == true) {
+                        logcritical("I/O ERROR OCCURRED");
+                    }
+                    startupchecks = startupchecks + 1;
+                    userstream.close();
+                    userstreamlock = false;
+                    return 1;
+                } else {
+                    // EXPECTED OUTCOME
+                    userstream.close();
+                    userstreamlock = false;
+                    return 0;
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+/////////////////////////////
+//// COG FILE OPERATIONS ////
+/////////////////////////////
+int analyzecogfile(std::string fileID) {
+    if (fileID != "") {
+        std::ifstream coginputstream;
+        std::string coglocation = "/home/crashlogs/" + fileID;
+        coginputstream.open(coglocation);
+        if (coginputstream.is_open() == true) {
+            std::string cogline;
+            std::string cogprefix;
+            std::string cogmessage;
+            bool completion2g = false;
+            int timer67 = 0;
+            int timer67max = 5;
+            while(completion2g == false) {
+                getline(coginputstream, cogline);
+                if (cogline != "" && cogmessage.length() >= 6) {
+                    cogprefix = cogline.substr(0, 4);
+                    cogmessage = cogline.substr(4, cogmessage.length() - 4);
+                    
+                    // COGPREFIX FOR USERNAMES
+                    if (cogprefix == "USE:") {
+
+                    }
+
+                    // COGPREFIX FOR PASSWORDS
+                    if (cogprefix == "PAS:") {
+
+                    }
+
+                    // COGPREFIX FOR FOLDER
+                    if (cogprefix == "FOL:") {
+
+                    }
+
+                    // COGPREFIX FOR FOLDER
+                    if (cogprefix == "FIL:") {
+
+                    }
+
+                    // COGPREFIX FOR FOLDER
+                    if (cogprefix == "PUB:") {
+
+                    }
+
+                    // COGPREFIX FOR FOLDER
+                    if (cogprefix == "CMD:") {
+
+                    }
+
+                } else {
+                    timer67 = timer67 + 1;
+                    if (timer67 >= timer67max) {
+                        completion2g = true;
+                        coginputstream.close();
+                        std::string rmoperation = "rm " + coglocation + " >nul: ";
+                        int kale = system(rmoperation.c_str());
+                        return 0;
+                    }
+                }
+                
+            }
+        } else {
+            logcritical("COG COULD NOT BE OPENED!");
+            logcritical(coglocation);
+            return 1;
+            return 1;
+            return 1;
+        }
+        return 0;
+    } else {
+        return 255;
+    }
+    return 1;    
+}
+
+int analyzeALLcogfiles() {
+    int numberturn = 0;
+    bool testsing = false;
+    while(testsing == false) {
+        int welcoming = analyzecogfile(filenameforcogs[numberturn]);
+        if (welcoming != 0 && welcoming != 255) {
+            logcritical("AN ERROR OCCURRED IN COG READING!");
+            return 1;
+            return 1;
+            return 1;
+        } else {
+            numberturn = numberturn + 1;
+            cogswaiting = cogswaiting - 1;
+        }
+        if (cogswaiting == 0 || numberturn >= 255) {
+            testsing = true;
+        }
+    }
+    cogswaiting = 0;
+    return 0;
+}
+
+
+
+
+
+////////////////////////////////
+////////////////////////////////
+//// MAIN MAINTENANCE LOOPS ////
+//////////////////////////////// 
+////////////////////////////////
+int maintenancescriptONEHOUR() {
+
+
+
+
+    return 0;
+}
+
+int maintenancescriptSIXHOUR() {
+
+
+
+
+
+    return 0;
+}
+
+
+
+// THINGS STILL TO DO:
+// IP LIST MORE INFO
+// MAC LIST
+// SEVERITY LIST
+// ACPMAC
+// CONFIG1 FILE
+// USERSTREAM
+// PASSSTREAM
+// SERVERDUMP
+// SERVERFILE
+// FOLDERS ACCESSED
+// FILES ACCESSED
+// CMD RUN FILE
+// COG FILE OPERATIONS
 
 
 
@@ -596,7 +867,6 @@ int loadipsafetyintoram() {
     }
     return 1;
 }
-
 
 
 
@@ -864,8 +1134,11 @@ int setup() {
 
     // DELAY FOR SYSTEM TO START FURTHER (FIGURE OUT CURRENT TIME)
     sleep(1);
+    loginfo(generateRandomFileName());
 
     int test = writetoipliststrict("HELLO", 0, true, false);
+    test = writetoUSERStream("TEST", true);
+    test = writetoUSERStream("TEST", true);
     if (test != 0) {
         logcritical("AN ERROR OCCURRED TRYING TO WRITE TO END OF IPLISTSTRICT");
     }
@@ -1818,7 +2091,19 @@ int setup() {
         loginfo("FUTURE THINGS!");
     }
 
-    
+    // SET TIMERS
+    timers[0] = time(NULL);
+    timers[1] = time(NULL);
+    timers[2] = time(NULL);
+    timers[3] = time(NULL);
+    timers[4] = time(NULL);
+    timers[5] = time(NULL);
+    timers[6] = time(NULL);
+    timers[7] = time(NULL);
+    timers[8] = time(NULL);
+    timers[9] = time(NULL);
+    timers[10] = time(NULL);
+
     
     return 0;
 }
@@ -1873,6 +2158,28 @@ int main() {
 
             sleep(60);
             loginfo("Running = TRUE...");
+
+
+            // TIMERS [3] CHECK
+            long int differenceintime3 = time(NULL) - timers[3];
+            if (differenceintime3 >= 3600) {
+                timers[3] = time(NULL);
+                maintenancescriptONEHOUR();
+            }
+
+            // TIMERS [4] CHECK
+            long int differenceintime4 = time(NULL) - timers[4];
+            if (differenceintime4 >= 21600) {
+                timers[4] = time(NULL);
+                maintenancescriptSIXHOUR();
+            }
+
+            // TIMERS [5] CHECK
+            long int differenceintime5 = time(NULL) - timers[5];
+            if (differenceintime5 >= 1800 || cogswaiting >= 100) {
+                timers[5] = time(NULL);
+                analyzeALLcogfiles();
+            }
 
 
         }

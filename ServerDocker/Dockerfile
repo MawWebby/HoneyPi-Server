@@ -23,6 +23,9 @@ RUN mkdir /home/savedump
 # MKDIR FOR HTML MAIN WEBPAGE
 RUN mkdir /home/htmlmainweb
 
+# MKDIR FOR ARCHIVE FILES
+RUN mkdir /home/archives
+
 # Set Working Directory
 COPY . /usr/src/honeypi
 WORKDIR /usr/src/honeypi
