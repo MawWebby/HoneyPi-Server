@@ -54,6 +54,7 @@ int port1;
 int server_fd2, new_socket2;
 bool packetactive = false;
 bool runningnetworksportAPI = true;
+std::string ipsafetyRAM[1] = "";
 
 // FILES 
 //std::fstream ipliststrict;         // IP BLOCKLIST TABLE (STRICT 90 DAY REMOVAL W/O EXCEPTIONS)
@@ -93,7 +94,8 @@ const char* filearguments = "ios::in | ios::out";
 
 // FILE LOCK VARIABLES
 bool ipliststrictlock = false;
-
+bool ipliststandardlock = false;
+bool ipsafetylock = false;
 
 
 // TIME VARIABLES
@@ -121,8 +123,9 @@ bool calculatingtime = false;
 // 0 - 
 
 
-
-
+//////////////////////
+//// TIMER SCRIPT ////
+//////////////////////
 int timedetector() {
     if (calculatingtime == true) {
         std::cout << "[WARNING] - Call to Time Calculation Called While Already Processing!" << std::endl;
@@ -175,7 +178,6 @@ int timedetector() {
 
 
 
-
 ////////////////////////////
 // Send to Logger Scripts //
 ////////////////////////////
@@ -200,6 +202,11 @@ void logcritical(std::string data2) {
 
 
 
+
+
+/////////////////////////////////////
+//// GENERATE API RANDOM STRINGS ////
+/////////////////////////////////////
 std::string generateRandomStringHoneyPI() {
     loginfo("CREATING NEW HoneyPi API KEY");
 
@@ -226,7 +233,6 @@ std::string generateRandomStringHoneyPI() {
 
     return random_string;
 }
-
 
 std::string generateRandomStringRouterAPI() {
     loginfo("CREATING NEW ROUTER API KEY");
@@ -258,8 +264,337 @@ std::string generateRandomStringRouterAPI() {
 
 
 
-int writetoipliststrict(std::string writedata, int position) {
-    
+
+
+////////////////////////////////////////////
+//// CHECK FILES BEFORE FILE OPEARTIONS ////
+////////////////////////////////////////////
+int checkstringinstrictDB(std::string stringtocheck) {
+    std::ifstream ipliststrict;
+    ipliststrict.open(ipliststrictfile);
+    int timer = 0;
+    int timermax = 5;
+    if (ipliststrict.is_open() != true) {
+        // UNABLE TO OPEN FILE, RETURN 2;
+        ipliststrict.close();
+        return 2;
+    } else {
+        std::string currentstring;
+        while (true) {
+            getline(ipliststrict, currentstring);
+            if (currentstring == stringtocheck) {
+                // STRING MATCHES, RETURN 1
+                ipliststrict.close();
+                return 1;
+            } else {
+                if (currentstring == "") {
+                    timer = timer + 1;
+                    if (timer >= timermax) {
+                        // STRING NOT FOUND
+                        ipliststrict.close();
+                        return 0;
+                    }
+                } else {
+                    timer = 0;
+                }
+            }
+        }
+    }
+    return 2;
+}
+
+int checkstringinstandardDB(std::string stringtocheck) {
+    std::ifstream ipliststandard;
+    ipliststandard.open(ipliststandardfile);
+    int timer = 0;
+    int timermax = 5;
+    if (ipliststandard.is_open() != true) {
+        // UNABLE TO OPEN FILE, RETURN 2;
+        ipliststandard.close();
+        return 2;
+    } else {
+        std::string currentstring;
+        while (true) {
+            getline(ipliststandard, currentstring);
+            if (currentstring == stringtocheck) {
+                // STRING MATCHES, RETURN 1
+                ipliststandard.close();
+                return 1;
+            } else {
+                if (currentstring == "") {
+                    timer = timer + 1;
+                    if (timer >= timermax) {
+                        // STRING NOT FOUND
+                        ipliststandard.close();
+                        return 0;
+                    }
+                } else {
+                    timer = 0;
+                }
+            }
+        }
+    }
+    return 2;
+}
+
+int checkstringinIPSAFETY(std::string stringtocheck) {
+    std::ifstream blockedipstream;
+    blockedipstream.open(blockedipstreamfile);
+    int timer = 0;
+    int timermax = 5;
+    if (blockedipstream.is_open() != true) {
+        // UNABLE TO OPEN FILE, RETURN 2;
+        blockedipstream.close();
+        return 2;
+    } else {
+        std::string currentstring;
+        while (true) {
+            getline(blockedipstream, currentstring);
+            if (currentstring == stringtocheck) {
+                // STRING MATCHES, RETURN 1
+                blockedipstream.close();
+                return 1;
+            } else {
+                if (currentstring == "") {
+                    timer = timer + 1;
+                    if (timer >= timermax) {
+                        // STRING NOT FOUND
+                        blockedipstream.close();
+                        return 0;
+                    }
+                } else {
+                    timer = 0;
+                }
+            }
+        }
+    }
+    return 2;
+}
+
+
+
+
+///////////////////////////////////////////
+////// THE FORBIDDEN FILE OPERATIONS //////
+///////////////////////////////////////////
+int writetoipliststrict(std::string writedata, int position, bool end, bool forcelock) {
+    if (forcelock == true) {
+        ipliststrictlock = false;
+    }
+
+    if (ipliststrictlock == true) {
+        logcritical("UNABLE TO WRITE TO IP LIST STRICT FILE!");
+        logcritical("ipliststrictlock = true");
+        return 2;
+    } else {
+        // CHECK FOR STRING TO ALREADY BE IN DB
+        ipliststrictlock = true;
+        int checkcommand = checkstringinstrictDB(writedata);
+        if (checkcommand == 0) {
+            std::ofstream ipliststrict;
+            if (end != true) {
+                ipliststrict.open(ipliststrictfile);
+            } else {
+                ipliststrict.open(ipliststrictfile, std::ios::app);
+            }
+            if (ipliststrict.is_open() == true) {
+                ipliststrict << writedata << '\n';
+                if (ipliststrict.fail()) {
+                    sendtolog("ERROR");
+                    logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTRICT");
+                    if (ipliststrict.bad() == true) {
+                        logcritical("I/O ERROR OCCURRED");
+                    }
+                    startupchecks = startupchecks + 1;
+                    ipliststrict.close();
+                    ipliststrictlock = false;
+                    return 1;
+                } else {
+                    // EXPECTED OUTCOME
+                    ipliststrict.close();
+                    ipliststrictlock = false;
+                    return 0;
+                }
+            } else {
+                ipliststrict.close();
+                ipliststrictlock = false;
+                return 1;
+            }
+        } else {
+            if (checkcommand == 1) {
+                // EXPECTED OUTCOME - DUPLICATE STRING
+                ipliststrictlock = false;
+                return 0;
+            } else {
+                ipliststrictlock = false;
+                return 1;
+            }
+        }
+    }
+    ipliststrictlock = false;
+    return 1;
+}
+
+int writetoipliststandard(std::string writedata, int position, bool end, bool forcelock) {
+    if (forcelock == true) {
+        ipliststandardlock = false;
+    }
+
+    if (ipliststandardlock == true) {
+        logcritical("UNABLE TO WRITE TO IP LIST STRICT FILE!");
+        logcritical("ipliststrictlock = true");
+        return 2;
+    } else {
+        // CHECK FOR STRING TO ALREADY BE IN DB
+        ipliststandardlock = true;
+        int checkcommand = checkstringinstrictDB(writedata);
+        if (checkcommand == 0) {
+            std::ofstream ipliststandard;
+            if (end != true) {
+                ipliststandard.open(ipliststandardfile);
+            } else {
+                ipliststandard.open(ipliststandardfile, std::ios::app);
+            }
+            if (ipliststandard.is_open() == true) {
+                ipliststandard << writedata << '\n';
+                if (ipliststandard.fail()) {
+                    sendtolog("ERROR");
+                    logcritical("AN ERROR OCCURRED WRITING TO ipliststandard");
+                    if (ipliststandard.bad() == true) {
+                        logcritical("I/O ERROR OCCURRED");
+                    }
+                    startupchecks = startupchecks + 1;
+                    ipliststandard.close();
+                    ipliststandardlock = false;
+                    return 1;
+                } else {
+                    // EXPECTED OUTCOME
+                    ipliststandard.close();
+                    ipliststandardlock = false;
+                    return 0;
+                }
+            } else {
+                ipliststandard.close();
+                ipliststandardlock = false;
+                return 1;
+            }
+        } else {
+            if (checkcommand == 1) {
+                // EXPECTED OUTCOME - DUPLICATE STRING
+                ipliststandardlock = false;
+                return 0;
+            } else {
+                ipliststandardlock = false;
+                return 1;
+            }
+        }
+    }
+    ipliststandardlock = false;
+    return 1;
+}
+
+// MORE ON MORE INFO IP LISTS/ADD ABILITY TO MODIFY LINES IF NEEDED FOR CERTAIN IP ADDRESSES/REPEAT/TIME/ETC.
+
+int writetoblockediplist(std::string writedata, bool end, bool forcelock) {
+    if (forcelock == true) {
+        ipsafetylock = false;
+    }
+
+    if (ipsafetylock == true) {
+        logcritical("UNABLE TO WRITE TO IP LIST STRICT FILE!");
+        logcritical("ipliststrictlock = true");
+        return 2;
+    } else {
+        // CHECK FOR STRING TO ALREADY BE IN DB
+        ipsafetylock = true;
+        int checkcommand = checkstringinstrictDB(writedata);
+        if (checkcommand == 0) {
+            std::ofstream ipsafety;
+            if (end != true) {
+                ipsafety.open(blockedipstreamfile);
+            } else {
+                ipsafety.open(blockedipstreamfile, std::ios::app);
+            }
+            if (ipsafety.is_open() == true) {
+                ipsafety << writedata << '\n';
+                if (ipsafety.fail()) {
+                    sendtolog("ERROR");
+                    logcritical("AN ERROR OCCURRED WRITING TO ipliststandard");
+                    if (ipsafety.bad() == true) {
+                        logcritical("I/O ERROR OCCURRED");
+                    }
+                    startupchecks = startupchecks + 1;
+                    ipsafety.close();
+                    ipsafetylock = false;
+                    return 1;
+                } else {
+                    // EXPECTED OUTCOME
+                    ipsafety.close();
+                    ipsafetylock = false;
+                    return 0;
+                }
+            } else {
+                ipsafety.close();
+                ipsafetylock = false;
+                return 1;
+            }
+        } else {
+            if (checkcommand == 1) {
+                // EXPECTED OUTCOME - DUPLICATE STRING
+                ipsafetylock = false;
+                return 0;
+            } else {
+                ipsafetylock = false;
+                return 1;
+            }
+        }
+    }
+    ipsafetylock = false;
+    return 1;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////
+//// LOAD THE LIST OF BLOCKED IPs INTO THE SERVER MAIN DATABASE ////
+////////////////////////////////////////////////////////////////////
+int loadipsafetyintoram() {
+    int numberofip = 0;
+    bool completion1939 = false;
+    int timer2 = 0;
+    int timer2max = 5;
+    std::ifstream ipsafetystream;
+    ipsafetystream.open(blockedipstreamfile);
+    std::string nextipaddr = "";
+    if (ipsafetystream.is_open() == true) {
+        while(completion1939 != true) {
+            getline(ipsafetystream, nextipaddr);
+            getline(ipsafetystream, nextipaddr);
+            logcritical(nextipaddr);
+            numberofip = numberofip + 1;
+            ipsafetyRAM->resize(numberofip + 1);
+            if (numberofip >= 1000) {
+                completion1939 = true;
+                logwarning("BLOCKED IP IS >= 1000!");
+            }
+            if (timer2 >= timer2max) {
+                completion1939 = true;
+                loginfo("REACHED END OF LOADING IPSAFETY File!");
+            }
+            if (nextipaddr == "") {
+                timer2 = timer2 + 1;
+            } else {
+                timer2 = 0;
+                ipsafetyRAM[numberofip - 1] = nextipaddr;
+            }
+        }
+        return 0;
+    } else {
+        logcritical("UNABLE TO OPEN FILE!");
+        return 1;
+    }
+    return 1;
 }
 
 
@@ -530,8 +865,13 @@ int setup() {
     // DELAY FOR SYSTEM TO START FURTHER (FIGURE OUT CURRENT TIME)
     sleep(1);
 
-    generateRandomStringHoneyPI();
-    generateRandomStringRouterAPI();
+    int test = writetoipliststrict("HELLO", 0, true, false);
+    if (test != 0) {
+        logcritical("AN ERROR OCCURRED TRYING TO WRITE TO END OF IPLISTSTRICT");
+    }
+
+//    generateRandomStringHoneyPI();
+//    generateRandomStringRouterAPI();
     startuptime = time(NULL);
     startupchecks = startupchecks + timedetector();
 
@@ -628,7 +968,6 @@ int setup() {
     std::string currentversionID = "Version: " + honeyversion + "\n";
     std::string compressed;
     int migration = 0;
-    logcritical(currentversionID);
 
     // IPLIST STRICT
     sendtologopen("[INFO] - Attempting to Read from IP LIST Strict TXT File...");
@@ -693,8 +1032,6 @@ int setup() {
     ipliststandard.open(ipliststandardfile);
     if(ipliststandard.is_open() == true) {
         std::getline(ipliststandard, versionID);
-        logwarning(versionID);
-        logcritical(versionID.substr(0,1));
         if (versionID != "") {
             if (versionID.substr(0,1) == "V") {
                 compressed = versionID.substr(9,10);
@@ -1373,6 +1710,17 @@ int setup() {
 
 
 
+    // LOAD IPSAFETY INTO RAM
+    sendtologopen("[INFO] - Loading IPSAFETY Into RAM...");
+    int ram = loadipsafetyintoram();
+    if (ram != 0) {
+        sendtolog("ERROR");
+        logcritical("AN ERROR OCCURRED LOADING IPSAFETY INTO RAM!");
+        startupchecks = startupchecks + 1;
+    } else {
+        sendtolog("Done");
+    }
+
 
 
     // CHECK BEFORE REST OF SERVER STARTUP IF FILES WERE NOT CONFIGURED CORRECTLY
@@ -1383,6 +1731,8 @@ int setup() {
         return 1;
         return 1;
     }
+
+    
 
 
 
