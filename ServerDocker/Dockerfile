@@ -10,6 +10,7 @@ RUN apt-get install -y g++
 # Expose Needed Ports
 EXPOSE 80
 EXPOSE 11829
+EXPOSE 11830
 
 # MKDIR FOR CONFIG FILES
 RUN mkdir /home/listfiles

@@ -55,6 +55,13 @@ int server_fd2, new_socket2;
 bool packetactive = false;
 bool runningnetworksportAPI = true;
 std::string ipsafetyRAM[1];
+bool runningport80 = true;
+bool port80runningstatus = false;
+std::string mainhtmlpayload;
+int packetspam = 0;
+bool waiting230 = false;
+std::string httpforbidden = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: 25\n\n<h1>504: Gateway Time-Out</h1>";
+std::string httpservererror = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
 
 // FILES 
 //std::fstream ipliststrict;         // IP BLOCKLIST TABLE (STRICT 90 DAY REMOVAL W/O EXCEPTIONS)
@@ -124,6 +131,8 @@ int hoursperday = 24;
 long long int timers[10] = {};
 bool calculatingtime = false;
 // 0 - 
+// 1 - PACKET OVERFLOW DETECTION PORT 80
+// 2 - 15-MINUTE TIMER FOR PORT 80
 // 3 - 1-Hour Maintenance Timer
 // 4 - 6-Hour Maintenance Timer
 // 5 - 30-Minute Wait for COGs
@@ -868,94 +877,108 @@ int loadipsafetyintoram() {
     return 1;
 }
 
-
-
-//////////////////////////////////////////
-// HANDLE NETWORKED CONNECTIONS (63599) //
-//////////////////////////////////////////
-void handleConnections(int server_fd) { 
-    char buffer[1024] = {0};
-    struct sockaddr_in address;
-    socklen_t addrlen = sizeof(address);
-    int new_socket;
-    ssize_t valread;
-    std::string hello = "Hello from server";
-
-    if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
-        perror("accept");
-        exit(EXIT_FAILURE);
+/////////////////////////////////
+//// LOAD MAIN HTML INTO RAM ////
+///////////////////////////////// 
+int loadmainHTMLintoram() {
+    std::string templine;
+    std::ifstream htmlmain;
+    mainhtmlpayload = "";
+    htmlmain.open(mainhtml);
+    bool completionht = false;
+    int timer7 = 0;
+    int timer7max = 5;
+    if (htmlmain.is_open() == true) {
+        while (completionht != true) {
+            getline(htmlmain, templine);
+            if (templine == "") {
+                timer7 = timer7 + 1;
+                if (timer7 >= timer7max) {
+                    completionht = true;
+                }
+            }
+            mainhtmlpayload = mainhtmlpayload + templine;
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = mainhtmlpayload.length();
+        mainhtmlpayload = httpsuccess + std::to_string(length) + beforepayload + mainhtmlpayload;
+        return 0;
+    } else {
+        mainhtmlpayload = "500: An Internal Server Error Occurred, Please Try Again Later";
+        return 1;
     }
+    mainhtmlpayload = "500: An Internal Server Error Occurred, Please Try Again Later";
+    return 1;
+}
 
-    timers[1] = time(NULL);
 
-        read(new_socket, buffer, 1024);
-        if (debug == true) {
-            sendtologopen(buffer);
+
+///////////////////////////////////////
+// HANDLE NETWORKED CONNECTIONS (80) //
+///////////////////////////////////////
+void handleConnections80(int server_fd) { 
+    while(runningport80 == true) {
+        port80runningstatus = true;
+        char buffer[2048] = {0};
+        struct sockaddr_in address;
+        socklen_t addrlen = sizeof(address);
+        int new_socket;
+        ssize_t valread;
+        std::string hello = "Hello from server";
+        
+
+        if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
+            perror("accept");
+            exit(EXIT_FAILURE);
         }
-
-        loginfo(buffer);
-
-        if (buffer != NULL && attacked == false) {
-
-            
-            // HEARTBEAT COMMAND TO NOT SPAM LOG
-            if (strcmp(buffer, "heartbeatSSH") == 0) {
-                lastcheckinSSH = time(NULL);
-                if (heartbeat >= 30) {
-                    loginfo("Received heartbeat from SSH Guest VM");
-                    heartbeat = 0;
-                } else {
-                    heartbeat = heartbeat + 1;
-                }
-            }
-
-            if(strcmp(buffer, "attacked") == 0) {
-                logwarning("SSH attacked! - Logging...");
-            }
-
-        } else {
-            if (buffer != NULL && attacked == true) {
-
-                // ADD COMMANDS HERE OF BEING ATTACKED AND STORING THAT DATA
-
-            } else {
-                if (buffer == NULL) {
-                    logcritical("INVALID CONNECTION RECEIVED, ignoring...");
-                }
-            }
-        }
-
-        // Send a hello message to the client
-//        send(new_socket, hello.c_str(), hello.size(), 0);
-//        std::cout << "Hello message sent" << std::endl;
-
 
         // ANTI-CRASH PACKET FLOW CHECK
-
-
-
-        // NEED EXPANDED FOR SERVER APPLICATION!!!
-
-
-        /*
         if (timers[1] == time(NULL)) {
-            packetsreceivedSSH = packetsreceivedSSH + 1;
-            if (packetsreceivedSSH >= 10) {
-                // KILL CONTAINER
-                logcritical("PACKET OVERFLOW DETECTED ON SSH DOCKER PORT!/KILLING THREAD AND CONTAINER!");
-                close(server_fd);
-                timers[0] = time(NULL);
-                SSHDockerActive = false;
-    //            system(dockerkillguestssh);
-                sleep(3);
-      //          system(dockerremoveguestssh);
+            packetspam = packetspam + 1;
+            if (packetspam >= 10) {
+                // STOP CONNECTIONS/ENTER BLOCKING STATE
+                waiting230 = true;
+                logwarning("LOCKING HTTP PORT FOR NOW (PACKET SPAM)");
+                timers[2] = time(NULL);
             }
         } else {
             timers[1] = time(NULL);
-            packetsreceivedSSH = 0;
+            if (packetspam >= 5) {
+                packetspam = packetspam -5;
+                waiting230 = false;
+            } else {
+                packetspam = 0;
+                waiting230 = false;
+            }
         }
-        */    
 
+        int differenceintime = time(NULL) - timers[2];
+
+        if (differenceintime >= 900) {
+            waiting230 = false;
+            logwarning("ALLOWING RESTART OF HTTP PROCESS!");
+        }
+
+        if (waiting230 == true) {
+            read(new_socket, buffer, 2048);
+            sendtolog(buffer);
+            int timer89 = 0;
+            int timer89max = 5;
+            bool completed23 = false;
+            while(completed23 == false) {
+                if (buffer != "") {
+                    int send_res=send(new_socket,mainhtmlpayload.c_str(),mainhtmlpayload.length(),0);
+                } else {
+                    // FUTURE TERMINATE COMMAND
+                    int send_res=send(new_socket,httpforbidden.c_str(),httpforbidden.length(),0);
+                }
+            }
+        } else {
+            int send_res=send(new_socket,httpforbidden.c_str(),httpforbidden.length(),0);
+        }
+    }
+    port80runningstatus = false;
 }
 
 
@@ -1052,8 +1075,8 @@ void handle11535Connections(int server_fd2) {
 
 
 
-int createnetworkport63599() {
-    int PORT = 63599;
+int createnetworkport80() {
+    int PORT = 80;
     int server_fd, new_socket;
     ssize_t valread;
     struct sockaddr_in address;
@@ -1067,7 +1090,7 @@ int createnetworkport63599() {
         exit(EXIT_FAILURE);
     }
 
-    // Forcefully attaching socket to the port 63599
+    // Forcefully attaching socket to the port 80
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
         perror("setsockopt");
         exit(EXIT_FAILURE);
@@ -1996,6 +2019,19 @@ int setup() {
 
 
 
+    // LOAD MAINHTML INTO RAM
+    sendtologopen("[INFO] - Loading MAINHTML Into RAM...");
+    int ram1 = loadmainHTMLintoram();
+    if (ram1 != 0) {
+        sendtolog("ERROR");
+        logcritical("AN ERROR OCCURRED LOADING MAINHTML INTO RAM!");
+        startupchecks = startupchecks + 1;
+    } else {
+        sendtolog("Done");
+    }
+
+
+
     // CHECK BEFORE REST OF SERVER STARTUP IF FILES WERE NOT CONFIGURED CORRECTLY
     if (startupchecks != 0) {
         logcritical("STARTUP CHECKS DOES NOT EQUAL 0!");
@@ -2012,9 +2048,9 @@ int setup() {
     // START NETWORK PORTS CONFIGURATION
     
     // OPEN NETWORK SERVER PORTS (1/3)
-    int PORT = 63599;
+    int PORT = 80;
     sendtologopen("[INFO] - Opening Server Ports (1/3)");
-    port1 = createnetworkport63599();
+    port1 = createnetworkport80();
     sendtolog("Done");
     sleep(2);
     sleep(3);
@@ -2138,7 +2174,7 @@ int main() {
         sendtologopen("[INFO] - Creating server thread on port 63599 listen...");
 
         sleep(2);
-        std::thread acceptingClientsThread(handleConnections, port1);
+        std::thread acceptingClientsThread(handleConnections80, port1);
         acceptingClientsThread.detach();
         sleep(1);
 
