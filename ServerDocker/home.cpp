@@ -10,9 +10,13 @@
 #include <thread>
 #include <ctime>
 #include <random>
+#include <mariadb/conncpp.hpp>
 
 const bool debug = false;
 const bool testing = false;
+
+
+
 
 
 
@@ -110,6 +114,16 @@ const char* mainhtml = "/home/htmlmainweb/index.html";
 const char* pricehtml = "/home/htmlmainweb/pricing.html";
 const char* htmlfolder = "/home/htmlmainweb";
 const char* filearguments = "ios::in | ios::out";
+const char* legendstring = "MyChiefDog79";
+
+
+// DATABASE OPERATIONS
+std::string headerforAPIKeyValid = "SELECT credentialsvalid FROM credentials WHERE honeypiapi = ";
+std::string headerforAPIKeyValid2 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi = ";
+std::string headerforAPIKeyValid3 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi2 = ";
+std::string headerforAPIKeyValid4 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi3 = ";
+std::string headerforAPIKeyValid5 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi4 = ";
+std::string headerforAPIKeyValid6 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi5 = ";
 
 
 
@@ -230,6 +244,177 @@ void logcritical(std::string data2) {
 }
 
 
+////////////////////////////
+////////////////////////////
+//// MARIADB OPERATIONS ////
+////////////////////////////
+////////////////////////////
+
+// MARIADB TEST
+int mariadbtest() {
+    
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+
+    // Execute query
+    sql::ResultSet *res = stmnt->executeQuery("SELECT user FROM credentials");
+    
+    loginfo("TRUE");
+    res->next();
+    std::cout << "User = " << res->getString(1);
+
+    return 0;
+}
+
+// MARIADB PI API KEY VALIDATION
+bool mariadbPIAPIkeyvalid(std::string apikey) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery21 = headerforAPIKeyValid + apikey;
+    sql::ResultSet *res = stmnt->executeQuery(executequery21);
+    
+    loginfo("TRUE");
+    if (res->next() == true) {
+        return true;
+    } else {
+        return false;
+    }
+    return false;
+}
+
+// MARIADB ROUTER API KEY VALIDATION
+bool mariadbROUTERAPIkeyvalid(std::string apikey) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery22 = headerforAPIKeyValid3 + apikey;
+    std::string executequery23 = headerforAPIKeyValid4 + apikey;
+    std::string executequery24 = headerforAPIKeyValid5 + apikey;
+    std::string executequery25 = headerforAPIKeyValid6 + apikey;
+    std::string executequery26 = headerforAPIKeyValid2 + apikey;
+    sql::ResultSet *res2 = stmnt->executeQuery(executequery22);
+    sql::ResultSet *res3 = stmnt->executeQuery(executequery23);
+    sql::ResultSet *res4 = stmnt->executeQuery(executequery24);
+    sql::ResultSet *res5 = stmnt->executeQuery(executequery25);
+    sql::ResultSet *res6 = stmnt->executeQuery(executequery26);
+
+
+    if (res2->next() == true || res3->next() == true ||res4->next() == true ||res5->next() == true ||res6->next() == true) {
+        return true;
+    } else {
+        return false;
+    }
+    return false;
+}
+
+// MARIADB NEW USER/PASSWORD/EMAIL INSERTION
+int mariadbNEWUSER(std::string username, std::string password, std::string emailaddress) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string insertintocredheader = "INSERT INTO credentials";
+    std::string valuestoinsertupe = " (user, pass, email) ";
+    std::string valuesheader = "VALUES(";
+    std::string commaheader = ",";
+    std::string executequery32 = insertintocredheader + valuestoinsertupe + valuesheader + username + commaheader + password + commaheader + emailaddress;
+    sql::ResultSet *res6 = stmnt->executeQuery(executequery32);
+
+
+    return 0;
+}
+
+// MARIADB INSERT NEW HONEY PI API KEY
+int mariadbINSERTPIKEY(std::string honeypikey) {
+
+}
+
+// MARIADB INSERT NEW HONEY ROUTER API KEY
+int mariadbINSERTROUTERKEY(std::string routerkey) {
+
+}
+
+// MARIADB VALIDATE USER CREDENTIALS
+bool mariadbVALIDATEUSER(std::string username, std::string password) {
+
+}
+
+// MARIADB CHECK-IN SCRIPT
+int mariadbCHECKINHONEYPI(std::string apikey) {
+
+}
+
+// MARIADB ROTATE CREDENTIALS/HOUR
+int mariadbROTATECREDENTIALShour() {
+
+}
+
+// MARIADB ROTATE CREDENTIALS/DAY
+int mariadbROTATECREDENTIALSday() {
+
+}
+
+// MARIADB INVALIDATE CREDENTIALS
+int mariadbINVALIDATECREDENTIALS(std::string user, std::string pass, std::string email) {
+
+}
+
+// MARIADB PAYMENT RECEIVED
+int mariadbRECEIVEPAYMENT(std::string user, bool truereceive) {
+
+}
+
+// MARIADB SET PAYMENT PLAN
+int mariadbSETPAYMENT(std::string user, int paymentlevel) {
+
+}
 
 
 
@@ -1024,12 +1209,12 @@ void handleConnections80(int server_fd) {
             bool completed23 = false;
             if (buffer != "" && sizeof(buffer) >= 7) {
                 std::string bufferstring = buffer;
-                std::string headerrequest = bufferstring.substr(0,5);
+                std::string headerrequest = bufferstring.substr(0,4);
                 loginfo(headerrequest);
                 
                 if (bufferstring.length() >= 7) {
                     // CHANGE HERE FROM GET: / TO GET /
-                    if (headerrequest == "GET /") {
+                    if (headerrequest == "GET ") {
                         std::string maindirectory = bufferstring.substr(4,1);
                         logwarning(maindirectory);
 
@@ -1039,7 +1224,7 @@ void handleConnections80(int server_fd) {
                             loginfo(nextletter);
 
                             // MAIN PAGE
-                            if (nextletter == "\n") {
+                            if (nextletter == " H") {
                                 int send_res=send(new_socket,mainhtmlpayload.c_str(),mainhtmlpayload.length(),0);
                             }
 
@@ -1056,6 +1241,7 @@ void handleConnections80(int server_fd) {
                             if (nextletter == "pr") {
                                 // pricing.html
                                 std::string pricingfulldictionary = bufferstring.substr(5,12);
+                                logcritical(pricingfulldictionary);
                                 if (pricingfulldictionary == "pricing.html") {
                                     int send_res=send(new_socket,pricinghtmlpayload.c_str(),pricinghtmlpayload.length(),0);
                                 }
@@ -1263,10 +1449,15 @@ int setup() {
 //        logcritical("AN ERROR OCCURRED TRYING TO WRITE TO END OF IPLISTSTRICT");
 //    }
 
-//    generateRandomStringHoneyPI();
-//    generateRandomStringRouterAPI();
+    loginfo(generateRandomStringHoneyPI());
+    loginfo(generateRandomStringRouterAPI());
+
+
+    mariadbtest();
     startuptime = time(NULL);
     startupchecks = startupchecks + timedetector();
+
+
 
 
     // DETERMINE NETWORK CONNECTIVITY
