@@ -69,6 +69,12 @@ bool waiting230 = false;
 // HTML VARIABLES
 std::string mainhtmlpayload;
 std::string pricinghtmlpayload;
+std::string aboutpayload;
+std::string getinfopayload;
+std::string getstartedpayload;
+std::string signuppayload;
+std::string loginpayload;
+std::string blogpayload;
 std::string httpforbidden = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: 25\n\n<h1>504: Gateway Time-Out</h1>";
 std::string httpservererror = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
 
@@ -113,6 +119,9 @@ const char* cogfolder = "/home/crashlogs";
 const char* mainhtml = "/home/htmlmainweb/index.html";
 const char* pricehtml = "/home/htmlmainweb/pricing.html";
 const char* htmlfolder = "/home/htmlmainweb";
+const char* signuphtml = "/home/htmlmainweb/signup.html";
+const char* loginhtml = "/home/htmlmainweb/login.html";
+const char* configpagehtml = "/home/htmlmainweb/config.html";
 const char* filearguments = "ios::in | ios::out";
 const char* legendstring = "MyChiefDog79";
 
@@ -124,6 +133,13 @@ std::string headerforAPIKeyValid3 = "SELECT credentialsvalid FROM credentials WH
 std::string headerforAPIKeyValid4 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi3 = ";
 std::string headerforAPIKeyValid5 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi4 = ";
 std::string headerforAPIKeyValid6 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi5 = ";
+std::string insertintocredheader = "INSERT INTO credentials";
+std::string valuestoinsertupe = " (user, pass, email, credentialsvalid) ";
+std::string valuesheader = "VALUES(";
+std::string commaheader = ",";
+std::string updatecredheader = "UPDATE credentials ";
+std::string valuetoinsertSETPIAPI = " SET honeypiapi = ";
+std::string valuetoinsertWHERE = " WHERE user = ";
 
 
 
@@ -244,6 +260,9 @@ void logcritical(std::string data2) {
 }
 
 
+
+
+
 ////////////////////////////
 ////////////////////////////
 //// MARIADB OPERATIONS ////
@@ -251,7 +270,7 @@ void logcritical(std::string data2) {
 ////////////////////////////
 
 // MARIADB TEST
-int mariadbtest() {
+int mariadb_test() {
     
     // Instantiate Driver
     sql::Driver* driver = sql::mariadb::get_driver_instance();
@@ -277,8 +296,48 @@ int mariadbtest() {
     return 0;
 }
 
+// READ THE VALUE OF PI API
+int mariadbREAD_VALUEPIAPI(std::string user) {
+
+
+
+    return 0;
+}
+
+// READ THE VALU7E OF ROUTER API
+int mariadbREAD_VALUEROUTERAPI(std::string user) {
+
+
+
+    return 0;
+}
+
+// READ THE VALUE OF THE EMAIL ADDRESS
+int mariadbREAD_EMAILADDRESS(std::string user) {
+
+
+
+
+    return 0;
+}
+
+// RESET THE PASSWORD DB ACCESS
+int mariadbRESET_PASSWORD(std::string user, std::string pass) {
+
+
+
+    return 0;
+}
+
+// RESET THE EMAIL DB ACCESS
+int mariadbRESET_EMAIL(std::string user, std::string emailaddress) {
+
+
+    return 0;
+}
+
 // MARIADB PI API KEY VALIDATION
-bool mariadbPIAPIkeyvalid(std::string apikey) {
+bool mariadbPIAPI_keyvalid(std::string apikey) {
     // Instantiate Driver
     sql::Driver* driver = sql::mariadb::get_driver_instance();
 
@@ -294,11 +353,12 @@ bool mariadbPIAPIkeyvalid(std::string apikey) {
     std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
     
     // Execute query
-    std::string executequery21 = headerforAPIKeyValid + apikey;
+    std::string executequery21 = headerforAPIKeyValid + "'" + apikey + "'";
     sql::ResultSet *res = stmnt->executeQuery(executequery21);
     
-    loginfo("TRUE");
     if (res->next() == true) {
+        loginfo("TRUE");
+        // FIX THIS PROBLEM, NOT READING RESULT OF A CLOSED SET"?"
         return true;
     } else {
         return false;
@@ -307,7 +367,7 @@ bool mariadbPIAPIkeyvalid(std::string apikey) {
 }
 
 // MARIADB ROUTER API KEY VALIDATION
-bool mariadbROUTERAPIkeyvalid(std::string apikey) {
+bool mariadbROUTERAPI_keyvalid(std::string apikey) {
     // Instantiate Driver
     sql::Driver* driver = sql::mariadb::get_driver_instance();
 
@@ -322,12 +382,21 @@ bool mariadbROUTERAPIkeyvalid(std::string apikey) {
     // Create a new Statement
     std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
     
-    // Execute query
-    std::string executequery22 = headerforAPIKeyValid3 + apikey;
-    std::string executequery23 = headerforAPIKeyValid4 + apikey;
-    std::string executequery24 = headerforAPIKeyValid5 + apikey;
-    std::string executequery25 = headerforAPIKeyValid6 + apikey;
-    std::string executequery26 = headerforAPIKeyValid2 + apikey;
+
+
+
+
+
+    // FIX THIS LOOP BY ANALYZING ONE_BY_ONE AND COMBINING AT END OF RESULT WITH 5 ELSES    
+
+
+
+
+    std::string executequery22 = headerforAPIKeyValid3 + "'" + apikey + "'";
+    std::string executequery23 = headerforAPIKeyValid4 + "'" + apikey + "'";
+    std::string executequery24 = headerforAPIKeyValid5 + "'" + apikey + "'";
+    std::string executequery25 = headerforAPIKeyValid6 + "'" + apikey + "'";
+    std::string executequery26 = headerforAPIKeyValid2 + "'" + apikey + "'";
     sql::ResultSet *res2 = stmnt->executeQuery(executequery22);
     sql::ResultSet *res3 = stmnt->executeQuery(executequery23);
     sql::ResultSet *res4 = stmnt->executeQuery(executequery24);
@@ -336,6 +405,7 @@ bool mariadbROUTERAPIkeyvalid(std::string apikey) {
 
 
     if (res2->next() == true || res3->next() == true ||res4->next() == true ||res5->next() == true ||res6->next() == true) {
+        logcritical("MATCH SEEN");
         return true;
     } else {
         return false;
@@ -344,7 +414,7 @@ bool mariadbROUTERAPIkeyvalid(std::string apikey) {
 }
 
 // MARIADB NEW USER/PASSWORD/EMAIL INSERTION
-int mariadbNEWUSER(std::string username, std::string password, std::string emailaddress) {
+int mariadbNEW_USER(std::string username, std::string password, std::string emailaddress) {
     // Instantiate Driver
     sql::Driver* driver = sql::mariadb::get_driver_instance();
 
@@ -360,11 +430,7 @@ int mariadbNEWUSER(std::string username, std::string password, std::string email
     std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
     
     // Execute query
-    std::string insertintocredheader = "INSERT INTO credentials";
-    std::string valuestoinsertupe = " (user, pass, email) ";
-    std::string valuesheader = "VALUES(";
-    std::string commaheader = ",";
-    std::string executequery32 = insertintocredheader + valuestoinsertupe + valuesheader + username + commaheader + password + commaheader + emailaddress;
+    std::string executequery32 = insertintocredheader + valuestoinsertupe + valuesheader + "'" + username + "'" + commaheader + "'" + password + "'" + commaheader + "'" + emailaddress + "'" + commaheader + " true" + ")";
     sql::ResultSet *res6 = stmnt->executeQuery(executequery32);
 
 
@@ -372,49 +438,133 @@ int mariadbNEWUSER(std::string username, std::string password, std::string email
 }
 
 // MARIADB INSERT NEW HONEY PI API KEY
-int mariadbINSERTPIKEY(std::string honeypikey) {
+int mariadbINSERT_PIKEY(std::string honeypikey, std::string username) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
 
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery34 = updatecredheader + valuetoinsertSETPIAPI + "'" + honeypikey + "'" + valuetoinsertWHERE + "'" + username + "'";
+    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+
+    return 0;
 }
 
 // MARIADB INSERT NEW HONEY ROUTER API KEY
-int mariadbINSERTROUTERKEY(std::string routerkey) {
+int mariadbINSERT_ROUTERKEY(std::string routerkey, int slottoinsert) {
+    if (slottoinsert == 0) {
+        // FIX TO ADD READ AND DETERMINE THE FIRST EMPTY SLOT
+    }
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
 
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery34 = updatecredheader + valuetoinsertSETPIAPI + "'" + honeypikey + "'" + valuetoinsertWHERE + "'" + username + "'";
+    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+
+    return 0;
 }
 
 // MARIADB VALIDATE USER CREDENTIALS
-bool mariadbVALIDATEUSER(std::string username, std::string password) {
+bool mariadbVALIDATE_USER(std::string username, std::string password) {
 
+
+
+
+    return false;
 }
 
 // MARIADB CHECK-IN SCRIPT
-int mariadbCHECKINHONEYPI(std::string apikey) {
+int mariadbCHECKIN_HONEYPI(std::string apikey) {
 
+
+
+
+    return 0;
 }
 
 // MARIADB ROTATE CREDENTIALS/HOUR
-int mariadbROTATECREDENTIALShour() {
+int mariadbROTATE_CREDENTIALShour() {
 
+
+
+
+    return 0;
 }
 
 // MARIADB ROTATE CREDENTIALS/DAY
-int mariadbROTATECREDENTIALSday() {
+int mariadbROTATE_CREDENTIALSday() {
 
+
+
+
+    return 0;
 }
 
 // MARIADB INVALIDATE CREDENTIALS
-int mariadbINVALIDATECREDENTIALS(std::string user, std::string pass, std::string email) {
+int mariadbINVALIDATE_CREDENTIALS(std::string user, std::string pass, std::string email) {
 
+
+
+
+    return 0;
 }
 
 // MARIADB PAYMENT RECEIVED
-int mariadbRECEIVEPAYMENT(std::string user, bool truereceive) {
+int mariadbRECEIVE_PAYMENT(std::string user, bool truereceive) {
 
+
+
+
+    return 0;
 }
 
 // MARIADB SET PAYMENT PLAN
-int mariadbSETPAYMENT(std::string user, int paymentlevel) {
+int mariadbSE_TPAYMENT(std::string user, int paymentlevel) {
+
+
+
+
+    return 0;
+}
+
+// REMOVE PI API FROM DB
+int mariadbREMOVE_PIAPI(std::string user) {
 
 }
+
+// REMOVE ROUTER API FROM DB
+int mariadbREMOVE_ROUTERAPI(std::string user) {
+
+
+
+    return 0;
+}
+
+
+
+
 
 
 
@@ -1442,20 +1592,20 @@ int setup() {
     // DELAY FOR SYSTEM TO START FURTHER (FIGURE OUT CURRENT TIME)
     sleep(1);
 
-//    int test = writetoipliststrict("HELLO", 0, true, false);
-//    test = writetoUSERStream("TEST", true);
-//    test = writetoUSERStream("TEST", true);
-//    if (test != 0) {
-//        logcritical("AN ERROR OCCURRED TRYING TO WRITE TO END OF IPLISTSTRICT");
-//    }
 
+    // BETA SCRIPTS
+    mariadbPIAPIkeyvalid("PIlws9pNqJ4olvnNTHxyvYhRD8WM1158N1Zlo308UVtqEv0ihWxLCN94Uxx07r1n");
+ //   mariadbROUTERAPIkeyvalid("ROdgkrvMvuHGL86dGHI65va3Ss9z6PtUM6tzDc62apcZkoGJwPgx48JqESgWyAz2");
+    mariadbNEWUSER("test123", "test122", "test123@gmail.com");
     loginfo(generateRandomStringHoneyPI());
     loginfo(generateRandomStringRouterAPI());
+    mariadbINSERTPIKEY(generateRandomStringHoneyPI(), "test123");
 
 
-    mariadbtest();
+    // DETERMINE TIME
     startuptime = time(NULL);
     startupchecks = startupchecks + timedetector();
+
 
 
 
