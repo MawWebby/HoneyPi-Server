@@ -69,7 +69,9 @@
         "numeric": "cpp",
         "string_view": "cpp",
         "numbers": "cpp",
-        "semaphore": "cpp"
+        "semaphore": "cpp",
+        "list": "cpp",
+        "map": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

@@ -59,10 +59,17 @@ int server_fd2, new_socket2;
 bool packetactive = false;
 bool runningnetworksportAPI = true;
 std::string ipsafetyRAM[1];
+std::string port80clientsIP[1];
+int port80clientsIPdata[1];
+std::string port11829clientsIP[1];
+int port11829clientsIPdata[1];
+std::string port11830clientsIP[1];
+int port11830clientsIPdata[1];
 bool runningport80 = true;
 bool port80runningstatus = false;
 int packetspam = 0;
 bool waiting230 = false;
+bool api11829 = false;
 
 
 
@@ -75,8 +82,10 @@ std::string getstartedpayload;
 std::string signuppayload;
 std::string loginpayload;
 std::string blogpayload;
-std::string httpforbidden = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: 25\n\n<h1>504: Gateway Time-Out</h1>";
-std::string httpservererror = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
+std::string httpfail = "HTTP/1.1 504 OK\nContent-Type:text/html\nContent-Length: 30\n\n<h1>504: Gateway Time-Out</h1>";
+std::string httpforbidden = "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 23\n\n<h1>403: Forbidden</h1>";
+std::string httpservererror = "HTTP/1.1 505 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
+std::string httpnotfound = "HTTP/1.1 404 OK\nContent-Type:text/html\nContent-Length: 28\n\n<h1>404: Page Not Found</h1>";
 
 
 
@@ -118,6 +127,13 @@ const char* cmdrunfile = "/home/listfiles/cmdrun.txt";
 const char* cogfolder = "/home/crashlogs";
 const char* mainhtml = "/home/htmlmainweb/index.html";
 const char* pricehtml = "/home/htmlmainweb/pricing.html";
+const char* bloghtmlfile = "/home/htmlmainweb/blog.html";
+const char* loginhtmlfile = "/home/htmlmainweb/login.html";
+const char* TOSFreefilefile = "/home/htmlmainweb/TOSFree.html";
+const char* TOSProfilefile = "/home/htmlmainweb/TOSPro.html";
+const char* TOSEnterprisefile = "/home/htmlmainweb/TOSEnterprise.html";
+const char* PrivacyPolicyfile = "/home/htmlmainweb/privacypolicy.html";
+const char* getstartedfile = "/home/htmlmainweb/login.html";
 const char* htmlfolder = "/home/htmlmainweb";
 const char* signuphtml = "/home/htmlmainweb/signup.html";
 const char* loginhtml = "/home/htmlmainweb/login.html";
@@ -140,7 +156,8 @@ std::string commaheader = ",";
 std::string updatecredheader = "UPDATE credentials ";
 std::string valuetoinsertSETPIAPI = " SET honeypiapi = ";
 std::string valuetoinsertWHERE = " WHERE user = ";
-
+std::string mariadbcheckaddrheader = "SELECT blockedip FROM serversecurity WHERE ipaddr = '";
+std::string mariadbaddaddrheader = "INSERT INTO serversecurity (ipaddr, packetsreceived, blockedip, resetattime) VALUES('";
 
 
 // FILE LOCK VARIABLES
@@ -295,6 +312,92 @@ int mariadb_test() {
 
     return 0;
 }
+
+// CHECK FOR IP ADDRESS IN serversecurity
+int mariadb_CHECKIPADDR(std::string ipaddr) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery21 = mariadbcheckaddrheader + ipaddr + "'";
+    sql::ResultSet *res = stmnt->executeQuery(executequery21);
+    
+    if (res->next() == true) {
+        // FIX THIS PROBLEM, NOT READING RESULT OF A CLOSED SET"?"
+        return 1;
+        loginfo("BLOCKED");
+    } else {
+        loginfo("TRUE");
+        return 0;
+    }
+
+    // RETURN 255 - IPADDR NOT FOUND IN DB PREVIOUSLY
+    return 255;
+}
+
+// ADD IP ADDRESS IN serversecurity
+int mariadb_ADDIPADDR(std::string ipaddr) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    int timetoreset = time(NULL) + 120;
+    
+    // Execute query
+    std::string executequery34 = mariadbaddaddrheader + ipaddr + "'," + "1," + "false," + std::to_string(timetoreset) + ")";
+    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+
+    return 0;
+}
+
+// ADD BLOCKED IP ADDRESS IN serversecurity
+int mariadb_BLOCKIPADDR(std::string ipaddr) {
+
+
+
+    return 0;
+}
+
+// ADD PACKET TO IP ADDRESS
+int mariadb_ADDPACKETTOIPADDR(std::string ipaddr) {
+
+
+
+
+    return 0;
+}
+
+// CLEAR IP ADDRESSES (MAINTENANCE AND DECREASE PACKETS FOR OTHER IPs)
+int mariadb_REMOVEOLDIPADDR() {
+
+
+
+
+
+    return 0;
+}
+
+
 
 // READ THE VALUE OF PI API
 int mariadbREAD_VALUEPIAPI(std::string user) {
@@ -460,8 +563,11 @@ int mariadbINSERT_PIKEY(std::string honeypikey, std::string username) {
     return 0;
 }
 
-// MARIADB INSERT NEW HONEY ROUTER API KEY
-int mariadbINSERT_ROUTERKEY(std::string routerkey, int slottoinsert) {
+
+// MARIADB INSERT NEW HONEY ROUTER API 
+
+// FIX THIS PROBLEM OF NEEDING 5 APIS FOR ONE ACCOUNT
+int mariadbINSERT_ROUTERKEY(std::string routerkey, int slottoinsert, std::string username) {
     if (slottoinsert == 0) {
         // FIX TO ADD READ AND DETERMINE THE FIRST EMPTY SLOT
     }
@@ -480,7 +586,7 @@ int mariadbINSERT_ROUTERKEY(std::string routerkey, int slottoinsert) {
     std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
     
     // Execute query
-    std::string executequery34 = updatecredheader + valuetoinsertSETPIAPI + "'" + honeypikey + "'" + valuetoinsertWHERE + "'" + username + "'";
+    std::string executequery34 = updatecredheader + valuetoinsertSETPIAPI + "'" + routerkey + "'" + valuetoinsertWHERE + "'" + username + "'";
     sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
 
     return 0;
@@ -552,6 +658,9 @@ int mariadbSE_TPAYMENT(std::string user, int paymentlevel) {
 // REMOVE PI API FROM DB
 int mariadbREMOVE_PIAPI(std::string user) {
 
+
+
+    return 0;
 }
 
 // REMOVE ROUTER API FROM DB
@@ -1188,6 +1297,7 @@ int maintenancescriptSIXHOUR() {
 ////////////////////////////////////////////////////////////////////
 //// LOAD THE LIST OF BLOCKED IPs INTO THE SERVER MAIN DATABASE ////
 ////////////////////////////////////////////////////////////////////
+/*
 int loadipsafetyintoram() {
     int numberofip = 0;
     bool completion1939 = false;
@@ -1226,9 +1336,13 @@ int loadipsafetyintoram() {
     return 1;
 }
 
+*/
+
 ////////////////////////////
 //// LOAD HTML INTO RAM ////
 //////////////////////////// 
+
+// PERMANENT LOAD INTO RAM!
 int loadmainHTMLintoram() {
     std::string templine;
     std::ifstream htmlmain;
@@ -1245,8 +1359,9 @@ int loadmainHTMLintoram() {
                 if (timer7 >= timer7max) {
                     completionht = true;
                 }
+            } else {
+                mainhtmlpayload = mainhtmlpayload + templine;
             }
-            mainhtmlpayload = mainhtmlpayload + templine;
         }
         std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
@@ -1255,11 +1370,11 @@ int loadmainHTMLintoram() {
         htmlmain.close();
         return 0;
     } else {
-        mainhtmlpayload = "500: An Internal Server Error Occurred, Please Try Again Later";
+        mainhtmlpayload = httpservererror;
         htmlmain.close();
         return 1;
     }
-    mainhtmlpayload = "500: An Internal Server Error Occurred, Please Try Again Later";
+    mainhtmlpayload = httpservererror;
     htmlmain.close();
     return 1;
 }
@@ -1280,8 +1395,9 @@ int loadpricingHTMLintoram() {
                 if (timer7 >= timer7max) {
                     completionht = true;
                 }
+            } else {
+                pricinghtmlpayload = pricinghtmlpayload + templine;
             }
-            pricinghtmlpayload = pricinghtmlpayload + templine;
         }
         std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
@@ -1290,17 +1406,273 @@ int loadpricingHTMLintoram() {
         htmlprice.close();
         return 0;
     } else {
-        pricinghtmlpayload = "500: An Internal Server Error Occurred, Please Try Again Later";
+        pricinghtmlpayload = httpservererror;
         htmlprice.close();
         return 1;
     }
-    pricinghtmlpayload = "500: An Internal Server Error Occurred, Please Try Again Later";
+    pricinghtmlpayload = httpservererror;
     htmlprice.close();
     return 1;
 }
 
+int loadblogHTMLintoram() {
+    std::string templine;
+    std::ifstream bloghtml;
+    blogpayload = "";
+    bloghtml.open(bloghtmlfile);
+    bool completionht = false;
+    int timer7 = 0;
+    int timer7max = 5;
+    if (bloghtml.is_open() == true) {
+        while (completionht != true) {
+            getline(bloghtml, templine);
+            if (templine == "") {
+                timer7 = timer7 + 1;
+                if (timer7 >= timer7max) {
+                    completionht = true;
+                }
+            } else {
+                blogpayload = blogpayload + templine;
+            }
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = blogpayload.length();
+        blogpayload = httpsuccess + std::to_string(length) + beforepayload + blogpayload;
+        bloghtml.close();
+        return 0;
+    } else {
+        blogpayload = httpservererror;
+        bloghtml.close();
+        return 1;
+    }
+    blogpayload = httpservererror;
+    bloghtml.close();
+    return 1;
+}
+
+int loadloginHTMLintoram() {
+    std::string templine;
+    std::ifstream loginhtml;
+    loginpayload = "";
+    loginhtml.open(loginhtmlfile);
+    bool completionht = false;
+    int timer7 = 0;
+    int timer7max = 5;
+    if (loginhtml.is_open() == true) {
+        while (completionht != true) {
+            getline(loginhtml, templine);
+            if (templine == "") {
+                timer7 = timer7 + 1;
+                if (timer7 >= timer7max) {
+                    completionht = true;
+                }
+            } else {
+                loginpayload = loginpayload + templine;
+            }
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = loginpayload.length();
+        loginpayload = httpsuccess + std::to_string(length) + beforepayload + loginpayload;
+        loginhtml.close();
+        return 0;
+    } else {
+        loginpayload = httpservererror;
+        loginhtml.close();
+        return 1;
+    }
+    loginpayload = httpservererror;
+    loginhtml.close();
+    return 1;
+}
+
+int loadgetstartedHTMLintoram() {
+    std::string templine;
+    std::ifstream getstartedstream;
+    getstartedpayload = "";
+    getstartedstream.open(getstartedfile);
+    bool completionht = false;
+    int timer7 = 0;
+    int timer7max = 5;
+    if (getstartedstream.is_open() == true) {
+        while (completionht != true) {
+            getline(getstartedstream, templine);
+            if (templine == "") {
+                timer7 = timer7 + 1;
+                if (timer7 >= timer7max) {
+                    completionht = true;
+                }
+            } else {
+                getstartedpayload = getstartedpayload + templine;
+            }
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = getstartedpayload.length();
+        getstartedpayload = httpsuccess + std::to_string(length) + beforepayload + getstartedpayload;
+        getstartedstream.close();
+        return 0;
+    } else {
+        getstartedpayload = httpservererror;
+        getstartedstream.close();
+        return 1;
+    }
+    getstartedpayload = httpservererror;
+    getstartedstream.close();
+    return 1;
+}
+
+int loadHTMLINTORAM() {
+    loginfo("Loading All Main HTML Pages into RAM!");
+    int returnvalue = 0;
+    returnvalue = returnvalue + loadmainHTMLintoram();
+    returnvalue = returnvalue + loadpricingHTMLintoram();
+    returnvalue = returnvalue + loadblogHTMLintoram();
+    returnvalue = returnvalue + loadloginHTMLintoram();
+    returnvalue = returnvalue + loadgetstartedHTMLintoram();
+    // returnvalue = returnvalue + 
+    loginfo("Done Loading into Ram");
+    return returnvalue;
+}
 
 
+// TEMPORARY READS
+std::string readTOSFree() {
+    std::string templine;
+    std::ifstream tosfreestream;
+    std::string tospayload = "";
+    tosfreestream.open(TOSFreefilefile);
+    bool completionhy = false;
+    int timer8 = 0;
+    int timer8max = 0;
+    if (tosfreestream.is_open() == true) {
+        while (completionhy != true) {
+            getline(tosfreestream, templine);
+            if (templine == "") {
+                timer8 = timer8 + 1;
+                if (timer8 >= timer8max) {
+                    completionhy = true;
+                }
+            } else {
+                tospayload = tospayload + templine;
+            }
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = tospayload.length();
+        tospayload = httpsuccess + std::to_string(length) + beforepayload + tospayload;
+        tosfreestream.close();
+        return tospayload;
+    } else {
+        tosfreestream.close();
+        return httpservererror;
+    }
+    tosfreestream.close();
+    return httpservererror;
+}
+
+std::string readTOSPro() {
+    std::string templine;
+    std::ifstream tosfreestream;
+    std::string tospayload = "";
+    tosfreestream.open(TOSProfilefile);
+    bool completionhy = false;
+    int timer8 = 0;
+    int timer8max = 0;
+    if (tosfreestream.is_open() == true) {
+        while (completionhy != true) {
+            getline(tosfreestream, templine);
+            if (templine == "") {
+                timer8 = timer8 + 1;
+                if (timer8 >= timer8max) {
+                    completionhy = true;
+                }
+            } else {
+                tospayload = tospayload + templine;
+            }
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = tospayload.length();
+        tospayload = httpsuccess + std::to_string(length) + beforepayload + tospayload;
+        tosfreestream.close();
+        return tospayload;
+    } else {
+        tosfreestream.close();
+        return httpservererror;
+    }
+    tosfreestream.close();
+    return httpservererror;
+}
+
+std::string readTOSEnterprise() {
+    std::string templine;
+    std::ifstream tosfreestream;
+    std::string tospayload = "";
+    tosfreestream.open(TOSEnterprisefile);
+    bool completionhy = false;
+    int timer8 = 0;
+    int timer8max = 0;
+    if (tosfreestream.is_open() == true) {
+        while (completionhy != true) {
+            getline(tosfreestream, templine);
+            if (templine == "") {
+                timer8 = timer8 + 1;
+                if (timer8 >= timer8max) {
+                    completionhy = true;
+                }
+            } else {
+                tospayload = tospayload + templine;
+            }
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = tospayload.length();
+        tospayload = httpsuccess + std::to_string(length) + beforepayload + tospayload;
+        tosfreestream.close();
+        return tospayload;
+    } else {
+        tosfreestream.close();
+        return httpservererror;
+    }
+    tosfreestream.close();
+    return httpservererror;
+}
+
+std::string readPrivacyPolicy() {
+    std::string templine;
+    std::ifstream tosfreestream;
+    std::string tospayload = "";
+    tosfreestream.open(PrivacyPolicyfile);
+    bool completionhy = false;
+    int timer8 = 0;
+    int timer8max = 0;
+    if (tosfreestream.is_open() == true) {
+        while (completionhy != true) {
+            getline(tosfreestream, templine);
+            if (templine == "") {
+                timer8 = timer8 + 1;
+                if (timer8 >= timer8max) {
+                    completionhy = true;
+                }
+            } else {
+                tospayload = tospayload + templine;
+            }
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = tospayload.length();
+        tospayload = httpsuccess + std::to_string(length) + beforepayload + tospayload;
+        tosfreestream.close();
+        return tospayload;
+    } else {
+        tosfreestream.close();
+        return httpservererror;
+    }
+    tosfreestream.close();
+    return httpservererror;
+}
 
 
 
@@ -1311,105 +1683,201 @@ void handleConnections80(int server_fd) {
     while(runningport80 == true) {
         port80runningstatus = true;
         char buffer[2048] = {0};
-        struct sockaddr_in address;
+        struct sockaddr_in address, client_addr;
         socklen_t addrlen = sizeof(address);
         int new_socket;
         ssize_t valread;
-        std::string hello = "Hello from server";
+
+        socklen_t client_addr_len = sizeof(client_addr);
         
 
-        if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
-            perror("accept");
-            exit(EXIT_FAILURE);
-        }
-
-        // ANTI-CRASH PACKET FLOW CHECK
-        if (timers[1] == time(NULL)) {
-            packetspam = packetspam + 1;
-            if (packetspam >= 10) {
-                // STOP CONNECTIONS/ENTER BLOCKING STATE
-                waiting230 = true;
-                logwarning("LOCKING HTTP PORT FOR NOW (PACKET SPAM)");
-                timers[2] = time(NULL);
-            }
+        if ((new_socket = accept(server_fd, (struct sockaddr*)&client_addr, &client_addr_len)) < 0) {
+            logcritical("FAILED TO ACCEPT CONNECTION!");
         } else {
-            timers[1] = time(NULL);
-            if (packetspam >= 5) {
-                packetspam = packetspam -5;
-                waiting230 = false;
-            } else {
-                packetspam = 0;
-                waiting230 = false;
+            char client_ip[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
+            std::cout << "Connection from: " << client_ip << '\n';
+            std::string clientipstd = client_ip;
+            int checks = 0;
+            int allowed = 0;
+            allowed = mariadb_CHECKIPADDR(client_ip);
+
+            if (allowed == 255) {
+                mariadb_ADDIPADDR(client_ip);
             }
-        }
 
-        int differenceintime = time(NULL) - timers[2];
-
-        if (differenceintime >= 900) {
-            waiting230 = false;
-            logwarning("ALLOWING RESTART OF HTTP PROCESS!");
-        }
-
-        if (waiting230 == false) {
-            // STANDARD OPERATION
-            read(new_socket, buffer, 2048);
-            sendtolog(buffer);
-            int timer89 = 0;
-            int timer89max = 5;
-            bool completed23 = false;
-            if (buffer != "" && sizeof(buffer) >= 7) {
-                std::string bufferstring = buffer;
-                std::string headerrequest = bufferstring.substr(0,4);
-                loginfo(headerrequest);
-                
-                if (bufferstring.length() >= 7) {
-                    // CHANGE HERE FROM GET: / TO GET /
-                    if (headerrequest == "GET ") {
-                        std::string maindirectory = bufferstring.substr(4,1);
-                        logwarning(maindirectory);
-
-                        // MAKE SURE THAT THE ADDRESS IS VALID
-                        if (maindirectory == "/") {
-                            std::string nextletter = bufferstring.substr(5,2);
-                            loginfo(nextletter);
-
-                            // MAIN PAGE
-                            if (nextletter == " H") {
-                                int send_res=send(new_socket,mainhtmlpayload.c_str(),mainhtmlpayload.length(),0);
-                            }
-
-                            // INDEX.HTML
-                            if (nextletter == "in") {
-                                //index.html
-                                std::string indexfulldictionary = bufferstring.substr(5, 10);
-                                if (indexfulldictionary == "index.html") {
-                                    int send_res=send(new_socket,mainhtmlpayload.c_str(),mainhtmlpayload.length(),0);
-                                }
-                            }
-
-                            // PRICING.HTML
-                            if (nextletter == "pr") {
-                                // pricing.html
-                                std::string pricingfulldictionary = bufferstring.substr(5,12);
-                                logcritical(pricingfulldictionary);
-                                if (pricingfulldictionary == "pricing.html") {
-                                    int send_res=send(new_socket,pricinghtmlpayload.c_str(),pricinghtmlpayload.length(),0);
-                                }
-                            }
-                        }
-                    } else {
-                        int send_res=send(new_socket,httpforbidden.c_str(),httpforbidden.length(),0);
+            if (allowed == 0 || allowed == 255) {
+                // ANTI-CRASH PACKET FLOW CHECK
+                if (timers[1] == time(NULL)) {
+                    packetspam = packetspam + 1;
+                    if (packetspam >= 10) {
+                        // STOP CONNECTIONS/ENTER BLOCKING STATE
+                        waiting230 = true;
+                        logwarning("LOCKING HTTP PORT FOR NOW (PACKET SPAM)");
+                        timers[2] = time(NULL);
                     }
                 } else {
-                    int send_res=send(new_socket,httpforbidden.c_str(),httpforbidden.length(),0);
+                    timers[1] = time(NULL);
+                    if (packetspam >= 5) {
+                        packetspam = packetspam -5;
+                        waiting230 = false;
+                    } else {
+                        packetspam = 0;
+                        waiting230 = false;
+                    }
+                }
+
+                int differenceintime = time(NULL) - timers[2];
+
+                if (differenceintime >= 900) {
+                    waiting230 = false;
+                    logwarning("ALLOWING RESTART OF HTTP PROCESS!");
+                }
+
+                if (waiting230 == false) {
+                    // STANDARD OPERATION
+                    read(new_socket, buffer, 2048);
+
+                    int timer89 = 0;
+                    int timer89max = 5;
+                    bool completed23 = false;
+                    if (buffer != "" && sizeof(buffer) >= 7) {
+                        std::string bufferstring = buffer;
+                        std::string headerrequest = bufferstring.substr(0,4);
+                        
+                        if (bufferstring.length() >= 7) {
+                            // CHANGE HERE FROM GET: / TO GET /
+                            if (headerrequest == "GET ") {
+                                std::string maindirectory = bufferstring.substr(4,1);
+
+                                // MAKE SURE THAT THE ADDRESS IS VALID
+                                if (maindirectory == "/") {
+                                    std::string nextletter = bufferstring.substr(5,2);
+
+                                    // MAKE SURE A CONNECTION WAS RECEIVED!
+                                    bool pagefound = false;
+
+                                    // MAIN PAGE
+                                    if (nextletter == " H") {
+                                        int send_res=send(new_socket,mainhtmlpayload.c_str(),mainhtmlpayload.length(),0);
+                                        pagefound = true;
+                                    }
+
+                                    // INDEX.HTML
+                                    if (nextletter == "in") {
+                                        //index.html
+                                        std::string indexfulldictionary = bufferstring.substr(5, 10);
+                                        if (indexfulldictionary == "index.html") {
+                                            int send_res=send(new_socket,mainhtmlpayload.c_str(),mainhtmlpayload.length(),0);
+                                            pagefound = true;
+                                        }
+                                    }
+
+                                    // PRICING.HTML
+                                    if (nextletter == "pr") {
+                                        // pricing.html
+                                        std::string pricingfulldictionary = bufferstring.substr(5,12);
+                                        if (pricingfulldictionary == "pricing.html") {
+                                            int send_res=send(new_socket,pricinghtmlpayload.c_str(),pricinghtmlpayload.length(),0);
+                                            pagefound = true;
+                                        }
+                                    }
+
+                                    // BLOG.HTML
+                                    if (nextletter == "bl") {
+                                        // blog.html
+                                        std::string blogfulldictionary = bufferstring.substr(5,9);
+                                        if (blogfulldictionary == "blog.html") {
+                                            int send_res=send(new_socket,blogpayload.c_str(),blogpayload.length(),0);
+                                            pagefound = true;
+                                        }
+                                    }
+
+                                    // LOGIN.HTML
+                                    if (nextletter == "lo") {
+                                        // login.html
+                                        std::string loginfulldictionary = bufferstring.substr(5,10);
+                                        if (loginfulldictionary == "login.html") {
+                                            int send_res=send(new_socket,loginpayload.c_str(),loginpayload.length(),0);
+                                            pagefound = true;
+                                        }
+                                    }
+
+                                    // TERMS OF SERVICE
+                                    if (nextletter == "TO") {
+                                        // TOSFree.html
+                                        // TOSPro.html
+                                        // TOSEnterprise.html
+                                        std::string TOSfulldictionary = bufferstring.substr(5, 11);
+
+                                        // TOSFREE.HTML
+                                        if (TOSfulldictionary == "TOSFree.htm") {
+                                            std::string tospayload = readTOSFree();
+                                            int send_res=send(new_socket,tospayload.c_str(),tospayload.length(),0);
+                                            pagefound = true;
+                                        }
+
+                                        // TOSPRO.HTML
+                                        if (TOSfulldictionary == "TOSPro.html") {
+                                            std::string tospayload = readTOSPro();
+                                            int send_res=send(new_socket,tospayload.c_str(),tospayload.length(),0);
+                                            pagefound = true;
+                                        }
+
+                                        // TOSEnterpri
+                                        if (TOSfulldictionary == "TOSEnterpri") {
+                                            std::string tospayload = readTOSEnterprise();
+                                            int send_res=send(new_socket,tospayload.c_str(),tospayload.length(),0);
+                                            pagefound = true;
+                                        }
+                                    }
+
+                                    // PRIVACY POLICY
+                                    if (nextletter == "pr") {
+                                        // privacypolicy.html
+                                        std::string privacyfulldictionary = bufferstring.substr(5,18);
+                                        if (privacyfulldictionary == "privacypolicy.html") {
+                                            std::string tospayload = readPrivacyPolicy();
+                                            int send_res=send(new_socket,tospayload.c_str(),tospayload.length(),0);
+                                            pagefound = true;
+                                        }
+                                    }
+
+                                    // GET-STARTED.HTML
+                                    if (nextletter == "ge") {
+                                        // GET-STARTED.HTML
+                                        std::string getstartedfulldictionary = bufferstring.substr(5,16);
+                                        if (getstartedfulldictionary == "get-started.html") {
+                                            int send_res=send(new_socket,getstartedpayload.c_str(),getstartedpayload.length(),0);
+                                            pagefound = true;
+                                        }
+                                    }
+
+
+
+                                    // NONE IS TRUE
+                                    if (pagefound != true) {
+                                      int send_res=send(new_socket,httpnotfound.c_str(),httpnotfound.length(),0);
+                                    }
+                                }
+                            } else {
+                                int send_res=send(new_socket,httpfail.c_str(),httpfail.length(),0);
+                            }
+                        } else {
+                            int send_res=send(new_socket,httpfail.c_str(),httpfail.length(),0);
+                        }
+                    } else {
+                        // FUTURE TERMINATE COMMAND
+                        int send_res=send(new_socket,httpfail.c_str(),httpfail.length(),0);
+                    }
+                    
+                } else {
+                    int send_res=send(new_socket,httpfail.c_str(),httpfail.length(),0);
                 }
             } else {
-                // FUTURE TERMINATE COMMAND
+                logwarning("ON BLOCKED IP LIST");
                 int send_res=send(new_socket,httpforbidden.c_str(),httpforbidden.length(),0);
             }
-            
-        } else {
-            int send_res=send(new_socket,httpforbidden.c_str(),httpforbidden.length(),0);
         }
     }
     port80runningstatus = false;
@@ -1419,49 +1887,35 @@ void handleConnections80(int server_fd) {
 
 
 
-//////////////////////////////////////////
-// HANDLE NETWORKED CONNECTIONS (11535) //
-//////////////////////////////////////////
-void handle11535Connections(int server_fd2) {
-    char buffer[1024] = {0};
-    struct sockaddr_in address;
-    socklen_t addrlen = sizeof(address);
-    int new_socket2;
-    ssize_t valread;
-    std::string hello = "Hello from server";
+////////////////////////////////////////////////////////////
+// HANDLE NETWORKED CONNECTIONS (11829) - MAIN API SERVER //
+////////////////////////////////////////////////////////////
+void handle11829Connections(int server_fd2) {
+    api11829 = true;
+    while(api11829 == true) {
+        char buffer[2048] = {0};
+        struct sockaddr_in address;
+        socklen_t addrlen = sizeof(address);
+        int new_socket2;
+        ssize_t valread;
+        std::string hello = "Hello from server";
 
-    if ((new_socket2 = accept(server_fd2, (struct sockaddr*)&address, &addrlen)) < 0) {
-        perror("accept");
-        exit(EXIT_FAILURE);
-    } else {
-        loginfo("11535 port initialized");
-    }
-
-    while(true) {
-        read(new_socket2, buffer, 1024);
+        if ((new_socket2 = accept(server_fd2, (struct sockaddr*)&address, &addrlen)) < 0) {
+            perror("accept");
+            exit(EXIT_FAILURE);
+        } else {
+            loginfo("11829 port initialized");
+        }
+    
+        read(new_socket2, buffer, 2048);
         sendtologopen(buffer);
+        std::string bufferstd = buffer;
 
-        if (buffer != NULL && attacked == false) {
-
-            // HEARTBEAT COMMAND TO NOT SPAM LOG
-            if (strcmp(buffer, "heartbeatSSH")) {
-                if (heartbeat >= 10) {
-                    loginfo("Received heartbeat from SSH Guest VM");
-                } else {
-                    heartbeat = heartbeat + 1;
-                }
-            } 
+        if (bufferstd.length() >= 4) {
 
         } else {
-            if (buffer != NULL && attacked == true) {
 
-            } else {
-                if (buffer == NULL) {
-                    logcritical("INVALID CONNECTION RECEIVED, ignoring...");
-                }
-            }
         }
-
 
         // ANTI-CRASH PACKET FLOW CHECK
 
@@ -1496,6 +1950,75 @@ void handle11535Connections(int server_fd2) {
 
 
 
+
+
+
+
+//////////////////////////////////////////
+// HANDLE NETWORKED CONNECTIONS (11830) //
+//////////////////////////////////////////
+void handle11830Connections(int server_fd2) {
+    api11829 = true;
+    while(api11829 == true) {
+        char buffer[2048] = {0};
+        struct sockaddr_in address;
+        socklen_t addrlen = sizeof(address);
+        int new_socket2;
+        ssize_t valread;
+        std::string hello = "Hello from server";
+    //   socklen_t client_addr_len = sizeof(client_addr);
+
+        if ((new_socket2 = accept(server_fd2, (struct sockaddr*)&address, &addrlen)) < 0) {
+            perror("accept");
+            exit(EXIT_FAILURE);
+        } else {
+            loginfo("11829 port initialized");
+        }
+
+    
+ //       std::fill_n(buffer, 2048, "");
+//        char client_ip[INET_ADDRSTRLEN];
+ //       inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
+        read(new_socket2, buffer, 2048);
+        sendtologopen(buffer);
+        std::string bufferstd = buffer;
+
+        if (bufferstd.length() >= 5) {
+            std::string keysubstring = "";
+            std::string bufferedkeystring = "";
+            std::string unencryptedstring = "";
+            keysubstring = bufferstd.substr(0,5);
+        } else {
+
+        }
+
+        // ANTI-CRASH PACKET FLOW CHECK
+
+
+        // NEED EXPANDED FOR SERVER APPLICATION!!!
+
+
+        /*
+        if (timers[2] == time(NULL)) {
+            packetsreceivedAPI = packetsreceivedAPI + 1;
+            if (packetsreceivedAPI >= 10) {
+                // KILL CONTAINER
+                logcritical("PACKET OVERFLOW DETECTED ON ROUTER API!");
+                close(server_fd2);
+            }
+        } else {
+            timers[2] = time(NULL);
+            packetsreceivedAPI = 0;
+        }
+        */
+
+
+
+ //        Send a hello message to the client
+         send(new_socket2, hello.c_str(), hello.size(), 0);
+         std::cout << "Hello message sent" << std::endl;
+    }
+}
 
 
 
@@ -1594,12 +2117,12 @@ int setup() {
 
 
     // BETA SCRIPTS
-    mariadbPIAPIkeyvalid("PIlws9pNqJ4olvnNTHxyvYhRD8WM1158N1Zlo308UVtqEv0ihWxLCN94Uxx07r1n");
+ //   mariadbPIAPI_keyvalid("PIlws9pNqJ4olvnNTHxyvYhRD8WM1158N1Zlo308UVtqEv0ihWxLCN94Uxx07r1n");
  //   mariadbROUTERAPIkeyvalid("ROdgkrvMvuHGL86dGHI65va3Ss9z6PtUM6tzDc62apcZkoGJwPgx48JqESgWyAz2");
-    mariadbNEWUSER("test123", "test122", "test123@gmail.com");
-    loginfo(generateRandomStringHoneyPI());
-    loginfo(generateRandomStringRouterAPI());
-    mariadbINSERTPIKEY(generateRandomStringHoneyPI(), "test123");
+ //   mariadbNEW_USER("test123", "test122", "test123@gmail.com");
+ //   loginfo(generateRandomStringHoneyPI());
+ //   loginfo(generateRandomStringRouterAPI());
+ //   mariadbINSERT_PIKEY(generateRandomStringHoneyPI(), "test123");
 
 
     // DETERMINE TIME
@@ -2445,6 +2968,9 @@ int setup() {
 
 
     // LOAD IPSAFETY INTO RAM
+    // DEPRECATED DUE TO USING MARIADB TO STORE THIS INFORMATION INSTEAD! (8/18/24)
+
+    /*
     sendtologopen("[INFO] - Loading IPSAFETY Into RAM...");
     int ram = loadipsafetyintoram();
     if (ram != 0) {
@@ -2454,12 +2980,13 @@ int setup() {
     } else {
         sendtolog("Done");
     }
+    */
 
 
 
     // LOAD MAINHTML INTO RAM
     sendtologopen("[INFO] - Loading MAINHTML Into RAM...");
-    int ram1 = loadmainHTMLintoram();
+    int ram1 = loadHTMLINTORAM();
     if (ram1 != 0) {
         sendtolog("ERROR");
         logcritical("AN ERROR OCCURRED LOADING MAINHTML INTO RAM!");
@@ -2494,7 +3021,7 @@ int setup() {
     sleep(3);
 
     // OPEN NETWORK SERVER PORTS (2/3)
-    PORT = 11535;
+    PORT = 11829;
     sendtologopen("[INFO] - Opening Server Ports (2/3)...");
     int server_fd2, new_socket2;
     ssize_t valread2;
@@ -2538,11 +3065,11 @@ int setup() {
 
 
 
-    // SERVER PORT LISTEN THREAD (2/3) (11535)
-    sendtologopen("[INFO] - Creating server thread on port 11535 listen...");
+    // SERVER PORT LISTEN THREAD (2/3) (11829)
+    sendtologopen("[INFO] - Creating server thread on port 11829 listen...");
 
     sleep(2);
-    std::thread acceptingClientsThread2(handle11535Connections, server_fd2);
+    std::thread acceptingClientsThread2(handle11829Connections, server_fd2);
     acceptingClientsThread2.detach();
     sleep(1);
 
@@ -2551,13 +3078,62 @@ int setup() {
 
 
 
-    // SYSTEM STARTED
-    sendtologopen("[INFO] - Updating API Token...");
+
+    // OPEN SERVER PORT 11830 FOR TELEMETRY
+    sendtologopen("[INFO] - Opening Server Ports (3/3)...");
+    PORT = 11830;
+    int server_fd3, new_socket3;
+    ssize_t valread3;
+    struct sockaddr_in address3;
+    socklen_t addrlen3 = sizeof(address3);
+    int opt3 = 1;
+    
+    sleep(1);
+
+    if((server_fd3 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Forcefully attaching socket to the port 11535
+    if (setsockopt(server_fd3, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt3, sizeof(opt3))) {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+
+    // REACHED HERE
+    sendtologopen("...");
+    address3.sin_family = AF_INET;
+    address3.sin_addr.s_addr = INADDR_ANY;
+    address3.sin_port = htons(PORT);
+
+    // Binding the socket to the network address and port
+    if (bind(server_fd3, (struct sockaddr*)&address3, sizeof(address3)) < 0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+    if (listen(server_fd3, 3) < 0) {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+
+    sendtolog("Done");
+    sleep(2);
 
 
-    // FUTURE NETWORK COMMUNICATION TO UPDATE API TOKENS
 
-    sendtolog("future");
+
+    // SERVER PORT LISTEN THREAD (3/3) (118.30)
+    sendtologopen("[INFO] - Creating server thread on port 11830 listen...");
+
+    sleep(2);
+    std::thread acceptingClientsThread3(handle11830Connections, server_fd3);
+    acceptingClientsThread3.detach();
+    sleep(1);
+
+    sendtolog("Done");
+
+
 
 
 
