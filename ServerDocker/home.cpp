@@ -158,6 +158,16 @@ std::string valuetoinsertSETPIAPI = " SET honeypiapi = ";
 std::string valuetoinsertWHERE = " WHERE user = ";
 std::string mariadbcheckaddrheader = "SELECT blockedip FROM serversecurity WHERE ipaddr = '";
 std::string mariadbaddaddrheader = "INSERT INTO serversecurity (ipaddr, packetsreceived, blockedip, resetattime) VALUES('";
+std::string mariadbblockipaddrheader = "UPDATE serversecurity SET blockedip = 'true' WHERE ipaddr = '";
+std::string mariadbubblockipaddrheader = "UPDATE serversecurity SET blockedip = 'false' WHERE ipaddr = '";
+std::string mariadbreadpacketcountipaddr = "SELECT packetsreceived FROM serversecurity WHERE ipaddr  = '";
+std::string mariadbwritepacketcountipaddr = "UPDATE serversecurity SET packetsreceived = ";
+std::string mariadbwritepacketcountipaddr2 = " WHERE ipaddr = '";
+std::string mariadbmaintenance = "SELECT ipaddr FROM serversecurity";
+std::string mariadbDEVBLOCKFLAG = "SELECT devblockip FROM serversecurity WHERE ipaddr = '";
+std::string mariadbremoveoldipaddr = "DELETE FROM serversecurity WHERE ipaddr = '";
+std::string mariadbpacketheader = "SELECT lastpacket FROM serversecurity WHERE ipaddr = '";
+std::string mariadbuserpiapikey = "SELECT honeypiapi FROM credentials WHERE user = '";
 
 
 // FILE LOCK VARIABLES
@@ -336,9 +346,7 @@ int mariadb_CHECKIPADDR(std::string ipaddr) {
     if (res->next() == true) {
         // FIX THIS PROBLEM, NOT READING RESULT OF A CLOSED SET"?"
         return 1;
-        loginfo("BLOCKED");
     } else {
-        loginfo("TRUE");
         return 0;
     }
 
@@ -372,47 +380,286 @@ int mariadb_ADDIPADDR(std::string ipaddr) {
 
 // ADD BLOCKED IP ADDRESS IN serversecurity
 int mariadb_BLOCKIPADDR(std::string ipaddr) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery36 = mariadbblockipaddrheader + ipaddr + "'";
+    sql::ResultSet *res6 = stmnt->executeQuery(executequery36);
 
     return 0;
 }
 
-// ADD PACKET TO IP ADDRESS
+// UNBLOCK IP ADDRESS IN serversecurity
+int mariadb_UNBLOCKIPADDR(std::string ipaddr) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery36 = mariadbubblockipaddrheader + ipaddr + "'";
+    sql::ResultSet *res6 = stmnt->executeQuery(executequery36);
+
+    return 0;
+}
+
+// ADD PACKET TO IP ADDRESS IN serversecurity
 int mariadb_ADDPACKETTOIPADDR(std::string ipaddr) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery36 = mariadbreadpacketcountipaddr + ipaddr + "'";
+    sql::ResultSet *res = stmnt->executeQuery(executequery36);
 
+    if (res->next() == true) {
+        int testers = res->getInt(1);
+        testers = testers + 1;
+
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbwritepacketcountipaddr + std::to_string(testers) + mariadbwritepacketcountipaddr2 + ipaddr + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery36);
+        
+        return 0;
+    } else {
+        return 1;
+    }
+    return 1;
+}
+
+// IP ADDRESS IS DEVELOPER BLOCKED AND WON'T CONTINUE SEARCHING
+bool mariadb_READDEVBLOCK(std::string ipaddr) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery36 = mariadbDEVBLOCKFLAG + ipaddr + "'";
+    sql::ResultSet *res = stmnt->executeQuery(executequery36);
+
+    if (res->next() == true) {
+        if (res->getInt(1) == true) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+    return false;
+}
+
+// REMOVE OLD IP ADDR
+int mariadb_REMOVEOLDIPADDR(std::string ipaddr) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery36 = mariadbremoveoldipaddr + ipaddr + "'";
+    sql::ResultSet *res = stmnt->executeQuery(executequery36);
 
     return 0;
 }
 
 // CLEAR IP ADDRESSES (MAINTENANCE AND DECREASE PACKETS FOR OTHER IPs)
-int mariadb_REMOVEOLDIPADDR() {
+int mariadb_MAINTENANCE() {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
-
-
-
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery36 = mariadbmaintenance;
+    sql::ResultSet *res = stmnt->executeQuery(executequery36);
+    std::string ipaddr;
+    std::istream *blob = res -> getBlob(1);
+    std::string ipaddr;
+    while(blob->eof() != true) {
+        *blob >> ipaddr;
+        bool devflagset = mariadb_READDEVBLOCK(ipaddr);
+        if (devflagset != true) {
+            int resultofcheck = mariadb_CHECKIPADDR(ipaddr);
+            if (resultofcheck == 1) {
+                // DO NOTHING - ADD MORE FOR TEMP BANS BUT NOT RIGHT NOW
+                int test = 0;
+            } else {
+                // REMOVE OLD IP ADDRESSES THAT DON'T CORRESPOND TO ANYTHING IMPORTANT
+                int remove = mariadb_REMOVEOLDIPADDR(ipaddr);
+            }
+        }
+    }
     return 0;
 }
 
+// MARIADB LAST TIME TO PACKET
+int mariadb_LASTTIMETOPACKET(std::string ipaddr) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
 
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery36 = mariadbpacketheader + ipaddr + "'";
+    sql::ResultSet *res = stmnt->executeQuery(executequery36);
+
+    int lasttime = res->getInt(1);
+    return lasttime;
+}
 
 // READ THE VALUE OF PI API
-int mariadbREAD_VALUEPIAPI(std::string user) {
+std::string mariadbREAD_VALUEPIAPI(std::string user) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery36 = mariadbuserpiapikey + user + "'";
+    sql::ResultSet *res = stmnt->executeQuery(executequery36);
 
-    return 0;
+    std::istream *hello = res->getBlob(1);
+    std::string piapi = "";
+    *hello >> piapi;
+    return piapi;
 }
 
 // READ THE VALU7E OF ROUTER API
-int mariadbREAD_VALUEROUTERAPI(std::string user) {
+std::string mariadbREAD_VALUEROUTERAPI(std::string user, int apinumber) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    std::string executequery38 = "";
+    
+    // SWITCH TO MAKE RIGHT NUMBER
+    switch(apinumber) {
+        case 0:
+            executequery38 = "SELECT honeyrouterapi FROM credentials WHERE user = '";
+            break;
+        case 1:
+            executequery38 = "SELECT honeyrouterapi2 FROM credentials WHERE user = '";
+            break;
+        case 2:
+            executequery38 = "SELECT honeyrouterapi3 FROM credentials WHERE user = '";
+            break;
+        case 3:
+            executequery38 = "SELECT honeyrouterapi4 FROM credentials WHERE user = '";
+            break;
+        case 4:
+            executequery38 = "SELECT honeyrouterapi5 FROM credentials WHERE user = '";
+            break;
+    }
 
-    return 0;
+    // Execute query
+    executequery38 = executequery38 + user + "'";
+    sql::ResultSet *res = stmnt->executeQuery(executequery38);
+    std::istream *hello = res->getBlob(1);
+    std::string rouapi = "";
+    *hello >> rouapi;
+    return rouapi;
 }
 
 // READ THE VALUE OF THE EMAIL ADDRESS
@@ -563,9 +810,7 @@ int mariadbINSERT_PIKEY(std::string honeypikey, std::string username) {
     return 0;
 }
 
-
 // MARIADB INSERT NEW HONEY ROUTER API 
-
 // FIX THIS PROBLEM OF NEEDING 5 APIS FOR ONE ACCOUNT
 int mariadbINSERT_ROUTERKEY(std::string routerkey, int slottoinsert, std::string username) {
     if (slottoinsert == 0) {
