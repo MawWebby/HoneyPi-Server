@@ -9,11 +9,17 @@ RUN apt-get install -y g++
 RUN apt-get install -y sudo
 RUN apt-get install -y wget
 RUN apt-get install -y apt-utils
+RUN apt-get install -y openssl libssh-dev
 
 # Expose Needed Ports
 EXPOSE 80
 EXPOSE 11829
 EXPOSE 11830
+
+# GENERATE OPENSSL KEYS
+RUN mkdir /certs
+RUN openssl genpkey -algorithm RSA -out /certs/private.key
+RUN openssl req -x509 -key /certs/private.key -out /certs/server.crt -days 365 -subj "/C=US/ST=Missouri/L=Springfield/O=HoneyPi/OU=IT/CN=honeypi.basellinux.net/emailAddress=mawhitworth01@gmail.com"
 
 # MKDIR FOR CONFIG FILES
 RUN mkdir /home/listfiles
@@ -35,13 +41,12 @@ RUN apt-get install -y mariadb-server
 RUN wget https://dlm.mariadb.com/3848191/Connectors/cpp/connector-cpp-1.1.4/mariadb-connector-cpp_1.1.4-1+maria~bookworm_arm64.deb
 RUN dpkg -i mariadb-connector-cpp_1.1.4-1+maria~bookworm_arm64.deb
 
-
 # Set Working Directory
 COPY . /usr/src/honeypi
 WORKDIR /usr/src/honeypi
 
 # This command compiles your app using GCC, adjust for your source code
-RUN g++ -o run home.cpp -lmariadbcpp
+RUN g++ -o run home.cpp -lmariadbcpp -lssl -lcrypto
 RUN g++ -o test servertest.cpp
 
 # REMOVE UNNEEDED PACKAGES

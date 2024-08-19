@@ -11,6 +11,9 @@
 #include <ctime>
 #include <random>
 #include <mariadb/conncpp.hpp>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 
 const bool debug = false;
 const bool testing = false;
@@ -70,6 +73,21 @@ bool port80runningstatus = false;
 int packetspam = 0;
 bool waiting230 = false;
 bool api11829 = false;
+SSL_CTX *ctx = SSL_CTX_new(TLS_server_method());
+SSL_CTX *create_context() {
+    const SSL_METHOD *method;
+    SSL_CTX *ctx;
+
+    method = TLS_server_method();
+    ctx = SSL_CTX_new(method);
+    if (!ctx) {
+        ERR_print_errors_fp(stderr);
+        abort();
+    }
+
+    return ctx;
+}
+    
 
 
 
@@ -549,7 +567,6 @@ int mariadb_MAINTENANCE() {
     sql::ResultSet *res = stmnt->executeQuery(executequery36);
     std::string ipaddr;
     std::istream *blob = res -> getBlob(1);
-    std::string ipaddr;
     while(blob->eof() != true) {
         *blob >> ipaddr;
         bool devflagset = mariadb_READDEVBLOCK(ipaddr);
@@ -1599,7 +1616,7 @@ int loadmainHTMLintoram() {
     if (htmlmain.is_open() == true) {
         while (completionht != true) {
             getline(htmlmain, templine);
-            if (templine == "") {
+            if (templine == "" || templine == "</html>") {
                 timer7 = timer7 + 1;
                 if (timer7 >= timer7max) {
                     completionht = true;
@@ -1635,7 +1652,7 @@ int loadpricingHTMLintoram() {
     if (htmlprice.is_open() == true) {
         while (completionht != true) {
             getline(htmlprice, templine);
-            if (templine == "") {
+            if (templine == "" || templine == "</html>") {
                 timer7 = timer7 + 1;
                 if (timer7 >= timer7max) {
                     completionht = true;
@@ -1671,7 +1688,7 @@ int loadblogHTMLintoram() {
     if (bloghtml.is_open() == true) {
         while (completionht != true) {
             getline(bloghtml, templine);
-            if (templine == "") {
+            if (templine == "" || templine == "</html>") {
                 timer7 = timer7 + 1;
                 if (timer7 >= timer7max) {
                     completionht = true;
@@ -1707,7 +1724,7 @@ int loadloginHTMLintoram() {
     if (loginhtml.is_open() == true) {
         while (completionht != true) {
             getline(loginhtml, templine);
-            if (templine == "") {
+            if (templine == "" || templine == "</html>") {
                 timer7 = timer7 + 1;
                 if (timer7 >= timer7max) {
                     completionht = true;
@@ -1743,7 +1760,7 @@ int loadgetstartedHTMLintoram() {
     if (getstartedstream.is_open() == true) {
         while (completionht != true) {
             getline(getstartedstream, templine);
-            if (templine == "") {
+            if (templine == "" || templine == "</html>") {
                 timer7 = timer7 + 1;
                 if (timer7 >= timer7max) {
                     completionht = true;
@@ -1772,10 +1789,15 @@ int loadHTMLINTORAM() {
     loginfo("Loading All Main HTML Pages into RAM!");
     int returnvalue = 0;
     returnvalue = returnvalue + loadmainHTMLintoram();
+    loginfo("Done with index.html");
     returnvalue = returnvalue + loadpricingHTMLintoram();
+    loginfo("Done with pricing.html");
     returnvalue = returnvalue + loadblogHTMLintoram();
+    loginfo("Done with blog.html");
     returnvalue = returnvalue + loadloginHTMLintoram();
+    loginfo("Done with login.html");
     returnvalue = returnvalue + loadgetstartedHTMLintoram();
+    loginfo("Done with getstarted.html");
     // returnvalue = returnvalue + 
     loginfo("Done Loading into Ram");
     return returnvalue;
@@ -1794,7 +1816,7 @@ std::string readTOSFree() {
     if (tosfreestream.is_open() == true) {
         while (completionhy != true) {
             getline(tosfreestream, templine);
-            if (templine == "") {
+            if (templine == "" || templine == "</html>") {
                 timer8 = timer8 + 1;
                 if (timer8 >= timer8max) {
                     completionhy = true;
@@ -1828,7 +1850,7 @@ std::string readTOSPro() {
     if (tosfreestream.is_open() == true) {
         while (completionhy != true) {
             getline(tosfreestream, templine);
-            if (templine == "") {
+            if (templine == "" || templine == "</html>") {
                 timer8 = timer8 + 1;
                 if (timer8 >= timer8max) {
                     completionhy = true;
@@ -1862,7 +1884,7 @@ std::string readTOSEnterprise() {
     if (tosfreestream.is_open() == true) {
         while (completionhy != true) {
             getline(tosfreestream, templine);
-            if (templine == "") {
+            if (templine == "" || templine == "</html>") {
                 timer8 = timer8 + 1;
                 if (timer8 >= timer8max) {
                     completionhy = true;
@@ -1896,7 +1918,7 @@ std::string readPrivacyPolicy() {
     if (tosfreestream.is_open() == true) {
         while (completionhy != true) {
             getline(tosfreestream, templine);
-            if (templine == "") {
+            if (templine == "" || templine == "</html>") {
                 timer8 = timer8 + 1;
                 if (timer8 >= timer8max) {
                     completionhy = true;
@@ -1921,9 +1943,12 @@ std::string readPrivacyPolicy() {
 
 
 
+
+
 ////////////////////////////////////////////////////////////
 // HANDLE NETWORKED CONNECTIONS (80) - MAIN HTML SERVER!! //
 ////////////////////////////////////////////////////////////
+/*
 void handleConnections80(int server_fd) { 
     while(runningport80 == true) {
         port80runningstatus = true;
@@ -2127,10 +2152,80 @@ void handleConnections80(int server_fd) {
     }
     port80runningstatus = false;
 }
+*/
 
+void handleConnections80(int server_fd) {
+    static bool initialized = false;
+    if (!initialized) {
+        SSL_library_init();
+        OpenSSL_add_all_algorithms();
+        SSL_load_error_strings();
+        initialized = true;
+    }
 
+    SSL_CTX *ctx = SSL_CTX_new(TLS_server_method());
+    if (!ctx) {
+        ERR_print_errors_fp(stderr);
+        return;
+    }
 
+    if (!SSL_CTX_use_certificate_file(ctx, "/certs/server.crt", SSL_FILETYPE_PEM)) {
+        ERR_print_errors_fp(stderr);
+        SSL_CTX_free(ctx);
+        return;
+    }
 
+    if (!SSL_CTX_use_PrivateKey_file(ctx, "/certs/private.key", SSL_FILETYPE_PEM)) {
+        ERR_print_errors_fp(stderr);
+        SSL_CTX_free(ctx);
+        return;
+    }
+
+    if (!SSL_CTX_check_private_key(ctx)) {
+        fprintf(stderr, "Private key does not match the public certificate\n");
+        SSL_CTX_free(ctx);
+        return;
+    }
+
+    port80runningstatus = true;
+    char buffer[2048] = {0};
+    struct sockaddr_in address;
+    socklen_t addrlen = sizeof(address);
+    SSL *ssl;
+
+    loginfo("Started!");
+
+    int client_fd = accept(server_fd, (struct sockaddr*)&address, &addrlen);
+    if (client_fd < 0) {
+        perror("Unable to accept");
+        SSL_CTX_free(ctx);
+        exit(EXIT_FAILURE);
+    }
+
+    ssl = SSL_new(ctx);
+    if (!ssl) {
+        ERR_print_errors_fp(stderr);
+        close(client_fd);
+        SSL_CTX_free(ctx);
+        return;
+    }
+    SSL_set_fd(ssl, client_fd);
+
+    if (SSL_accept(ssl) <= 0) {
+        ERR_print_errors_fp(stderr);
+    } else {
+        logcritical("SENDING");
+        const char *response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, world!";
+        SSL_write(ssl, response, strlen(response));
+    }
+
+    SSL_shutdown(ssl);
+    SSL_free(ssl);
+    close(client_fd);
+    SSL_CTX_free(ctx);
+
+    logcritical("Finished!");
+}
 
 ////////////////////////////////////////////////////////////
 // HANDLE NETWORKED CONNECTIONS (11829) - MAIN API SERVER //
