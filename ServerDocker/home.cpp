@@ -19,7 +19,18 @@ const bool debug = false;
 const bool testing = false;
 
 
-
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+//// THIS SOFTWARE IS DEVELOPED AND PRODUCED BY MATTHEW WHITWORTH                        ////
+////                                                                                     ////
+//// DO NOT DUPLICATE, COPY, OR MODIFY THIS SOFTWARE UNLESS WRITTEN BY MATTHEW WHITWORTH ////
+////                                                                                     ////
+//// ANY FAILURE TO DO SO WILL RESULT IN LEGAL ACTION                                    ////
+////                                                                                     ////
+//// ANY MONETIZATION THAT IS PRODUCED FROM CODE COPIED FROM MATTHEW                     ////
+//// WHITWORTH'S WORK MUST BE GIVEN TO THE DEVELOPER OR LEGAL ACTION WILL BE USED        ////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
