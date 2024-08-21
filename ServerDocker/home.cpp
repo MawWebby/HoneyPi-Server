@@ -42,6 +42,8 @@ const bool testing = false;
 const std::string honeyversion = "0.1";
 const int heartbeattime = 10;
 
+
+
 // SYSTEM VARIABLES
 bool checkforupdates = true;
 int startupchecks = 0;
@@ -51,9 +53,9 @@ bool systemup = false;
 int heartbeat = 29;
 std::string erroroccurred = "";
 bool logfilepresent = false;
-
-
 bool serverdumpfilefound = false;
+
+
 
 // DOCKER VARIABLES
 int timesincelastcheckinSSH = 0;
@@ -111,10 +113,24 @@ std::string getstartedpayload;
 std::string signuppayload;
 std::string loginpayload;
 std::string blogpayload;
-std::string httpfail = "HTTP/1.1 504 OK\nContent-Type:text/html\nContent-Length: 30\n\n<h1>504: Gateway Time-Out</h1>";
-std::string httpforbidden = "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 23\n\n<h1>403: Forbidden</h1>";
-std::string httpservererror = "HTTP/1.1 505 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
-std::string httpnotfound = "HTTP/1.1 404 OK\nContent-Type:text/html\nContent-Length: 28\n\n<h1>404: Page Not Found</h1>";
+const std::string httpfail = "HTTP/1.1 504 OK\nContent-Type:text/html\nContent-Length: 30\n\n<h1>504: Gateway Time-Out</h1>";
+const std::string httpforbidden = "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 23\n\n<h1>403: Forbidden</h1>";
+const std::string httpservererror = "HTTP/1.1 505 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
+const std::string httpnotfound = "HTTP/1.1 404 OK\nContent-Type:text/html\nContent-Length: 28\n\n<h1>404: Page Not Found</h1>";
+
+
+
+
+// API VARIABLES
+const std::string apireject = "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 17\n\n{state: rejected}";
+const std::string apiincomplete = "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 19\n\n{state: incomplete}";
+const std::string apisendcog = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent-Length: 13\n\n{state: send}";
+const std::string apiwaittosend = "HAPI/1.1 222 OK\nContent-Type:text/json\nContent-Length: 13\n\n{state: wait}";
+const std::string apideny = "HAPI/1.1 400 OK\nContent-Type:test/json\nContent-Length: 15\n\n{state: denied}";
+const std::string apiunavailable = "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 20\n\n{state: unavailable}";
+const std::string apinotfound = "HAPI/1.1 404 OK\nContent-Type:text/json\n\nContent-Length: 17\n\n{state: notfound}";
+const std::string apitrigger = "HAPI/1.1 200 OK\nContent-Type:text/json\n\nContent-Length:18\n\n{state: triggered}";
+const std::string apisuccess = "HAPI/1.1 200 OK\nContent-Type:test/json\nContent-Length: 17\n\n{state: success}";
 
 
 
@@ -163,6 +179,7 @@ const char* TOSProfilefile = "/home/htmlmainweb/TOSPro.html";
 const char* TOSEnterprisefile = "/home/htmlmainweb/TOSEnterprise.html";
 const char* PrivacyPolicyfile = "/home/htmlmainweb/privacypolicy.html";
 const char* getstartedfile = "/home/htmlmainweb/login.html";
+const char* accountfile = "/home/htmlmainweb/account.html";
 const char* htmlfolder = "/home/htmlmainweb";
 const char* signuphtml = "/home/htmlmainweb/signup.html";
 const char* loginhtml = "/home/htmlmainweb/login.html";
@@ -171,32 +188,34 @@ const char* filearguments = "ios::in | ios::out";
 const char* legendstring = "MyChiefDog79";
 
 
+
 // DATABASE OPERATIONS
-std::string headerforAPIKeyValid = "SELECT credentialsvalid FROM credentials WHERE honeypiapi = ";
-std::string headerforAPIKeyValid2 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi = ";
-std::string headerforAPIKeyValid3 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi2 = ";
-std::string headerforAPIKeyValid4 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi3 = ";
-std::string headerforAPIKeyValid5 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi4 = ";
-std::string headerforAPIKeyValid6 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi5 = ";
-std::string insertintocredheader = "INSERT INTO credentials";
-std::string valuestoinsertupe = " (user, pass, email, credentialsvalid) ";
-std::string valuesheader = "VALUES(";
-std::string commaheader = ",";
-std::string updatecredheader = "UPDATE credentials ";
-std::string valuetoinsertSETPIAPI = " SET honeypiapi = ";
-std::string valuetoinsertWHERE = " WHERE user = ";
-std::string mariadbcheckaddrheader = "SELECT blockedip FROM serversecurity WHERE ipaddr = '";
-std::string mariadbaddaddrheader = "INSERT INTO serversecurity (ipaddr, packetsreceived, blockedip, resetattime) VALUES('";
-std::string mariadbblockipaddrheader = "UPDATE serversecurity SET blockedip = 'true' WHERE ipaddr = '";
-std::string mariadbubblockipaddrheader = "UPDATE serversecurity SET blockedip = 'false' WHERE ipaddr = '";
-std::string mariadbreadpacketcountipaddr = "SELECT packetsreceived FROM serversecurity WHERE ipaddr  = '";
-std::string mariadbwritepacketcountipaddr = "UPDATE serversecurity SET packetsreceived = ";
-std::string mariadbwritepacketcountipaddr2 = " WHERE ipaddr = '";
-std::string mariadbmaintenance = "SELECT ipaddr FROM serversecurity";
-std::string mariadbDEVBLOCKFLAG = "SELECT devblockip FROM serversecurity WHERE ipaddr = '";
-std::string mariadbremoveoldipaddr = "DELETE FROM serversecurity WHERE ipaddr = '";
-std::string mariadbpacketheader = "SELECT lastpacket FROM serversecurity WHERE ipaddr = '";
-std::string mariadbuserpiapikey = "SELECT honeypiapi FROM credentials WHERE user = '";
+const std::string headerforAPIKeyValid = "SELECT credentialsvalid FROM credentials WHERE honeypiapi = ";
+const std::string headerforAPIKeyValid2 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi = ";
+const std::string headerforAPIKeyValid3 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi2 = ";
+const std::string headerforAPIKeyValid4 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi3 = ";
+const std::string headerforAPIKeyValid5 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi4 = ";
+const std::string headerforAPIKeyValid6 = "SELECT credentialsvalid FROM credentials WHERE honeyrouterapi5 = ";
+const std::string insertintocredheader = "INSERT INTO credentials";
+const std::string valuestoinsertupe = " (user, pass, email, credentialsvalid) ";
+const std::string valuesheader = "VALUES(";
+const std::string commaheader = ",";
+const std::string updatecredheader = "UPDATE credentials ";
+const std::string valuetoinsertSETPIAPI = " SET honeypiapi = ";
+const std::string valuetoinsertWHERE = " WHERE user = ";
+const std::string mariadbcheckaddrheader = "SELECT blockedip FROM serversecurity WHERE ipaddr = '";
+const std::string mariadbaddaddrheader = "INSERT INTO serversecurity (ipaddr, packetsreceived, blockedip, resetattime) VALUES('";
+const std::string mariadbblockipaddrheader = "UPDATE serversecurity SET blockedip = 'true' WHERE ipaddr = '";
+const std::string mariadbubblockipaddrheader = "UPDATE serversecurity SET blockedip = 'false' WHERE ipaddr = '";
+const std::string mariadbreadpacketcountipaddr = "SELECT packetsreceived FROM serversecurity WHERE ipaddr  = '";
+const std::string mariadbwritepacketcountipaddr = "UPDATE serversecurity SET packetsreceived = ";
+const std::string mariadbwritepacketcountipaddr2 = " WHERE ipaddr = '";
+const std::string mariadbmaintenance = "SELECT ipaddr FROM serversecurity";
+const std::string mariadbDEVBLOCKFLAG = "SELECT devblockip FROM serversecurity WHERE ipaddr = '";
+const std::string mariadbremoveoldipaddr = "DELETE FROM serversecurity WHERE ipaddr = '";
+const std::string mariadbpacketheader = "SELECT lastpacket FROM serversecurity WHERE ipaddr = '";
+const std::string mariadbuserpiapikey = "SELECT honeypiapi FROM credentials WHERE user = '";
+
 
 
 // FILE LOCK VARIABLES
@@ -204,6 +223,7 @@ bool ipliststrictlock = false;
 bool ipliststandardlock = false;
 bool ipsafetylock = false;
 bool userstreamlock = false;
+
 
 
 // TIME VARIABLES
@@ -224,8 +244,6 @@ int secondsperhour = 3600;
 int secondsperminute = 60;
 int minutesperhour = 60;
 int hoursperday = 24;
-
-
 long long int timers[10] = {};
 bool calculatingtime = false;
 // 0 - 
@@ -1030,6 +1048,28 @@ std::string generateRandomFileName() {
     return random_string;
 }
 
+std::string generateRandomClientKey() {
+    // Define the list of possible characters
+    const std::string CHARACTERS
+        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
+          "wxyz0123456789";
+
+    // Create a random number generator
+    std::random_device rd;
+    std::mt19937 generator(rd());
+
+    // Create a distribution to uniformly select from all
+    // characters
+    std::uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
+
+    // Generate the random string
+    std::string random_string = "CL";
+    for (int i = 0; i < 30; ++i) {
+        random_string += CHARACTERS[distribution(generator)];
+    }
+
+    return random_string;
+}
 
 
 
@@ -2251,22 +2291,211 @@ void handle11829Connections(int server_fd2) {
         ssize_t valread;
         std::string hello = "Hello from server";
 
-        if ((new_socket2 = accept(server_fd2, (struct sockaddr*)&address, &addrlen)) < 0) {
-            perror("accept");
-            exit(EXIT_FAILURE);
+        port11829runningstatus = true;
+        char buffer[2048] = {0};
+        struct sockaddr_in client_addr;
+
+        socklen_t client_addr_len = sizeof(client_addr);
+        
+
+        if ((new_socket = accept(server_fd, (struct sockaddr*)&client_addr, &client_addr_len)) < 0) {
+            logcritical("FAILED TO ACCEPT CONNECTION!");
         } else {
-            loginfo("11829 port initialized");
+            char client_ip[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
+            std::cout << "Connection from: " << client_ip << '\n';
+            std::string clientipstd = client_ip;
+            int checks = 0;
+            int allowed = 0;
+            allowed = mariadb_CHECKIPADDR(client_ip);
+
+            if (allowed == true) {
+                if ((new_socket2 = accept(server_fd2, (struct sockaddr*)&address, &addrlen)) < 0) {
+                    perror("accept");
+                    exit(EXIT_FAILURE);
+                } else {
+                    loginfo("11829 port initialized");
+                }
+            
+                read(new_socket2, buffer, 2048);
+                sendtologopen(buffer);
+                std::string bufferstd = buffer;
+
+                if (bufferstd.length() >= 8) {
+                    // READ BUFFER LENGTH HERE
+                    
+                    // MAKE SURE THAT IT IS A VALID STRING
+                    std::buffertests = bufferstd.substr(0,1);
+                    std::string realstring;
+
+                    if (buffertests == "{") {
+                        // START READING STATEMENTS
+                        buffertests = bufferstd.substr(1,5);
+                        bool shiftfound = false;
+
+                        // CORRESPONDING TO ABCDE; ADD TEN CASES !SHIFTS!
+                        if (buffertests == "ABCDE") {
+                            // SHIFT 0
+                            shiftfound = true;
+                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        }
+                        if (buffertests == "BCDEF") {
+                            // SHIFT +1
+                            shiftfound = true;
+                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        }
+                        if (buffertests == "CDEFG") {
+                            // SHIFT +2
+                            shiftfound = true;
+                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        }
+                        if (buffertests == "DEFGH") {
+                            // SHIFT +3
+                            shiftfound = true;
+                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        }
+                        if (buffertests == "EFGHI") {
+                            // SHIFT +4
+                            shiftfound = true;
+                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        }
+                        if (buffertests == "FGHIJ") {
+                            // SHIFT +5
+                            shiftfound = true;
+                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        }
+                        if (buffertests == "zABCD") {
+                            // SHIFT -1
+                            shiftfound = true;
+                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        }
+                        if (buffertests == "yzABC") {
+                            // SHIFT -2
+                            shiftfound = true;
+                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        }
+                        if (buffertests == "xyzAB") {
+                            // SHIFT -3
+                            shiftfound = true;
+                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        }
+                        if (buffertests == "wxyzA") {
+                            // SHIFT -4
+                            shiftfound = true;
+                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        }
+                        if (buffertests == "vwxyz") {
+                            // SHIFT -5
+                            shiftfound = true;
+                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        }
+
+
+
+
+
+                        // SHIFT HAS BEEN FOUND, START ANALYZING THE ACTUAL STRING
+                        if (shiftfound == true && realstring != "") {
+                            // CONTINUE ANALYZING
+                            if (realstring.length() >= 7) {
+                                // PING VERSION 0.1
+                                if (realstring.substr(0,6) == "status") {
+                                    // PING FOR HONEYPI THINGS
+                                }
+                                
+                                // REPORT NEW COG
+                                if (realstring.substr(0,6) == "report") {
+                                    if (cogswaiting >= 20) {
+                                        while (cogswaiting >= 20) {
+                                            sleep(3);
+                                            int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                                        }
+                                    }
+                                    int send_res=send(new_socket2,apisendcog.c_str(),apisendcog.length(),0);
+                                }
+
+                                // CREATE NEW SERVER ACCOUNT
+                                if (realstring.substr(0.6) == "create") {
+
+                                }
+
+                                // RESET PASSWORD
+                                if (realstring.substr(0,6) == "passwo") {
+                                    
+                                }
+
+                                // LOAD/CREATE API KEY
+                                if (realstring.substr(0.6) == "apikey") {
+                                    if (realstring.length() >= 12) {
+                                        if (realstring.substr(6,1) == ",") {
+                                            if (realstring.substr(7,5) == "show:") {
+                                                if (realstring.length() >= 15) {
+                                                    if (realstring.substr(12,3) == "pi}") {
+                                                        // SHOW THE HONEYPI API FOR PI
+
+                                                    }
+
+                                                    if (realstring.substr(12,3) == "rou") {
+                                                        // SHOW THE HONEYPI API FOR PI
+
+                                                    }
+                                                } else {
+                                                    // SEND ERROR ON API PORT
+                                                    int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                                                }
+                                            }
+                                            
+                                            if (realstring == "creat") {
+                                                // CREATE NEW HONEYPI API TOKENS
+                                            }
+                                        } else {
+                                            // SEND ERROR ON API PORT
+                                            int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                                        }
+                                    } else {
+                                        // SEND ERROR ON API PORT
+                                        int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                                    }
+                                }
+                            } else {
+                                if (realstring.length() >= 4) {
+
+                                    // PING FOR HONEYPI NEW
+                                    if (realstring.susbtr(0,4) == "ping") {
+                                        // NEW PING FOR HONEYPI
+                                    }
+                                } else {
+                                    // SEND ERROR ON API PORT
+                                    int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                                }
+                            }
+                        } else {
+                            // SEND ERROR ON API PORT
+                            int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                        }
+                    } else {
+                        // SEND ERROR ON API PORT
+                        int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                    }
+                } else {
+                    // SEND ERROR ON API PORT
+                    int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                }
+            } else {
+                // SEND ERROR ON API PORT
+                int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+            }
+
+ //        Send a hello message to the client
+         send(new_socket2, hello.c_str(), hello.size(), 0);
+         std::cout << "Hello message sent" << std::endl;
         }
-    
-        read(new_socket2, buffer, 2048);
-        sendtologopen(buffer);
-        std::string bufferstd = buffer;
+    }
+}
 
-        if (bufferstd.length() >= 4) {
 
-        } else {
 
-        }
+        
 
         // ANTI-CRASH PACKET FLOW CHECK
 
@@ -2287,17 +2516,6 @@ void handle11829Connections(int server_fd2) {
             packetsreceivedAPI = 0;
         }
         */
-
-
-
- //        Send a hello message to the client
-         send(new_socket2, hello.c_str(), hello.size(), 0);
-         std::cout << "Hello message sent" << std::endl;
-    }
-}
-
-
-
 
 
 
