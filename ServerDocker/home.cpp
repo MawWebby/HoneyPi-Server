@@ -215,7 +215,9 @@ const std::string mariadbDEVBLOCKFLAG = "SELECT devblockip FROM serversecurity W
 const std::string mariadbremoveoldipaddr = "DELETE FROM serversecurity WHERE ipaddr = '";
 const std::string mariadbpacketheader = "SELECT lastpacket FROM serversecurity WHERE ipaddr = '";
 const std::string mariadbuserpiapikey = "SELECT honeypiapi FROM credentials WHERE user = '";
-
+const std::string mariadbverifyuserpassheader = "SELECT pass FROM credentials WHERE user = '";
+const std::string mariadbuserverifyvalidheader = "SELECT credentialsvalid FROM credential WHERE user = '";
+const std::string mariadbinsertsessionheader = "UPDATE credentials SET clientsession = '";
 
 
 // FILE LOCK VARIABLES
@@ -893,11 +895,85 @@ int mariadbINSERT_ROUTERKEY(std::string routerkey, int slottoinsert, std::string
 
 // MARIADB VALIDATE USER CREDENTIALS
 bool mariadbVALIDATE_USER(std::string username, std::string password) {
+    bool credentialsmatch = false;
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery36 = mariadbverifyuserpassheader + username + "'";
+    sql::ResultSet *res = stmnt->executeQuery(executequery36);
+
+    std::istream *hello = res->getBlob(1);
+    std::string piapi = "";
+    *hello >> piapi;
+
+    if (piapi == password) {
+        credentialsmatch = true;
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery362 = mariadbuserverifyvalidheader + username + "'";
+        sql::ResultSet *res2 = stmnt->executeQuery(executequery362);
+
+        std::istream *hello3 = res2->getBlob(1);
+        std::string piapi1 = "";
+        *hello3 >> piapi1;
+        if (piapi1 == "1") {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        credentialsmatch = false;
+        return false;
+    }
     return false;
+}
+
+// MARIADB INSERT NEW CLIENT SESSION KEY
+int mariadbINSERT_SESSIONKEY(std::string username, std::string sessionToken) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery34 = mariadbinsertsessionheader + sessionToken + "' WHERE user='" + username + "'";
+    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+
+    return 0;
 }
 
 // MARIADB CHECK-IN SCRIPT
@@ -1072,7 +1148,7 @@ std::string generateRandomClientKey() {
 
     // Generate the random string
     std::string random_string = "SS";
-    for (int i = 0; i < 30; ++i) {
+    for (int i = 0; i < 62; ++i) {
         random_string += CHARACTERS[distribution(generator)];
     }
 
@@ -2045,7 +2121,6 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
         if (buffer != "" && sizeof(buffer) >= 7) {
             std::string bufferstring = buffer;
             std::string headerrequest = bufferstring.substr(0,4);
-            loginfo("analyzingconnection");
             
             if (bufferstring.length() >= 7) {
                 // CHANGE HERE FROM GET: / TO GET /
@@ -2175,17 +2250,11 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                             int micronumber = 4;
                             bool pagefoundpost = false;
 
-                            loginfo("PSOT");
-                            if (timey9000 <= timey9000max && completionah == false) {
-                                logcritical("THIS SHOULD WORK");
-                            }
-
                             while(timey9000 <= timey9000max && completionah == false) {
                                 micronumber = micronumber + 1;
                                 timey9000 = timey9000 + 1;
                                 microstring = bufferstring.substr(micronumber, 1);
-                                logwarning(microstring);
-                                if (microstring != "H" || microstring != "/" || microstring != " ") {
+                                if (microstring != "H" && microstring != "/" && microstring != " ") {
                                     if (dashesreceived > 1) {
                                         headerstringpost = headerstringpost + microstring;
                                     }
@@ -2200,10 +2269,9 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                 }
                             }
 
-                            logcritical(headerstringpost);
-
                             // LOGINTOACCOUNT
                             if (headerstringpost == "logintoaccount") {
+                                loginfo("logintoaccount received");
                                 pagefoundpost = true;
                                 int offset = 0;
                                 bool completedlp = false;
@@ -2217,7 +2285,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                     microswisscode = bufferstring.substr(bufferstringlength - offset - 1, 1);
                                     offset = offset + 1;
                                     if (microswisscode == "{") {
-                                        jsonlogin = bufferstring.substr(bufferstringlength - offset - 1, bufferstringlength - offset);
+                                        jsonlogin = bufferstring.substr(bufferstringlength - offset, bufferstringlength - offset - 1);
                                     } else {
                                         timey809 = timey809 + 1;
                                     }
@@ -2225,7 +2293,96 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
                                 if (jsonlogin != "") {
                                     // ADD MARIADB CHECK
-                                    int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
+                                    loginfo(jsonlogin);
+
+                                    // GO AHEAD TO ANALYZE JSON AND SEND IT TO MARIADB TO VERIFY
+                                    std::string userstringverify = jsonlogin.substr(2,8);
+                                    logwarning(userstringverify);
+                                    if (userstringverify == "username"){
+                                        std::string verifyjson = jsonlogin.substr(11,1);
+                                        int analyzenumber = 12;
+                                        logcritical(verifyjson);
+                                        if (verifyjson == ":") {
+                                            int timering80 = 0;
+                                            int timering80max = 80;
+                                            bool timering80set = false;
+                                            int quotations = 0;
+                                            int characternumber = 0;
+                                            std::string hellostring = "";
+                                            std::string username = "";
+                                            while (timering80 <= timering80max && timering80set != true && quotations < 2) {
+                                                logwarning(hellostring);
+                                                hellostring = jsonlogin.substr(analyzenumber, 1);
+                                                if (hellostring.find('"') != std::string::npos) {
+                                                    quotations = quotations + 1;
+                                                    if (quotations > 1) {
+                                                        timering80set = true;
+                                                    }
+                                                } else {
+                                                    if (quotations == 1) {
+                                                        username = username + hellostring;
+                                                    }
+                                                }
+                                                analyzenumber = analyzenumber + 1;
+                                                timering80 = timering80 + 1;
+                                            }
+
+                                            hellostring = jsonlogin.substr(analyzenumber, 1);
+                                            analyzenumber = analyzenumber + 1;
+                                            logcritical(hellostring);
+
+                                            if (hellostring == ",") {
+                                                // WORK ON VERIFYING PASSWORD
+                                                int timering90 = 0;
+                                                int timering90max = 64;
+                                                bool timering90set = false;
+                                                int quotations2 = false;
+                                                int characternumber = 0;
+                                                analyzenumber = analyzenumber + 11;
+                                                std::string password = "";
+                                                while (timering90 <= timering90max && timering90set != true && quotations2 < 2) {
+                                                    hellostring = jsonlogin.substr(analyzenumber, 1);
+                                                    logwarning(hellostring);
+                                                    if (hellostring.find('"') != std::string::npos) {
+                                                        quotations2 = quotations2 + 1;
+                                                        if (quotations2 > 1) {
+                                                            timering90set = true;
+                                                        }
+                                                    } else {
+                                                        if (quotations2 == 1) {
+                                                            password = password + hellostring;
+                                                        }
+                                                    }
+                                                    analyzenumber = analyzenumber + 1;
+                                                    timering90 = timering90 + 1;
+                                                }
+
+                                                std::cout << "RECEIVED CREDENTIALS user=" << username <<", pass=" << password << ";" << std::endl;
+                                                bool verified = mariadbVALIDATE_USER(username, password);
+                                                if (verified == true) {
+                                                    // CREATE SESSION TOKEN AND REDIRECT
+                                                    std::string sessiontoken = generateRandomClientKey();
+                                                    mariadbINSERT_SESSIONKEY(username, sessiontoken);
+                                                    sleep(1);
+                                                    int contentlength = 0;
+                                                    char doublequote = '"';
+                                                    // SEND MODIFIED JSON WITH SUCCESS, CLIENT TOKEN, AND ADDRESS TO FORWARD TO...
+                                                    std::string sendpayloadforlength = "{" + doublequote + "state" + doublequote + ":" + doublequote + "state" + doublequote + "," + doublequote + "token" + doublequote + ":" + doublequote + sessiontoken + doublequote + "," + doublequote + "redirect" + doublequote + ":" + doublequote + "account.html" + doublequote + "}";
+                                                    contentlength = sendpayloadforlength.length();
+                                                    std::string sendpayloadtoclient = "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length: " + std::to_string(contentlength) + "\r\nConnection: close\r\n" + sendpayloadforlength;
+                                                } else {
+                                                    int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
+                                                }
+                                            } else {
+                                                int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
+                                            }
+                                        } else {
+                                            int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
+                                        }
+                                    } else {
+                                        int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
+                                    }
+                                    
                                 } else {
                                     int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
                                 }
