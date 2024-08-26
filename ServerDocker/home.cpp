@@ -70,7 +70,7 @@ const int BUFFER_SIZE = 1024;
 int serverSocket1 = 0;
 int serverSocket2 = 0;
 int server_fd, new_socket;
-int port1;
+int port1, port4;
 int server_fd2, new_socket2;
 bool packetactive = false;
 bool runningnetworksportAPI = true;
@@ -996,7 +996,7 @@ int mariadbROTATE_CREDENTIALShour() {
 
 // REMOVE ALL SESSION TOKENS EVERY 24 HOURS
 int mariadbREMOVE_SESSIONTOKENS() {
-    
+
 }
 
 // MARIADB ROTATE CREDENTIALS/DAY
@@ -2078,9 +2078,9 @@ std::string readPrivacyPolicy() {
 
 
 
-////////////////////////////////////////////////////////////
-// HANDLE NETWORKED CONNECTIONS (80) - MAIN HTML SERVER!! //
-////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+// HANDLE NETWORKED CONNECTIONS (443) - MAIN HTTPS SERVER!! //
+//////////////////////////////////////////////////////////////
 void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client_fd, struct sockaddr_in client_addr) {
     loginfo("HTTP THREAD");
     std::string ipaddr;
@@ -2372,7 +2372,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                     int contentlength = 0;
                                                     char doublequote = '"';
                                                     // SEND MODIFIED JSON WITH SUCCESS, CLIENT TOKEN, AND ADDRESS TO FORWARD TO...
-                                                    std::string sendpayloadforlength = "{" + doublequote + "state" + doublequote + ":" + doublequote + "state" + doublequote + "," + doublequote + "token" + doublequote + ":" + doublequote + sessiontoken + doublequote + "," + doublequote + "redirect" + doublequote + ":" + doublequote + "account.html" + doublequote + "}";
+                                                    std::string sendpayloadforlength = "{" + doublequote + std::string("state") + doublequote + ":" + doublequote + "state" + doublequote + "," + doublequote + "token" + doublequote + ":" + doublequote + sessiontoken + doublequote + "," + doublequote + "redirect" + doublequote + ":" + doublequote + "account.html" + doublequote + "}";
                                                     contentlength = sendpayloadforlength.length();
                                                     std::string sendpayloadtoclient = "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length: " + std::to_string(contentlength) + "\r\nConnection: close\r\n" + sendpayloadforlength;
                                                 } else {
@@ -2424,9 +2424,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
     //mariadb_REMOVEPACKETFROMIPADDR(ipaddr);
 } 
 
-
-
-void handleConnections80(int server_fd) {
+void handleConnections443(int server_fd) {
 
     port80runningstatus = true;
     int threadnumber = 0;    
@@ -2551,6 +2549,52 @@ void handleConnections80(int server_fd) {
     SSL_free(ssl);
     SSL_CTX_free(ctx);
     logcritical("Finished!");
+}
+
+
+////////////////////////////////////////////////////////////
+// HANDLE NETWORKED CONNECTIONS (80) - MAIN HTTP SERVER!! //
+////////////////////////////////////////////////////////////
+void handleConnections80() {
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in address;
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(80);
+
+    bind(server_fd, (struct sockaddr*)&address, sizeof(address));
+    listen(server_fd, 10);
+
+    while (true) {
+        handleHTTPRedirect(server_fd);
+    }
+
+    close(server_fd);
+}
+
+void handleHTTPRedirect(int server_fd) {
+    struct sockaddr_in address;
+    socklen_t addrlen = sizeof(address);
+
+    int client_fd = accept(server_fd, (struct sockaddr*)&address, &addrlen);
+    if (client_fd < 0) {
+        perror("Unable to accept");
+        return;
+    }
+
+    // Simple HTTP response for redirection
+    const char *response =
+        "HTTP/1.1 301 Moved Permanently\r\n"
+        "Location: https://10.72.91.159/ \r\n"
+        "Content-Length: 0\r\n"
+        "Connection: close\r\n"
+        "\r\n";
+
+    // Send the redirect response
+    send(client_fd, response, strlen(response), 0);
+
+    // Close the connection
+    close(client_fd);
 }
 
 
@@ -2891,6 +2935,45 @@ int createnetworkport80() {
     return server_fd;
 }
 
+int createnetworkport443() {
+    int PORT = 443;
+    int server_fd3, new_socket3;
+    ssize_t valread3;
+    struct sockaddr_in address3;
+    socklen_t addrlen3 = sizeof(address3);
+    std::string hello3 = "Hello from server";
+    int opt = 1;
+
+    // SETUP NETWORK PORTS
+    if((server_fd3 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Forcefully attaching socket to the port 80
+    if (setsockopt(server_fd3, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+
+    // REACHED HERE
+    sendtologopen("...");
+    address3.sin_family = AF_INET;
+    address3.sin_addr.s_addr = INADDR_ANY;
+    address3.sin_port = htons(PORT);
+
+    // Binding the socket to the network address and port
+    if (bind(server_fd3, (struct sockaddr*)&address3, sizeof(address3)) < 0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+    if (listen(server_fd3, 3) < 0) {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+
+    return server_fd3;
+}
 
 
 /////////////////////////
@@ -3836,7 +3919,12 @@ int setup() {
     sendtologopen("[INFO] - Opening Server Ports (1/3)");
     port1 = createnetworkport80();
     sendtolog("Done");
-    sleep(2);
+    sleep(3);
+
+    int PORT = 80;
+    sendtologopen("[INFO] - Opening Server Ports (1/3)");
+    port4 = createnetworkport443();
+    sendtolog("Done");
     sleep(3);
 
     // OPEN NETWORK SERVER PORTS (2/3)
@@ -4004,10 +4092,21 @@ int main() {
 
 
         // SERVER PORT LISTEN THREAD
+        sendtologopen("[INFO] - Creating server thread on port 443 listen...");
+
+        sleep(2);
+        std::thread acceptingClientsThread(handleConnections443, port4);
+        acceptingClientsThread.detach();
+        sleep(1);
+
+        sendtolog("Done");
+
+
+        // SERVER PORT LISTEN THREAD
         sendtologopen("[INFO] - Creating server thread on port 80 listen...");
 
         sleep(2);
-        std::thread acceptingClientsThread(handleConnections80, port1);
+        std::thread acceptingClientsThread(handleConnections80);
         acceptingClientsThread.detach();
         sleep(1);
 
