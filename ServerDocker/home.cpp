@@ -216,7 +216,7 @@ const std::string mariadbremoveoldipaddr = "DELETE FROM serversecurity WHERE ipa
 const std::string mariadbpacketheader = "SELECT lastpacket FROM serversecurity WHERE ipaddr = '";
 const std::string mariadbuserpiapikey = "SELECT honeypiapi FROM credentials WHERE user = '";
 const std::string mariadbverifyuserpassheader = "SELECT pass FROM credentials WHERE user = '";
-const std::string mariadbuserverifyvalidheader = "SELECT credentialsvalid FROM credential WHERE user = '";
+const std::string mariadbuserverifyvalidheader = "SELECT credentialsvalid FROM credentials WHERE user = '";
 const std::string mariadbinsertsessionheader = "UPDATE credentials SET clientsession = '";
 
 
@@ -913,43 +913,46 @@ bool mariadbVALIDATE_USER(std::string username, std::string password) {
     // Execute query
     std::string executequery36 = mariadbverifyuserpassheader + username + "'";
     sql::ResultSet *res = stmnt->executeQuery(executequery36);
+    if (res->next() == true) {
+        std::istream *hello = res->getBlob(1);
+        std::string piapi = "";
+        *hello >> piapi;
 
-    std::istream *hello = res->getBlob(1);
-    std::string piapi = "";
-    *hello >> piapi;
+        if (piapi == password) {
+            credentialsmatch = true;
+            // Instantiate Driver
+            sql::Driver* driver = sql::mariadb::get_driver_instance();
 
-    if (piapi == password) {
-        credentialsmatch = true;
-        // Instantiate Driver
-        sql::Driver* driver = sql::mariadb::get_driver_instance();
+            // Configure Connection
+            sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+            sql::Properties properties({{"user", "root"}, {"password", legendstring}});
 
-        // Configure Connection
-        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-        // Establish Connection
-        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+            // Establish Connection
+            std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
-        // Create a new Statement
-        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-        
-        // Execute query
-        std::string executequery362 = mariadbuserverifyvalidheader + username + "'";
-        sql::ResultSet *res2 = stmnt->executeQuery(executequery362);
+            // Create a new Statement
+            std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+            
+            // Execute query
+            std::string executequery362 = mariadbuserverifyvalidheader + username + "'";
+            sql::ResultSet *res2 = stmnt->executeQuery(executequery362);
 
-        std::istream *hello3 = res2->getBlob(1);
-        std::string piapi1 = "";
-        *hello3 >> piapi1;
-        if (piapi1 == "1") {
-            return true;
+            std::istream *hello3 = res2->getBlob(1);
+            std::string piapi1 = "";
+            *hello3 >> piapi1;
+            if (piapi1 == "1") {
+                return true;
+            } else {
+                return false;
+            }
         } else {
+            credentialsmatch = false;
             return false;
         }
     } else {
-        credentialsmatch = false;
         return false;
-    }
+    }    
     return false;
 }
 
@@ -997,6 +1000,10 @@ int mariadbROTATE_CREDENTIALShour() {
 // REMOVE ALL SESSION TOKENS EVERY 24 HOURS
 int mariadbREMOVE_SESSIONTOKENS() {
 
+
+
+
+    return 0;
 }
 
 // MARIADB ROTATE CREDENTIALS/DAY
@@ -1064,9 +1071,7 @@ std::string generateRandomStringHoneyPI() {
     loginfo("CREATING NEW HoneyPi API KEY");
 
     // Define the list of possible characters
-    const std::string CHARACTERS
-        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
-          "wxyz0123456789";
+    const std::string CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     // Create a random number generator
     std::random_device rd;
@@ -1089,9 +1094,7 @@ std::string generateRandomStringRouterAPI() {
     loginfo("CREATING NEW ROUTER API KEY");
 
     // Define the list of possible characters
-    const std::string CHARACTERS
-        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
-          "wxyz0123456789";
+    const std::string CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     // Create a random number generator
     std::random_device rd;
@@ -1116,9 +1119,7 @@ std::string generateRandomFileName() {
     timedetector();
 
     // Define the list of possible characters
-    const std::string CHARACTERS
-        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
-          "wxyz0123456789";
+    const std::string CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     // Create a random number generator
     std::random_device rd;
@@ -1139,9 +1140,7 @@ std::string generateRandomFileName() {
 
 std::string generateRandomClientKey() {
     // Define the list of possible characters
-    const std::string CHARACTERS
-        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
-          "wxyz0123456789";
+    const std::string CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     // Create a random number generator
     std::random_device rd;
@@ -2372,7 +2371,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                     int contentlength = 0;
                                                     char doublequote = '"';
                                                     // SEND MODIFIED JSON WITH SUCCESS, CLIENT TOKEN, AND ADDRESS TO FORWARD TO...
-                                                    std::string sendpayloadforlength = "{" + doublequote + std::string("state") + doublequote + ":" + doublequote + "state" + doublequote + "," + doublequote + "token" + doublequote + ":" + doublequote + sessiontoken + doublequote + "," + doublequote + "redirect" + doublequote + ":" + doublequote + "account.html" + doublequote + "}";
+                                                    std::string sendpayloadforlength = "{" + doublequote + std::string("state") + doublequote + ":" + doublequote + "ok" + doublequote + "," + doublequote + "token" + doublequote + ":" + doublequote + sessiontoken + doublequote + "," + doublequote + "redirect" + doublequote + ":" + doublequote + "account.html" + doublequote + "}";
                                                     contentlength = sendpayloadforlength.length();
                                                     std::string sendpayloadtoclient = "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length: " + std::to_string(contentlength) + "\r\nConnection: close\r\n" + sendpayloadforlength;
                                                 } else {
@@ -2555,23 +2554,6 @@ void handleConnections443(int server_fd) {
 ////////////////////////////////////////////////////////////
 // HANDLE NETWORKED CONNECTIONS (80) - MAIN HTTP SERVER!! //
 ////////////////////////////////////////////////////////////
-void handleConnections80() {
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in address;
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(80);
-
-    bind(server_fd, (struct sockaddr*)&address, sizeof(address));
-    listen(server_fd, 10);
-
-    while (true) {
-        handleHTTPRedirect(server_fd);
-    }
-
-    close(server_fd);
-}
-
 void handleHTTPRedirect(int server_fd) {
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
@@ -2596,6 +2578,24 @@ void handleHTTPRedirect(int server_fd) {
     // Close the connection
     close(client_fd);
 }
+
+void handleConnections80() {
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in address;
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(80);
+
+    bind(server_fd, (struct sockaddr*)&address, sizeof(address));
+    listen(server_fd, 10);
+
+    while (true) {
+        handleHTTPRedirect(server_fd);
+    }
+
+    close(server_fd);
+}
+
 
 
 
@@ -3916,20 +3916,20 @@ int setup() {
     
     // OPEN NETWORK SERVER PORTS (1/3)
     int PORT = 80;
-    sendtologopen("[INFO] - Opening Server Ports (1/3)");
+    sendtologopen("[INFO] - Opening Server Ports (1/4)");
     port1 = createnetworkport80();
     sendtolog("Done");
     sleep(3);
 
-    int PORT = 80;
-    sendtologopen("[INFO] - Opening Server Ports (1/3)");
+    PORT = 80;
+    sendtologopen("[INFO] - Opening Server Ports (2/4)");
     port4 = createnetworkport443();
     sendtolog("Done");
     sleep(3);
 
     // OPEN NETWORK SERVER PORTS (2/3)
     PORT = 11829;
-    sendtologopen("[INFO] - Opening Server Ports (2/3)...");
+    sendtologopen("[INFO] - Opening Server Ports (3/4)...");
     int server_fd2, new_socket2;
     ssize_t valread2;
     struct sockaddr_in address2;
@@ -3987,7 +3987,7 @@ int setup() {
 
 
     // OPEN SERVER PORT 11830 FOR TELEMETRY
-    sendtologopen("[INFO] - Opening Server Ports (3/3)...");
+    sendtologopen("[INFO] - Opening Server Ports (4/4)...");
     PORT = 11830;
     int server_fd3, new_socket3;
     ssize_t valread3;
@@ -4095,8 +4095,8 @@ int main() {
         sendtologopen("[INFO] - Creating server thread on port 443 listen...");
 
         sleep(2);
-        std::thread acceptingClientsThread(handleConnections443, port4);
-        acceptingClientsThread.detach();
+        std::thread acceptingClientsThread443(handleConnections443, port4);
+        acceptingClientsThread443.detach();
         sleep(1);
 
         sendtolog("Done");
@@ -4106,8 +4106,8 @@ int main() {
         sendtologopen("[INFO] - Creating server thread on port 80 listen...");
 
         sleep(2);
-        std::thread acceptingClientsThread(handleConnections80);
-        acceptingClientsThread.detach();
+        std::thread acceptingClientsThread80(handleConnections80);
+        acceptingClientsThread80.detach();
         sleep(1);
 
         sendtolog("Done");
