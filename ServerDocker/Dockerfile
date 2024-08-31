@@ -10,6 +10,9 @@ RUN apt-get install -y sudo
 RUN apt-get install -y wget
 RUN apt-get install -y apt-utils
 RUN apt-get install -y openssl libssh-dev
+RUN apt-get install -y mariadb-server
+RUN apt-get install -y libcurl4
+RUN apt-get install -y libcurl4-openssl-dev
 
 # Expose Needed Ports
 EXPOSE 80
@@ -37,7 +40,6 @@ RUN mkdir /home/htmlmainweb
 RUN mkdir /home/archives
 
 # INSTALL MARIADB AND MARIADB CONNECTORS
-RUN apt-get install -y mariadb-server
 RUN wget https://dlm.mariadb.com/3848191/Connectors/cpp/connector-cpp-1.1.4/mariadb-connector-cpp_1.1.4-1+maria~bookworm_arm64.deb
 RUN dpkg -i mariadb-connector-cpp_1.1.4-1+maria~bookworm_arm64.deb
 
@@ -46,7 +48,7 @@ COPY . /usr/src/honeypi
 WORKDIR /usr/src/honeypi
 
 # This command compiles your app using GCC, adjust for your source code
-RUN g++ -o run home.cpp -lmariadbcpp -lssl -lcrypto
+RUN g++ -o run home.cpp -lmariadbcpp -lssl -lcrypto -lcurl
 RUN g++ -o test servertest.cpp
 
 # REMOVE UNNEEDED PACKAGES

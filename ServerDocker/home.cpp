@@ -13,6 +13,8 @@
 #include <mariadb/conncpp.hpp>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <curl/curl.h>
+#include <curl/easy.h>
 
 
 const bool debug = false;
@@ -29,6 +31,8 @@ const bool testing = false;
 ////                                                                                     ////
 //// ANY MONETIZATION THAT IS PRODUCED FROM CODE COPIED FROM MATTHEW                     ////
 //// WHITWORTH'S WORK MUST BE GIVEN TO THE DEVELOPER OR LEGAL ACTION WILL BE USED        ////
+////                                                                                     ////
+//// ANY ACCESS TO THIS CODE WITH THE PERMISSION OF MATTHEW WHITWORTH IS PROHIBITED!     ////
 /////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -54,7 +58,9 @@ int heartbeat = 29;
 std::string erroroccurred = "";
 bool logfilepresent = false;
 bool serverdumpfilefound = false;
-
+bool searchforupdates = true;
+std::string updatefileinformationserver;
+std::string updatefileinformationhoneypi;
 
 
 // DOCKER VARIABLES
@@ -336,6 +342,90 @@ void logcritical(std::string data2) {
 }
 
 
+
+
+
+
+////////////////////////////////
+////////////////////////////////
+//// CURL/UPDATE OPERATIONS ////
+////////////////////////////////
+////////////////////////////////
+size_t write_callbackserver(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    updatefileinformationserver = updatefileinformationserver + ptr;
+
+    return updatefileinformationserver.length();
+}
+
+size_t write_callbackhoneypi(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    updatefileinformationhoneypi = updatefileinformationhoneypi + ptr;
+
+    return updatefileinformationhoneypi.length();
+}
+
+void checkforserverupdates() {
+    CURL *curl = curl_easy_init();
+    if(curl) {
+        CURLcode res;
+        curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/server.txt");
+        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackserver);
+        res = curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+
+        // PERFORM CURL
+        res = curl_easy_perform(curl);
+        std::cout << "RECEIVED GITHUB INFORMATION: " << updatefileinformationserver << std::endl;
+    
+        // CLEAN UP CURL COMMAND
+        curl_easy_cleanup(curl);
+    }
+}
+
+void checkforhoneypiupdates() {
+    CURL *curl = curl_easy_init();
+    if(curl) {
+        CURLcode res;
+        curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/mainversion.txt");
+        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackhoneypi);
+        res = curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+
+        // PERFORM CURL
+        res = curl_easy_perform(curl);
+        std::cout << "RECEIVED GITHUB INFORMATION: " << updatefileinformationhoneypi << std::endl;
+    
+        // CLEAN UP CURL COMMAND
+        curl_easy_cleanup(curl);
+    }
+}
+
+bool honeypiupdateavailable() {
+    std::string aStd = updatefileinformationhoneypi;
+}
+
+bool serverupdateavailable() {
+    std::string aStd = updatefileinformationserver;
+    if (aStd.length() >= 30) {
+        std::string header1 = aStd.substr(0, 19);
+        if (header1 == "supportedversion = ") {
+            std::string version1 = aStd.substr(19,5);
+            std::string nextcharacter = aStd.substr(24,1);
+            if (nextcharacter == ";") {
+
+            } else {
+                
+            }
+
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+    return false;
+}
+
+int updatetoNewServer() {
+    
+}
 
 
 
@@ -3072,7 +3162,14 @@ int setup() {
 
 
     // CHECK FOR SYSTEM UPDATES
-    sendtolog("[WARNING] - Updates Disabled - Future");
+    sendtologopen("[INFO] - Checking for Server Updates...");
+    checkforserverupdates();
+    bool serverupdate = serverupdateavailable();
+    sendtolog("Done");
+    sendtologopen("[INFO] - Checking for HoneyPi Updates...");
+    checkforhoneypiupdates();
+    bool honeypiupdate = honeypiupdateavailable();
+    sendtolog("Done");
 
 
 
