@@ -938,21 +938,28 @@ bool mariadbVALIDATE_USER(std::string username, std::string password) {
             std::string executequery362 = mariadbuserverifyvalidheader + username + "'";
             sql::ResultSet *res2 = stmnt->executeQuery(executequery362);
 
-            std::istream *hello3 = res2->getBlob(1);
-            std::string piapi1 = "";
-            *hello3 >> piapi1;
-            if (piapi1 == "1") {
-                return true;
-            } else {
-                return false;
+            if (res2->next() == true) {
+                std::istream *hello3 = res2->getBlob(1);
+                std::string piapi1 = "";
+                *hello3 >> piapi1;
+                if (piapi1 == "1") {
+                    loginfo("THAT IS TRUE");
+                    return true;
+                } else {
+                    return false;
+                }
             }
         } else {
             credentialsmatch = false;
             return false;
         }
     } else {
+
+        // ADD INVALID USER
         return false;
     }    
+
+    // ADD INVALID USER
     return false;
 }
 
@@ -1827,7 +1834,8 @@ int loadloginHTMLintoram() {
                 loginpayload = loginpayload + templine + "\n";
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\r\nContent-Type:text/html\r\nConnection: close\r\nContent-Length: ";
+        // Connection: close\r\n
+        std::string httpsuccess = "HTTP/1.1 200 OK\r\nContent-Type:text/html\r\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = loginpayload.length();
         loginpayload = httpsuccess + std::to_string(length) + beforepayload + loginpayload;
@@ -2363,17 +2371,22 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
                                                 std::cout << "RECEIVED CREDENTIALS user=" << username <<", pass=" << password << ";" << std::endl;
                                                 bool verified = mariadbVALIDATE_USER(username, password);
+                                                std::cout << "RECEIVED VERIFIED STATUS OF " << verified << std::endl;
                                                 if (verified == true) {
                                                     // CREATE SESSION TOKEN AND REDIRECT
+                                                    loginfo("SENDING TO ACCOUNT PAGE");
                                                     std::string sessiontoken = generateRandomClientKey();
                                                     mariadbINSERT_SESSIONKEY(username, sessiontoken);
                                                     sleep(1);
                                                     int contentlength = 0;
                                                     char doublequote = '"';
                                                     // SEND MODIFIED JSON WITH SUCCESS, CLIENT TOKEN, AND ADDRESS TO FORWARD TO...
-                                                    std::string sendpayloadforlength = "{" + doublequote + std::string("state") + doublequote + ":" + doublequote + "ok" + doublequote + "," + doublequote + "token" + doublequote + ":" + doublequote + sessiontoken + doublequote + "," + doublequote + "redirect" + doublequote + ":" + doublequote + "account.html" + doublequote + "}";
+                                                    std::string sendpayloadforlength = std::string("{") + doublequote + std::string("state") + doublequote + ":" + doublequote + "ok" + doublequote + "," + doublequote + "token" + doublequote + ":" + doublequote + sessiontoken + doublequote + "," + doublequote + "redirect" + doublequote + ":" + doublequote + "account.html" + doublequote + "}";
                                                     contentlength = sendpayloadforlength.length();
-                                                    std::string sendpayloadtoclient = "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length: " + std::to_string(contentlength) + "\r\nConnection: close\r\n" + sendpayloadforlength;
+                                                    std::string sendpayloadtoclient = "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length: " + std::to_string(contentlength) + "\r\n" + sendpayloadforlength;
+                                                    int send_res=SSL_write(ssl, sendpayloadtoclient.c_str(), sendpayloadtoclient.length());
+                                                    sendtologopen("Sent Payload: ");
+                                                    sendtolog(sendpayloadtoclient);
                                                 } else {
                                                     int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
                                                 }
@@ -3059,45 +3072,7 @@ int setup() {
 
 
     // CHECK FOR SYSTEM UPDATES
-    sendtologopen("[INFO] - Checking for Updates...");
-    if (checkforupdates == true) {
-        // CHECK FOR SYSTEM UPDATES
-        int returnedvalue = system("apt-get update > nul:");
-        if (returnedvalue == 0) {
-            sendtolog("Done");
-        } else {
-            sendtolog("ERROR");
-            logcritical("UNABLE TO CHECK FOR SYSTEM UPDATES!");
-            logcritical("This could be potentially dangerous!");
-            logcritical("KILLING PROCESS!");
-            startupchecks = startupchecks + 1;
-            return 1;
-            return 1;
-            return 1;
-        }
-
-
-
-        // CHECK FOR SYSTEM UPDATES
-        sendtologopen("[INFO] - Updating System...");
-        int returnedvalue2 = system("apt-get upgrade -y > nul:");
-        if (returnedvalue2 == 0) {
-            sendtolog("Done");
-        } else {
-            sendtolog("ERROR");
-            logcritical("UNABLE TO UPGRADE SYSTEM!");
-            logcritical("This could be potentially dangerous!");
-            logcritical("KILLING PROCESS!");
-            startupchecks = startupchecks + 1;
-            return 1;
-            return 1;
-            return 1;
-        }
-
-    } else {
-        sendtolog("disabled");
-        logwarning("UNABLE TO CHECK FOR UPDATES! (SYSTEM DISABLED)");
-    }
+    sendtolog("[WARNING] - Updates Disabled - Future");
 
 
 
