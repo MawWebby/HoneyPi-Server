@@ -15,6 +15,7 @@
 #include <openssl/err.h>
 #include <curl/curl.h>
 #include <curl/easy.h>
+#include <map>
 
 
 const bool debug = false;
@@ -137,8 +138,15 @@ const std::string apideny = "HAPI/1.1 400 OK\nContent-Type:test/json\nContent-Le
 const std::string apiunavailable = "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 20\n\n{state: unavailable}";
 const std::string apinotfound = "HAPI/1.1 404 OK\nContent-Type:text/json\n\nContent-Length: 17\n\n{state: notfound}";
 const std::string apitrigger = "HAPI/1.1 200 OK\nContent-Type:text/json\n\nContent-Length:18\n\n{state: triggered}";
-const std::string apisuccess = "HAPI/1.1 200 OK\nContent-Type:test/json\nContent-Length: 17\n\n{state: success}";
-
+const std::string apisuccess = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent-Length: 17\n\n{state: success}";
+const std::string apisendliststandard = "HAPI/1.1 200 OK\nContent-Type:text/text\nContent-Length: ";
+const std::string apisendlist2standard = "\n\n{state: success; crypt: ";
+const std::string apisendlist3standard = "; let: ";
+const std::string apisendlist4standard = "}";
+std::string ipliststandardunencrypt = "";
+std::string iplistSTRICTunencrypt = "";
+std::string ipliststandardENC = "";
+std::string iplistSTRICTENC = "";
 
 
 // FILES 
@@ -233,6 +241,10 @@ const std::string mariadbinsertsessionheader = "UPDATE credentials SET clientses
 const std::string mariadbreademail = "SELECT email FROM credentials WHERE user = '";
 const std::string mariadbresetpasswordheader = "UPDATE credentials SET pass = '";
 const std::string mariadbremovepiapiheader = "UPDATE credentials SET honeypiapi = '' WHERE user = '";
+const std::string mariadbcheckinhoneypiheader = "UPDATE credentials SET honeypilastcheckin = '0' WHERE honeypiapi = '";
+const std::string mariadbloadalluserswithsessiontokens = "SELECT user FROM credentials WHERE clientsession != ''";
+const std::string mariadbloadalluserswithhoneypis = "SELECT user FROM credentials WHERE honeypilastcheckin != 0";
+const std::string mariadbremovesessionID24hours = "UPDATE credentials SET clientsession = '' WHERE user = '";
 
 
 // FILE LOCK VARIABLES
@@ -270,6 +282,1047 @@ bool calculatingtime = false;
 // 4 - 6-Hour Maintenance Timer
 // 5 - 30-Minute Wait for COGs
 
+
+
+
+
+// ENCRYPT IP VARIABLES! - CRYPT/NUMBERIPADDR/EVALUE
+std::map<std::pair<int,int>, std::string> encryptip = {
+    {{0,0}, "a"},
+    {{0,1}, "b"},
+    {{0,2}, "c"},
+    {{0,3}, "d"},
+    {{0,4}, "e"},
+    {{0,5}, "f"},
+    {{0,6}, "g"},
+    {{0,7}, "h"},
+    {{0,8}, "i"},
+    {{0,9}, "j"},
+    {{0,10}, "k"},
+    {{0,11}, "l"},
+    {{0,12}, "m"},
+    {{0,13}, "n"},
+    {{1,0}, "b"},
+    {{1,1}, "c"},
+    {{1,2}, "d"},
+    {{1,3}, "e"},
+    {{1,4}, "f"},
+    {{1,5}, "g"},
+    {{1,6}, "h"},
+    {{1,7}, "i"},
+    {{1,8}, "j"},
+    {{1,9}, "k"},
+    {{1,10}, "l"},
+    {{1,11}, "m"},
+    {{1,12}, "n"},
+    {{1,13}, "o"},
+    {{2,0}, "Q"},
+    {{2,1}, "W"},
+    {{2,2}, "E"},
+    {{2,3}, "R"},
+    {{2,4}, "T"},
+    {{2,5}, "Y"},
+    {{2,6}, "U"},
+    {{2,7}, "I"},
+    {{2,8}, "O"},
+    {{2,9}, "P"},
+    {{2,10}, "A"},
+    {{2,11}, "S"},
+    {{2,12}, "D"},
+    {{2,13}, "F"},
+    {{3,0}, "G"},
+    {{3,1}, "H"},
+    {{3,2}, "J"},
+    {{3,3}, "K"},
+    {{3,4}, "L"},
+    {{3,5}, "M"},
+    {{3,6}, "N"},
+    {{3,7}, "B"},
+    {{3,8}, "V"},
+    {{3,9}, "C"},
+    {{3,10}, "P"},
+    {{3,11}, "X"},
+    {{3,12}, "A"},
+    {{3,13}, "S"},
+    {{4,0}, "U"},
+    {{4,1}, "Y"},
+    {{4,2}, "T"},
+    {{4,3}, "R"},
+    {{4,4}, "E"},
+    {{4,5}, "W"},
+    {{4,6}, "N"},
+    {{4,7}, "B"},
+    {{4,8}, "V"},
+    {{4,9}, "X"},
+    {{4,10}, "L"},
+    {{4,11}, "K"},
+    {{4,12}, "J"},
+    {{4,13}, "H"},
+    {{5,0}, "t"},
+    {{5,1}, "y"},
+    {{5,2}, "u"},
+    {{5,3}, "i"},
+    {{5,4}, "o"},
+    {{5,5}, "p"},
+    {{5,6}, "k"},
+    {{5,7}, "j"},
+    {{5,8}, "h"},
+    {{5,9}, "g"},
+    {{5,10}, "f"},
+    {{5,11}, "d"},
+    {{5,12}, "s"},
+    {{5,13}, "a"},
+    {{6,0}, "o"},
+    {{6,1}, "i"},
+    {{6,2}, "u"},
+    {{6,3}, "y"},
+    {{6,4}, "a"},
+    {{6,5}, "e"},
+    {{6,6}, "b"},
+    {{6,7}, "c"},
+    {{6,8}, "d"},
+    {{6,9}, "e"},
+    {{6,10}, "f"},
+    {{6,11}, "g"},
+    {{6,12}, "h"},
+    {{6,13}, "i"},
+    {{7,0}, "k"},
+    {{7,1}, "l"},
+    {{7,2}, "m"},
+    {{7,3}, "n"},
+    {{7,4}, "o"},
+    {{7,5}, "p"},
+    {{7,6}, "q"},
+    {{7,7}, "r"},
+    {{7,8}, "s"},
+    {{7,9}, "t"},
+    {{7,10}, "u"},
+    {{7,11}, "v"},
+    {{7,12}, "w"},
+    {{7,13}, "x"},
+    {{8,0}, "y"},
+    {{8,1}, "z"},
+    {{8,2}, "A"},
+    {{8,3}, "b"},
+    {{8,4}, "E"},
+    {{8,5}, "G"},
+    {{8,6}, "h"},
+    {{8,7}, "T"},
+    {{8,8}, "u"},
+    {{8,9}, "F"},
+    {{8,10}, "K"},
+    {{8,11}, "J"},
+    {{8,12}, "L"},
+    {{8,13}, "O"},
+    {{9,0}, "Q"},
+    {{9,1}, "E"},
+    {{9,2}, "T"},
+    {{9,3}, "U"},
+    {{9,4}, "O"},
+    {{9,5}, "K"},
+    {{9,6}, "J"},
+    {{9,7}, "G"},
+    {{9,8}, "F"},
+    {{9,9}, "A"},
+    {{9,10}, "V"},
+    {{9,11}, "B"},
+    {{9,12}, "N"},
+    {{9,13}, "M"},
+    {{10,0}, "U"},
+    {{10,1}, "K"},
+    {{10,2}, "J"},
+    {{10,3}, "Y"},
+    {{10,4}, "H"},
+    {{10,5}, "G"},
+    {{10,6}, "T"},
+    {{10,7}, "R"},
+    {{10,8}, "F"},
+    {{10,9}, "D"},
+    {{10,10}, "E"},
+    {{10,11}, "S"},
+    {{10,12}, "A"},
+    {{10,13}, "W"},
+    {{11,0}, "1"},
+    {{11,1}, "2"},
+    {{11,2}, "3"},
+    {{11,3}, "4"},
+    {{11,4}, "5"},
+    {{11,5}, "6"},
+    {{11,6}, "7"},
+    {{11,7}, "8"},
+    {{11,8}, "9"},
+    {{11,9}, "a"},
+    {{11,10}, "b"},
+    {{11,11}, "c"},
+    {{11,12}, "d"},
+    {{11,13}, "e"},
+};
+
+std::string charactermap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+
+
+
+//                              0        1         2         3         4         5         6         7     7
+//                              1234567890123456789012345678901234567890123456789012345678901234567890123456
+// chactermap for unecnrypt =  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789;:/`~[{()}]?%!"
+//                              )}]?%!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789;:/`~[{(
+// ACTUAL CHARACTER MAP =      "}]?%!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789;:/`~[{()"
+// UNENCRYPT COGS! - CRYPT/EVALUE/REALVALUE
+std::map<std::pair<int, std::string>, std::string> uecryptcog = {
+    {{0, "}"}, "A"},
+    {{0, "]"}, "B"},
+    {{0, "?"}, "C"},
+    {{0, "%"}, "D"},
+    {{0, "!"}, "E"},
+    {{0, "A"}, "F"},
+    {{0, "B"}, "G"},
+    {{0, "C"}, "H"},
+    {{0, "D"}, "I"},
+    {{0, "E"}, "J"},
+    {{0, "F"}, "K"},
+    {{0, "G"}, "L"},
+    {{0, "H"}, "M"},
+    {{0, "I"}, "N"},
+    {{0, "J"}, "O"},
+    {{0, "K"}, "P"},
+    {{0, "L"}, "Q"},
+    {{0, "M"}, "R"},
+    {{0, "N"}, "S"},
+    {{0, "O"}, "T"},
+    {{0, "P"}, "U"},
+    {{0, "Q"}, "V"},
+    {{0, "R"}, "W"},
+    {{0, "S"}, "X"},
+    {{0, "T"}, "Y"},
+    {{0, "U"}, "Z"},
+    {{0, "V"}, "a"},
+    {{0, "W"}, "b"},
+    {{0, "X"}, "c"},
+    {{0, "Y"}, "d"},
+    {{0, "Z"}, "e"},
+    {{0, "a"}, "f"},
+    {{0, "b"}, "g"},
+    {{0, "c"}, "h"},
+    {{0, "d"}, "i"},
+    {{0, "e"}, "j"},
+    {{0, "f"}, "k"},
+    {{0, "g"}, "l"},
+    {{0, "h"}, "m"},
+    {{0, "i"}, "n"},
+    {{0, "j"}, "o"},
+    {{0, "k"}, "p"},
+    {{0, "l"}, "q"},
+    {{0, "m"}, "r"},
+    {{0, "n"}, "s"},
+    {{0, "o"}, "t"},
+    {{0, "p"}, "u"},
+    {{0, "q"}, "v"},
+    {{0, "r"}, "w"},
+    {{0, "s"}, "x"},
+    {{0, "t"}, "y"},
+    {{0, "u"}, "z"},
+    {{0, "v"}, "0"},
+    {{0, "w"}, "1"},
+    {{0, "x"}, "2"},
+    {{0, "y"}, "3"},
+    {{0, "z"}, "4"},
+    {{0, "0"}, "5"},
+    {{0, "1"}, "6"},
+    {{0, "2"}, "7"},
+    {{0, "3"}, "8"},
+    {{0, "4"}, "9"},
+    {{0, "5"}, ";"},
+    {{0, "6"}, ":"},
+    {{0, "7"}, "/"},
+    {{0, "8"}, "`"},
+    {{0, "9"}, "~"},
+    {{0, ";"}, "["},
+    {{0, ":"}, "{"},
+    {{0, "/"}, "("},
+    {{0, "`"}, "}"},
+    {{0, "~"}, "}"},
+    {{0, "["}, "]"},
+    {{0, "{"}, "?"},
+    {{0, "("}, "%"},
+    {{0, ")"}, "!"},
+    {{1, "}"}, "!"},
+    {{1, "]"}, "A"},
+    {{1, "?"}, "B"},
+    {{1, "%"}, "C"},
+    {{1, "!"}, "D"},
+    {{1, "A"}, "E"},
+    {{1, "B"}, "F"},
+    {{1, "C"}, "G"},
+    {{1, "D"}, "H"},
+    {{1, "E"}, "I"},
+    {{1, "F"}, "J"},
+    {{1, "G"}, "K"},
+    {{1, "H"}, "L"},
+    {{1, "I"}, "M"},
+    {{1, "J"}, "N"},
+    {{1, "K"}, "O"},
+    {{1, "L"}, "P"},
+    {{1, "M"}, "Q"},
+    {{1, "N"}, "R"},
+    {{1, "O"}, "S"},
+    {{1, "P"}, "T"},
+    {{1, "Q"}, "U"},
+    {{1, "R"}, "V"},
+    {{1, "S"}, "W"},
+    {{1, "T"}, "X"},
+    {{1, "U"}, "Y"},
+    {{1, "V"}, "Z"},
+    {{1, "W"}, "a"},
+    {{1, "X"}, "b"},
+    {{1, "Y"}, "c"},
+    {{1, "Z"}, "d"},
+    {{1, "a"}, "e"},
+    {{1, "b"}, "f"},
+    {{1, "c"}, "g"},
+    {{1, "d"}, "h"},
+    {{1, "e"}, "i"},
+    {{1, "f"}, "j"},
+    {{1, "g"}, "k"},
+    {{1, "h"}, "l"},
+    {{1, "i"}, "m"},
+    {{1, "j"}, "n"},
+    {{1, "k"}, "o"},
+    {{1, "l"}, "p"},
+    {{1, "m"}, "q"},
+    {{1, "n"}, "r"},
+    {{1, "o"}, "s"},
+    {{1, "p"}, "t"},
+    {{1, "q"}, "u"},
+    {{1, "r"}, "v"},
+    {{1, "s"}, "w"},
+    {{1, "t"}, "x"},
+    {{1, "u"}, "y"},
+    {{1, "v"}, "z"},
+    {{1, "w"}, "0"},
+    {{1, "x"}, "1"},
+    {{1, "y"}, "2"},
+    {{1, "z"}, "3"},
+    {{1, "0"}, "4"},
+    {{1, "1"}, "5"},
+    {{1, "2"}, "6"},
+    {{1, "3"}, "7"},
+    {{1, "4"}, "8"},
+    {{1, "5"}, "9"},
+    {{1, "6"}, ";"},
+    {{1, "7"}, ":"},
+    {{1, "8"}, "/"},
+    {{1, "9"}, "`"},
+    {{1, ";"}, "~"},
+    {{1, ":"}, "["},
+    {{1, "/"}, "{"},
+    {{1, "`"}, "("},
+    {{1, "~"}, ")"},
+    {{1, "["}, "}"},
+    {{1, "{"}, "]"},
+    {{1, "("}, "?"},
+    {{1, ")"}, "%"},
+    {{2, "}"}, "%"},
+    {{2, "]"}, "!"},
+    {{2, "?"}, "A"},
+    {{2, "%"}, "B"},
+    {{2, "!"}, "C"},
+    {{2, "A"}, "D"},
+    {{2, "B"}, "E"},
+    {{2, "C"}, "F"},
+    {{2, "D"}, "G"},
+    {{2, "E"}, "H"},
+    {{2, "F"}, "I"},
+    {{2, "G"}, "J"},
+    {{2, "H"}, "K"},
+    {{2, "I"}, "L"},
+    {{2, "J"}, "M"},
+    {{2, "K"}, "N"},
+    {{2, "L"}, "O"},
+    {{2, "M"}, "P"},
+    {{2, "N"}, "Q"},
+    {{2, "O"}, "R"},
+    {{2, "P"}, "S"},
+    {{2, "Q"}, "T"},
+    {{2, "R"}, "U"},
+    {{2, "S"}, "V"},
+    {{2, "T"}, "W"},
+    {{2, "U"}, "X"},
+    {{2, "V"}, "Y"},
+    {{2, "W"}, "Z"},
+    {{2, "X"}, "a"},
+    {{2, "Y"}, "b"},
+    {{2, "Z"}, "c"},
+    {{2, "a"}, "d"},
+    {{2, "b"}, "e"},
+    {{2, "c"}, "f"},
+    {{2, "d"}, "g"},
+    {{2, "e"}, "h"},
+    {{2, "f"}, "i"},
+    {{2, "g"}, "j"},
+    {{2, "h"}, "k"},
+    {{2, "i"}, "l"},
+    {{2, "j"}, "m"},
+    {{2, "k"}, "n"},
+    {{2, "l"}, "o"},
+    {{2, "m"}, "p"},
+    {{2, "n"}, "q"},
+    {{2, "o"}, "r"},
+    {{2, "p"}, "s"},
+    {{2, "q"}, "t"},
+    {{2, "r"}, "u"},
+    {{2, "s"}, "v"},
+    {{2, "t"}, "w"},
+    {{2, "u"}, "x"},
+    {{2, "v"}, "y"},
+    {{2, "w"}, "z"},
+    {{2, "x"}, "0"},
+    {{2, "y"}, "1"},
+    {{2, "z"}, "2"},
+    {{2, "0"}, "3"},
+    {{2, "1"}, "4"},
+    {{2, "2"}, "5"},
+    {{2, "3"}, "6"},
+    {{2, "4"}, "7"},
+    {{2, "5"}, "8"},
+    {{2, "6"}, "9"},
+    {{2, "7"}, ";"},
+    {{2, "8"}, ":"},
+    {{2, "9"}, "/"},
+    {{2, ";"}, "`"},
+    {{2, ":"}, "~"},
+    {{2, "/"}, "["},
+    {{2, "`"}, "{"},
+    {{2, "~"}, "("},
+    {{2, "["}, ")"},
+    {{2, "{"}, "}"},
+    {{2, "("}, "]"},
+    {{2, ")"}, "?"},
+    {{3, "}"}, "?"},
+    {{3, "]"}, "%"},
+    {{3, "?"}, "!"},
+    {{3, "%"}, "A"},
+    {{3, "!"}, "B"},
+    {{3, "A"}, "C"},
+    {{3, "B"}, "D"},
+    {{3, "C"}, "E"},
+    {{3, "D"}, "F"},
+    {{3, "E"}, "G"},
+    {{3, "F"}, "H"},
+    {{3, "G"}, "I"},
+    {{3, "H"}, "J"},
+    {{3, "I"}, "K"},
+    {{3, "J"}, "L"},
+    {{3, "K"}, "M"},
+    {{3, "L"}, "N"},
+    {{3, "M"}, "O"},
+    {{3, "N"}, "P"},
+    {{3, "O"}, "Q"},
+    {{3, "P"}, "R"},
+    {{3, "Q"}, "S"},
+    {{3, "R"}, "T"},
+    {{3, "S"}, "U"},
+    {{3, "T"}, "V"},
+    {{3, "U"}, "W"},
+    {{3, "V"}, "X"},
+    {{3, "W"}, "Y"},
+    {{3, "X"}, "Z"},
+    {{3, "Y"}, "a"},
+    {{3, "Z"}, "b"},
+    {{3, "a"}, "c"},
+    {{3, "b"}, "d"},
+    {{3, "c"}, "e"},
+    {{3, "d"}, "f"},
+    {{3, "e"}, "g"},
+    {{3, "f"}, "h"},
+    {{3, "g"}, "i"},
+    {{3, "h"}, "j"},
+    {{3, "i"}, "k"},
+    {{3, "j"}, "l"},
+    {{3, "k"}, "m"},
+    {{3, "l"}, "n"},
+    {{3, "m"}, "o"},
+    {{3, "n"}, "p"},
+    {{3, "o"}, "q"},
+    {{3, "p"}, "r"},
+    {{3, "q"}, "s"},
+    {{3, "r"}, "t"},
+    {{3, "s"}, "u"},
+    {{3, "t"}, "v"},
+    {{3, "u"}, "w"},
+    {{3, "v"}, "x"},
+    {{3, "w"}, "y"},
+    {{3, "x"}, "z"},
+    {{3, "y"}, "0"},
+    {{3, "z"}, "1"},
+    {{3, "0"}, "2"},
+    {{3, "1"}, "3"},
+    {{3, "2"}, "4"},
+    {{3, "3"}, "5"},
+    {{3, "4"}, "6"},
+    {{3, "5"}, "7"},
+    {{3, "6"}, "8"},
+    {{3, "7"}, "9"},
+    {{3, "8"}, ";"},
+    {{3, "9"}, ":"},
+    {{3, ";"}, "/"},
+    {{3, ":"}, "`"},
+    {{3, "/"}, "~"},
+    {{3, "`"}, "["},
+    {{3, "~"}, "{"},
+    {{3, "["}, "("},
+    {{3, "{"}, ")"},
+    {{3, "("}, "}"},
+    {{3, ")"}, "]"},
+    {{4, "}"}, "]"},
+    {{4, "]"}, "?"},
+    {{4, "?"}, "%"},
+    {{4, "%"}, "!"},
+    {{4, "!"}, "A"},
+    {{4, "A"}, "B"},
+    {{4, "B"}, "C"},
+    {{4, "C"}, "D"},
+    {{4, "D"}, "E"},
+    {{4, "E"}, "F"},
+    {{4, "F"}, "G"},
+    {{4, "G"}, "H"},
+    {{4, "H"}, "I"},
+    {{4, "I"}, "J"},
+    {{4, "J"}, "K"},
+    {{4, "K"}, "L"},
+    {{4, "L"}, "M"},
+    {{4, "M"}, "N"},
+    {{4, "N"}, "O"},
+    {{4, "O"}, "P"},
+    {{4, "P"}, "Q"},
+    {{4, "Q"}, "R"},
+    {{4, "R"}, "S"},
+    {{4, "S"}, "T"},
+    {{4, "T"}, "U"},
+    {{4, "U"}, "V"},
+    {{4, "V"}, "W"},
+    {{4, "W"}, "X"},
+    {{4, "X"}, "Y"},
+    {{4, "Y"}, "Z"},
+    {{4, "Z"}, "a"},
+    {{4, "a"}, "b"},
+    {{4, "b"}, "c"},
+    {{4, "c"}, "d"},
+    {{4, "d"}, "e"},
+    {{4, "e"}, "f"},
+    {{4, "f"}, "g"},
+    {{4, "g"}, "h"},
+    {{4, "h"}, "i"},
+    {{4, "i"}, "j"},
+    {{4, "j"}, "k"},
+    {{4, "k"}, "l"},
+    {{4, "l"}, "m"},
+    {{4, "m"}, "n"},
+    {{4, "n"}, "o"},
+    {{4, "o"}, "p"},
+    {{4, "p"}, "q"},
+    {{4, "q"}, "r"},
+    {{4, "r"}, "s"},
+    {{4, "s"}, "t"},
+    {{4, "t"}, "u"},
+    {{4, "u"}, "v"},
+    {{4, "v"}, "w"},
+    {{4, "w"}, "x"},
+    {{4, "x"}, "y"},
+    {{4, "y"}, "z"},
+    {{4, "z"}, "0"},
+    {{4, "0"}, "1"},
+    {{4, "1"}, "2"},
+    {{4, "2"}, "3"},
+    {{4, "3"}, "4"},
+    {{4, "4"}, "5"},
+    {{4, "5"}, "6"},
+    {{4, "6"}, "7"},
+    {{4, "7"}, "8"},
+    {{4, "8"}, "9"},
+    {{4, "9"}, ";"},
+    {{4, ";"}, ":"},
+    {{4, ":"}, "/"},
+    {{4, "/"}, "`"},
+    {{4, "`"}, "~"},
+    {{4, "~"}, "["},
+    {{4, "["}, "{"},
+    {{4, "{"}, "("},
+    {{4, "("}, ")"},
+    {{4, ")"}, "}"},
+    {{5, "}"}, "}"},
+    {{5, "]"}, "]"},
+    {{5, "?"}, "?"},
+    {{5, "%"}, "%"},
+    {{5, "!"}, "!"},
+    {{5, "A"}, "A"},
+    {{5, "B"}, "B"},
+    {{5, "C"}, "C"},
+    {{5, "D"}, "D"},
+    {{5, "E"}, "E"},
+    {{5, "F"}, "F"},
+    {{5, "G"}, "G"},
+    {{5, "H"}, "H"},
+    {{5, "I"}, "I"},
+    {{5, "J"}, "J"},
+    {{5, "K"}, "K"},
+    {{5, "L"}, "L"},
+    {{5, "M"}, "M"},
+    {{5, "N"}, "N"},
+    {{5, "O"}, "O"},
+    {{5, "P"}, "P"},
+    {{5, "Q"}, "Q"},
+    {{5, "R"}, "R"},
+    {{5, "S"}, "S"},
+    {{5, "T"}, "T"},
+    {{5, "U"}, "U"},
+    {{5, "V"}, "V"},
+    {{5, "W"}, "W"},
+    {{5, "X"}, "X"},
+    {{5, "Y"}, "Y"},
+    {{5, "Z"}, "Z"},
+    {{5, "a"}, "a"},
+    {{5, "b"}, "b"},
+    {{5, "c"}, "c"},
+    {{0, "d"}, "d"},
+    {{5, "e"}, "e"},
+    {{5, "f"}, "f"},
+    {{5, "g"}, "g"},
+    {{5, "h"}, "h"},
+    {{5, "i"}, "i"},
+    {{5, "j"}, "k"},
+    {{5, "k"}, "l"},
+    {{5, "l"}, "l"},
+    {{5, "m"}, "m"},
+    {{5, "n"}, "n"},
+    {{5, "o"}, "o"},
+    {{5, "p"}, "p"},
+    {{5, "q"}, "q"},
+    {{5, "r"}, "r"},
+    {{5, "s"}, "s"},
+    {{5, "t"}, "t"},
+    {{5, "u"}, "u"},
+    {{5, "v"}, "v"},
+    {{5, "w"}, "w"},
+    {{5, "x"}, "x"},
+    {{5, "y"}, "y"},
+    {{5, "z"}, "z"},
+    {{5, "0"}, "0"},
+    {{5, "1"}, "1"},
+    {{5, "2"}, "2"},
+    {{5, "3"}, "3"},
+    {{5, "4"}, "4"},
+    {{5, "5"}, "5"},
+    {{5, "6"}, "6"},
+    {{5, "7"}, "7"},
+    {{5, "8"}, "8"},
+    {{5, "9"}, "9"},
+    {{5, ";"}, ";"},
+    {{5, ":"}, ":"},
+    {{5, "/"}, "/"},
+    {{5, "`"}, "`"},
+    {{5, "~"}, "~"},
+    {{5, "["}, "["},
+    {{5, "{"}, "{"},
+    {{5, "("}, "("},
+    {{5, ")"}, "}"},
+    {{6, "}"}, ")"},
+    {{6, "]"}, "}"},
+    {{6, "?"}, "]"},
+    {{6, "%"}, "?"},
+    {{6, "!"}, "%"},
+    {{6, "A"}, "!"},
+    {{6, "B"}, "A"},
+    {{6, "C"}, "B"},
+    {{6, "D"}, "C"},
+    {{6, "E"}, "D"},
+    {{6, "F"}, "E"},
+    {{6, "G"}, "F"},
+    {{6, "H"}, "G"},
+    {{6, "I"}, "H"},
+    {{6, "J"}, "I"},
+    {{6, "K"}, "J"},
+    {{6, "L"}, "K"},
+    {{6, "M"}, "L"},
+    {{6, "N"}, "M"},
+    {{6, "O"}, "N"},
+    {{6, "P"}, "O"},
+    {{6, "Q"}, "P"},
+    {{6, "R"}, "Q"},
+    {{6, "S"}, "R"},
+    {{6, "T"}, "S"},
+    {{6, "U"}, "T"},
+    {{6, "V"}, "U"},
+    {{6, "W"}, "V"},
+    {{6, "X"}, "W"},
+    {{6, "Y"}, "X"},
+    {{6, "Z"}, "Y"},
+    {{6, "a"}, "Z"},
+    {{6, "b"}, "a"},
+    {{6, "c"}, "b"},
+    {{6, "d"}, "c"},
+    {{6, "e"}, "d"},
+    {{6, "f"}, "e"},
+    {{6, "g"}, "f"},
+    {{6, "h"}, "g"},
+    {{6, "i"}, "h"},
+    {{6, "j"}, "i"},
+    {{6, "k"}, "j"},
+    {{6, "l"}, "k"},
+    {{6, "m"}, "l"},
+    {{6, "n"}, "m"},
+    {{6, "o"}, "n"},
+    {{6, "p"}, "o"},
+    {{6, "q"}, "p"},
+    {{6, "r"}, "q"},
+    {{6, "s"}, "r"},
+    {{6, "t"}, "s"},
+    {{6, "u"}, "t"},
+    {{6, "v"}, "u"},
+    {{6, "w"}, "v"},
+    {{6, "x"}, "w"},
+    {{6, "y"}, "x"},
+    {{6, "z"}, "y"},
+    {{6, "0"}, "z"},
+    {{6, "1"}, "0"},
+    {{6, "2"}, "1"},
+    {{6, "3"}, "2"},
+    {{6, "4"}, "3"},
+    {{6, "5"}, "4"},
+    {{6, "6"}, "5"},
+    {{6, "7"}, "6"},
+    {{6, "8"}, "7"},
+    {{6, "9"}, "8"},
+    {{6, ";"}, "9"},
+    {{6, ":"}, ";"},
+    {{6, "/"}, ":"},
+    {{6, "`"}, "/"},
+    {{6, "~"}, "`"},
+    {{6, "["}, "~"},
+    {{6, "{"}, "["},
+    {{6, "("}, "{"},
+    {{6, ")"}, "("},
+
+
+
+
+    {{7, "}"}, "A"},
+    {{7, "]"}, "B"},
+    {{7, "?"}, "C"},
+    {{7, "%"}, "D"},
+    {{7, "!"}, "E"},
+    {{7, "A"}, "F"},
+    {{7, "B"}, "G"},
+    {{7, "C"}, "H"},
+    {{7, "D"}, "I"},
+    {{7, "E"}, "J"},
+    {{7, "F"}, "K"},
+    {{7, "G"}, "L"},
+    {{7, "H"}, "M"},
+    {{7, "I"}, "N"},
+    {{7, "J"}, "O"},
+    {{7, "K"}, "P"},
+    {{7, "L"}, "Q"},
+    {{7, "M"}, "R"},
+    {{7, "N"}, "S"},
+    {{7, "O"}, "T"},
+    {{7, "P"}, "U"},
+    {{7, "Q"}, "V"},
+    {{7, "R"}, "W"},
+    {{7, "S"}, "X"},
+    {{7, "T"}, "Y"},
+    {{7, "U"}, "Z"},
+    {{7, "V"}, "a"},
+    {{7, "W"}, "b"},
+    {{7, "X"}, "c"},
+    {{7, "Y"}, "d"},
+    {{7, "Z"}, "e"},
+    {{7, "a"}, "f"},
+    {{7, "b"}, "g"},
+    {{7, "c"}, "h"},
+    {{7, "d"}, "i"},
+    {{7, "e"}, "j"},
+    {{7, "f"}, "k"},
+    {{7, "g"}, "l"},
+    {{7, "h"}, "m"},
+    {{7, "i"}, "n"},
+    {{7, "j"}, "o"},
+    {{7, "k"}, "p"},
+    {{7, "l"}, "q"},
+    {{7, "m"}, "r"},
+    {{7, "n"}, "s"},
+    {{7, "o"}, "t"},
+    {{7, "p"}, "u"},
+    {{7, "q"}, "v"},
+    {{7, "r"}, "w"},
+    {{7, "s"}, "x"},
+    {{7, "t"}, "y"},
+    {{7, "u"}, "z"},
+    {{7, "v"}, "0"},
+    {{7, "w"}, "1"},
+    {{7, "x"}, "2"},
+    {{7, "y"}, "3"},
+    {{7, "z"}, "4"},
+    {{7, "0"}, "5"},
+    {{7, "1"}, "6"},
+    {{7, "2"}, "7"},
+    {{7, "3"}, "8"},
+    {{7, "4"}, "9"},
+    {{7, "5"}, ";"},
+    {{7, "6"}, ":"},
+    {{7, "7"}, "/"},
+    {{7, "8"}, "`"},
+    {{7, "9"}, "~"},
+    {{7, ";"}, "["},
+    {{7, ":"}, "{"},
+    {{7, "/"}, "("},
+    {{7, "`"}, "}"},
+    {{7, "~"}, "}"},
+    {{7, "["}, "]"},
+    {{7, "{"}, "?"},
+    {{7, "("}, "%"},
+    {{7, ")"}, "!"},
+
+
+
+
+    {{8, "}"}, "A"},
+    {{8, "]"}, "B"},
+    {{8, "?"}, "C"},
+    {{8, "%"}, "D"},
+    {{8, "!"}, "E"},
+    {{8, "A"}, "F"},
+    {{8, "B"}, "G"},
+    {{8, "C"}, "H"},
+    {{8, "D"}, "I"},
+    {{8, "E"}, "J"},
+    {{8, "F"}, "K"},
+    {{8, "G"}, "L"},
+    {{8, "H"}, "M"},
+    {{8, "I"}, "N"},
+    {{8, "J"}, "O"},
+    {{8, "K"}, "P"},
+    {{8, "L"}, "Q"},
+    {{8, "M"}, "R"},
+    {{8, "N"}, "S"},
+    {{8, "O"}, "T"},
+    {{8, "P"}, "U"},
+    {{8, "Q"}, "V"},
+    {{8, "R"}, "W"},
+    {{8, "S"}, "X"},
+    {{8, "T"}, "Y"},
+    {{8, "U"}, "Z"},
+    {{8, "V"}, "a"},
+    {{8, "W"}, "b"},
+    {{8, "X"}, "c"},
+    {{8, "Y"}, "d"},
+    {{8, "Z"}, "e"},
+    {{8, "a"}, "f"},
+    {{8, "b"}, "g"},
+    {{8, "c"}, "h"},
+    {{8, "d"}, "i"},
+    {{8, "e"}, "j"},
+    {{8, "f"}, "k"},
+    {{8, "g"}, "l"},
+    {{8, "h"}, "m"},
+    {{8, "i"}, "n"},
+    {{8, "j"}, "o"},
+    {{8, "k"}, "p"},
+    {{8, "l"}, "q"},
+    {{8, "m"}, "r"},
+    {{8, "n"}, "s"},
+    {{8, "o"}, "t"},
+    {{8, "p"}, "u"},
+    {{8, "q"}, "v"},
+    {{8, "r"}, "w"},
+    {{8, "s"}, "x"},
+    {{8, "t"}, "y"},
+    {{8, "u"}, "z"},
+    {{8, "v"}, "0"},
+    {{8, "w"}, "1"},
+    {{8, "x"}, "2"},
+    {{8, "y"}, "3"},
+    {{8, "z"}, "4"},
+    {{8, "0"}, "5"},
+    {{8, "1"}, "6"},
+    {{8, "2"}, "7"},
+    {{8, "3"}, "8"},
+    {{8, "4"}, "9"},
+    {{8, "5"}, ";"},
+    {{8, "6"}, ":"},
+    {{8, "7"}, "/"},
+    {{8, "8"}, "`"},
+    {{8, "9"}, "~"},
+    {{8, ";"}, "["},
+    {{8, ":"}, "{"},
+    {{8, "/"}, "("},
+    {{8, "`"}, "}"},
+    {{8, "~"}, "}"},
+    {{8, "["}, "]"},
+    {{8, "{"}, "?"},
+    {{8, "("}, "%"},
+    {{8, ")"}, "!"},
+
+
+
+
+    {{9, "}"}, "A"},
+    {{9, "]"}, "B"},
+    {{9, "?"}, "C"},
+    {{9, "%"}, "D"},
+    {{9, "!"}, "E"},
+    {{9, "A"}, "F"},
+    {{9, "B"}, "G"},
+    {{9, "C"}, "H"},
+    {{9, "D"}, "I"},
+    {{9, "E"}, "J"},
+    {{9, "F"}, "K"},
+    {{9, "G"}, "L"},
+    {{9, "H"}, "M"},
+    {{9, "I"}, "N"},
+    {{9, "J"}, "O"},
+    {{9, "K"}, "P"},
+    {{9, "L"}, "Q"},
+    {{9, "M"}, "R"},
+    {{9, "N"}, "S"},
+    {{9, "O"}, "T"},
+    {{9, "P"}, "U"},
+    {{9, "Q"}, "V"},
+    {{9, "R"}, "W"},
+    {{9, "S"}, "X"},
+    {{9, "T"}, "Y"},
+    {{9, "U"}, "Z"},
+    {{9, "V"}, "a"},
+    {{9, "W"}, "b"},
+    {{9, "X"}, "c"},
+    {{9, "Y"}, "d"},
+    {{9, "Z"}, "e"},
+    {{9, "a"}, "f"},
+    {{9, "b"}, "g"},
+    {{9, "c"}, "h"},
+    {{9, "d"}, "i"},
+    {{9, "e"}, "j"},
+    {{9, "f"}, "k"},
+    {{9, "g"}, "l"},
+    {{9, "h"}, "m"},
+    {{9, "i"}, "n"},
+    {{9, "j"}, "o"},
+    {{9, "k"}, "p"},
+    {{9, "l"}, "q"},
+    {{9, "m"}, "r"},
+    {{9, "n"}, "s"},
+    {{9, "o"}, "t"},
+    {{9, "p"}, "u"},
+    {{9, "q"}, "v"},
+    {{9, "r"}, "w"},
+    {{9, "s"}, "x"},
+    {{9, "t"}, "y"},
+    {{9, "u"}, "z"},
+    {{9, "v"}, "0"},
+    {{9, "w"}, "1"},
+    {{9, "x"}, "2"},
+    {{9, "y"}, "3"},
+    {{9, "z"}, "4"},
+    {{9, "0"}, "5"},
+    {{9, "1"}, "6"},
+    {{9, "2"}, "7"},
+    {{9, "3"}, "8"},
+    {{9, "4"}, "9"},
+    {{9, "5"}, ";"},
+    {{9, "6"}, ":"},
+    {{9, "7"}, "/"},
+    {{9, "8"}, "`"},
+    {{9, "9"}, "~"},
+    {{9, ";"}, "["},
+    {{9, ":"}, "{"},
+    {{9, "/"}, "("},
+    {{9, "`"}, "}"},
+    {{9, "~"}, "}"},
+    {{9, "["}, "]"},
+    {{9, "{"}, "?"},
+    {{9, "("}, "%"},
+    {{9, ")"}, "!"},
+
+
+
+
+    {{10, "}"}, "A"},
+    {{10, "]"}, "B"},
+    {{10, "?"}, "C"},
+    {{10, "%"}, "D"},
+    {{10, "!"}, "E"},
+    {{10, "A"}, "F"},
+    {{10, "B"}, "G"},
+    {{10, "C"}, "H"},
+    {{10, "D"}, "I"},
+    {{10, "E"}, "J"},
+    {{10, "F"}, "K"},
+    {{10, "G"}, "L"},
+    {{10, "H"}, "M"},
+    {{10, "I"}, "N"},
+    {{10, "J"}, "O"},
+    {{10, "K"}, "P"},
+    {{10, "L"}, "Q"},
+    {{10, "M"}, "R"},
+    {{10, "N"}, "S"},
+    {{10, "O"}, "T"},
+    {{10, "P"}, "U"},
+    {{10, "Q"}, "V"},
+    {{10, "R"}, "W"},
+    {{10, "S"}, "X"},
+    {{10, "T"}, "Y"},
+    {{10, "U"}, "Z"},
+    {{10, "V"}, "a"},
+    {{10, "W"}, "b"},
+    {{10, "X"}, "c"},
+    {{10, "Y"}, "d"},
+    {{10, "Z"}, "e"},
+    {{10, "a"}, "f"},
+    {{10, "b"}, "g"},
+    {{10, "c"}, "h"},
+    {{10, "d"}, "i"},
+    {{10, "e"}, "j"},
+    {{10, "f"}, "k"},
+    {{10, "g"}, "l"},
+    {{10, "h"}, "m"},
+    {{10, "i"}, "n"},
+    {{10, "j"}, "o"},
+    {{10, "k"}, "p"},
+    {{10, "l"}, "q"},
+    {{10, "m"}, "r"},
+    {{10, "n"}, "s"},
+    {{10, "o"}, "t"},
+    {{10, "p"}, "u"},
+    {{10, "q"}, "v"},
+    {{10, "r"}, "w"},
+    {{10, "s"}, "x"},
+    {{10, "t"}, "y"},
+    {{10, "u"}, "z"},
+    {{10, "v"}, "0"},
+    {{10, "w"}, "1"},
+    {{10, "x"}, "2"},
+    {{10, "y"}, "3"},
+    {{10, "z"}, "4"},
+    {{10, "0"}, "5"},
+    {{10, "1"}, "6"},
+    {{10, "2"}, "7"},
+    {{10, "3"}, "8"},
+    {{10, "4"}, "9"},
+    {{10, "5"}, ";"},
+    {{10, "6"}, ":"},
+    {{10, "7"}, "/"},
+    {{10, "8"}, "`"},
+    {{10, "9"}, "~"},
+    {{10, ";"}, "["},
+    {{10, ":"}, "{"},
+    {{10, "/"}, "("},
+    {{10, "`"}, "}"},
+    {{10, "~"}, "}"},
+    {{10, "["}, "]"},
+    {{10, "{"}, "?"},
+    {{10, "("}, "%"},
+    {{10, ")"}, "!"},
+};
 
 
 
@@ -948,6 +2001,7 @@ bool mariadbPIAPI_keyvalid(std::string apikey) {
 }
 
 // MARIADB ROUTER API KEY VALIDATION
+// FIX LATER
 bool mariadbROUTERAPI_keyvalid(std::string apikey) {
     // Instantiate Driver
     sql::Driver* driver = sql::mariadb::get_driver_instance();
@@ -1163,9 +2217,23 @@ int mariadbINSERT_SESSIONKEY(std::string username, std::string sessionToken) {
 
 // MARIADB CHECK-IN SCRIPT
 int mariadbCHECKIN_HONEYPI(std::string apikey) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
-
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery34 = mariadbcheckinhoneypiheader + apikey + "'";
+    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
 
     return 0;
 }
@@ -1181,10 +2249,45 @@ int mariadbROTATE_CREDENTIALShour() {
 
 // REMOVE ALL SESSION TOKENS EVERY 24 HOURS
 int mariadbREMOVE_SESSIONTOKENS() {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery34 = mariadbloadalluserswithsessiontokens;
+    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+    std::string user;
+    std::istream *blob = res6 -> getBlob(1);
+    while(blob->eof() != true) {
+        *blob >> user;
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbremovesessionID24hours;
+        sql::ResultSet *res8 = stmnt->executeQuery(executequery36);
+    }
     return 0;
 }
 
@@ -1216,7 +2319,7 @@ int mariadbRECEIVE_PAYMENT(std::string user, bool truereceive) {
 }
 
 // MARIADB SET PAYMENT PLAN
-int mariadbSE_TPAYMENT(std::string user, int paymentlevel) {
+int mariadbSET_PAYMENT(std::string user, int paymentlevel) {
 
 
 
@@ -1257,6 +2360,9 @@ int mariadbREMOVE_ROUTERAPI(std::string user, int number) {
 
 int mariadbREMOVE_USER(std::string user, std::string pass) {
 
+
+
+    return 0;
 }
 
 
@@ -1272,7 +2378,7 @@ std::string generateRandomStringHoneyPI() {
     loginfo("CREATING NEW HoneyPi API KEY");
 
     // Define the list of possible characters
-    const std::string CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const std::string CHARACTERS = charactermap;
 
     // Create a random number generator
     std::random_device rd;
@@ -1295,7 +2401,7 @@ std::string generateRandomStringRouterAPI() {
     loginfo("CREATING NEW ROUTER API KEY");
 
     // Define the list of possible characters
-    const std::string CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const std::string CHARACTERS = charactermap;
 
     // Create a random number generator
     std::random_device rd;
@@ -1320,7 +2426,7 @@ std::string generateRandomFileName() {
     timedetector();
 
     // Define the list of possible characters
-    const std::string CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const std::string CHARACTERS = charactermap;
 
     // Create a random number generator
     std::random_device rd;
@@ -1341,7 +2447,7 @@ std::string generateRandomFileName() {
 
 std::string generateRandomClientKey() {
     // Define the list of possible characters
-    const std::string CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const std::string CHARACTERS = charactermap;
 
     // Create a random number generator
     std::random_device rd;
@@ -1893,6 +2999,85 @@ int maintenancescriptSIXHOUR() {
 // FILES ACCESSED
 // CMD RUN FILE
 // COG FILE OPERATIONS
+
+
+
+
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+//// MAIN ENCRYPTION / UNECNRYPTION LOOPS ////
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+int readipliststandard() {
+    std::ifstream iplist231;
+    iplist231.open(ipliststandardfile);
+    // FIRST READ FILE TO UNECNRYPTED STRING
+    if (iplist231.is_open() == true) {
+        bool completiong = false;
+        std::string templine;
+        int timery9 = 0;
+        int timer9max = 0;
+        while (completiong == false) {
+            getline(iplist231, templine);
+            if (templine != "") {
+                timery9 = timery9 + 1;
+                if (timery9 >= timer9max) {
+                    if (ipliststandardunencrypt != "") {
+                        return 0;
+                    } else {
+                        return 1;
+                    }
+                }
+            } else {
+                ipliststandardunencrypt = ipliststandardunencrypt + templine + "\n";
+            }
+        }
+        return 1;
+    }
+    return 1;
+}
+
+int encryptipliststandard() {
+    int yargh = readipliststandard();
+    if (yargh == 0) {
+        std::string templine = ipliststandardunencrypt;
+        int maxlength = ipliststandardunencrypt.length();
+        if (maxlength > 1) {
+            int current = 0;
+            int crypt = int (rand() % 12);
+            std::string currentcharacter;
+            std::string newcharacter;
+            bool matched = false;
+            while (current <= maxlength) {
+                matched = false;
+                currentcharacter = templine.substr(current, current + 1);
+                current = current + 1;
+
+                // TRY TO MATCH TO OPTION BELOW, OTHERWISE KEEP CHARACTER SAME!
+                if (currentcharacter == "0") {
+                    newcharacter = "";
+                }
+
+            }
+        }
+    } else {
+        return 1;
+    }
+    return 1;
+}
+
+int encryptipliststrict() {
+
+}
+
+int unencryptCOG() {
+
+
+
+
+    return 0;
+}
+
 
 
 ////////////////////////////
