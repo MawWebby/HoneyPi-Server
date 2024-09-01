@@ -160,6 +160,12 @@ int cogswaiting = 0;
 
 
 
+// URL LOCATIONS
+const std::string updateserverlocation = "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/server.txt";
+const std::string updatehoneypilocation = "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/mainversion.txt";
+
+
+
 // FILE LOCATIONS
 const char* ipliststrictfile = "/home/listfiles/ipliststrict.txt";
 const char* ipliststandardfile = "/home/listfiles/ipliststandard.txt";
@@ -226,6 +232,7 @@ const std::string mariadbuserverifyvalidheader = "SELECT credentialsvalid FROM c
 const std::string mariadbinsertsessionheader = "UPDATE credentials SET clientsession = '";
 const std::string mariadbreademail = "SELECT email FROM credentials WHERE user = '";
 const std::string mariadbresetpasswordheader = "UPDATE credentials SET pass = '";
+const std::string mariadbremovepiapiheader = "UPDATE credentials SET honeypiapi = '' WHERE user = '";
 
 
 // FILE LOCK VARIABLES
@@ -367,7 +374,7 @@ void checkforserverupdates() {
     CURL *curl = curl_easy_init();
     if(curl) {
         CURLcode res;
-        curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/server.txt");
+        curl_easy_setopt(curl, CURLOPT_URL, updateserverlocation);
         res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackserver);
         res = curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
@@ -384,7 +391,7 @@ void checkforhoneypiupdates() {
     CURL *curl = curl_easy_init();
     if(curl) {
         CURLcode res;
-        curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/mainversion.txt");
+        curl_easy_setopt(curl, CURLOPT_URL, updatehoneypilocation);
         res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackhoneypi);
         res = curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
@@ -1219,18 +1226,37 @@ int mariadbSE_TPAYMENT(std::string user, int paymentlevel) {
 
 // REMOVE PI API FROM DB
 int mariadbREMOVE_PIAPI(std::string user) {
+    // Instantiate Driver
+    sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+    // Configure Connection
+    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+    // Establish Connection
+    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+    // Create a new Statement
+    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+    
+    // Execute query
+    std::string executequery36 = mariadbremovepiapiheader + user + "'";
+    sql::ResultSet *res = stmnt->executeQuery(executequery36);
+
+    return 0;
+}
+
+// REMOVE ROUTER API FROM DB
+int mariadbREMOVE_ROUTERAPI(std::string user, int number) {
 
 
 
     return 0;
 }
 
-// REMOVE ROUTER API FROM DB
-int mariadbREMOVE_ROUTERAPI(std::string user) {
+int mariadbREMOVE_USER(std::string user, std::string pass) {
 
-
-
-    return 0;
 }
 
 
