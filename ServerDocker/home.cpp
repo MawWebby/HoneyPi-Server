@@ -121,6 +121,9 @@ std::string getstartedpayload;
 std::string signuppayload;
 std::string loginpayload;
 std::string blogpayload;
+std::string accountpayload;
+std::string installhtmlpayload;
+std::string installscriptSHpayload;
 const std::string httpfail = "HTTP/1.1 504 OK\nContent-Type:text/html\nContent-Length: 30\n\n<h1>504: Gateway Time-Out</h1>";
 const std::string httpforbidden = "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 23\n\n<h1>403: Forbidden</h1>";
 const std::string httpservererror = "HTTP/1.1 505 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
@@ -201,6 +204,8 @@ const char* TOSEnterprisefile = "/home/htmlmainweb/TOSEnterprise.html";
 const char* PrivacyPolicyfile = "/home/htmlmainweb/privacypolicy.html";
 const char* getstartedfile = "/home/htmlmainweb/get-started.html";
 const char* accountfile = "/home/htmlmainweb/account.html";
+const char* installfile = "/home/htmlmainweb/install.html";
+const char* installBASH = "/home/htmlmainweb/installscript.sh";
 const char* htmlfolder = "/home/htmlmainweb";
 const char* signuphtmlfile = "/home/htmlmainweb/signup.html";
 const char* configpagehtml = "/home/htmlmainweb/config.html";
@@ -246,6 +251,17 @@ const std::string mariadbloadalluserswithsessiontokens = "SELECT user FROM crede
 const std::string mariadbloadalluserswithhoneypis = "SELECT user FROM credentials WHERE honeypilastcheckin != 0";
 const std::string mariadbremovesessionID24hours = "UPDATE credentials SET clientsession = '' WHERE user = '";
 
+const std::map <std::pair<int, int>, std::string> mariadbchangeportstatusheader = {
+    {{0,0}, "UPDATE serverstatus SET port80running = '0'"},
+    {{0,1}, "UPDATE serverstatus SET port80running = '1'"},
+    {{1,0}, "UPDATE serverstatus SET port443running = '0'"},
+    {{1,1}, "UPDATE serverstatus SET port443running = '1'"},
+    {{2,0}, "UPDATE serverstatus SET port11829running = '0'"},
+    {{2,1}, "UPDATE serverstatus SET port11829running = '1'"},
+    {{3,0}, "UPDATE serverstatus SET port11830running = '0'"},
+    {{3,1}, "UPDATE serverstatus SET port11830running = '1'"},
+};
+
 
 // FILE LOCK VARIABLES
 bool ipliststrictlock = false;
@@ -287,7 +303,7 @@ bool calculatingtime = false;
 
 
 // ENCRYPT IP VARIABLES! - CRYPT/NUMBERIPADDR/EVALUE
-std::map<std::pair<int,int>, std::string> encryptip = {
+std::map<std::pair<int,int>, std::string> ecryptip = {
     {{0,0}, "a"},
     {{0,1}, "b"},
     {{0,2}, "c"},
@@ -2344,6 +2360,7 @@ int mariadbREMOVE_ROUTERAPI(std::string user, int number) {
     return 0;
 }
 
+// REMOVE USER FROM DB
 int mariadbREMOVE_USER(std::string user, std::string pass) {
 
 
@@ -2351,7 +2368,60 @@ int mariadbREMOVE_USER(std::string user, std::string pass) {
     return 0;
 }
 
+// CHANGE RUNNING PORT STATUS IN SERVER DB
+// 0 - 80; 1 - 443; 2 - 11829; 3 - 11830
+int mariadbCHANGEPORTSTATUS(int port,bool status) {
+    std::string dbpayload = "";
+//    dbpayload = mariadbchangeportstatusheader[{port, status}];
 
+
+    return 0;
+}
+
+// REVIEW SERVER STATUS
+int mariadbREVIEWSTATUS() {
+
+
+
+    return 0;
+}
+
+// ADD COG TO DB
+int mariadbADDCOGTODB(std::string) {
+
+
+
+    return 0;
+}
+
+// RETURN TOP MOST COG
+std::string mariadbTOPCOG() {
+
+
+
+    return "";
+}
+
+// CLEAR COGS
+int mariadbCLEARCOGS_START() {
+
+
+
+    return 0;
+}
+
+// MARIADB CLEAR COGS
+int mariadbCLEARCOGS_READ() {
+
+
+
+    return 0;
+}
+
+// SET FLAG TO PREVENT COGS FROM BEING ADDED WHILE THEY ARE BEING WRITTEN
+int mariadbSETCOGLOCKINDB() {
+
+}
 
 
 
@@ -3011,7 +3081,7 @@ int readipliststandard() {
                     if (ipliststandardunencrypt != "") {
                         return 0;
                     } else {
-                        return 1;
+                        return 2;
                     }
                 }
             } else {
@@ -3030,21 +3100,81 @@ int encryptipliststandard() {
         int maxlength = ipliststandardunencrypt.length();
         if (maxlength > 1) {
             int current = 0;
-            int crypt = int (rand() % 12);
+            int crypt = int (rand() % 11);
             std::string currentcharacter;
             std::string newcharacter;
             bool matched = false;
-            while (current <= maxlength) {
+            while (current < maxlength) {
                 matched = false;
                 currentcharacter = templine.substr(current, current + 1);
                 current = current + 1;
 
                 // TRY TO MATCH TO OPTION BELOW, OTHERWISE KEEP CHARACTER SAME!
                 if (currentcharacter == "0") {
-                    newcharacter = "";
+                    newcharacter = ecryptip[std::pair{crypt,0}];
+                    matched = true;
+                }
+                if (currentcharacter == "1") {
+                    newcharacter = ecryptip[std::pair{crypt,1}];
+                    matched = true;
+                }
+                if (currentcharacter == "2") {
+                    newcharacter = ecryptip[std::pair{crypt,2}];
+                    matched = true;
+                }
+                if (currentcharacter == "3") {
+                    newcharacter = ecryptip[std::pair{crypt,3}];
+                    matched = true;
+                }
+                if (currentcharacter == "4") {
+                    newcharacter = ecryptip[std::pair{crypt,4}];
+                    matched = true;
+                }
+                if (currentcharacter == "5") {
+                    newcharacter = ecryptip[std::pair{crypt,5}];
+                    matched = true;
+                }
+                if (currentcharacter == "6") {
+                    newcharacter = ecryptip[std::pair{crypt,6}];
+                    matched = true;
+                }
+                if (currentcharacter == "7") {
+                    newcharacter = ecryptip[std::pair{crypt,7}];
+                    matched = true;
+                }
+                if (currentcharacter == "8") {
+                    newcharacter = ecryptip[std::pair{crypt,8}];
+                    matched = true;
+                }
+                if (currentcharacter == "9") {
+                    newcharacter = ecryptip[std::pair{crypt,9}];
+                    matched = true;
+                }
+                if (currentcharacter == ".") {
+                    newcharacter = ecryptip[std::pair{crypt,10}];
+                    matched = true;
+                }
+                if (currentcharacter == ":") {
+                    newcharacter = ecryptip[std::pair{crypt,11}];
+                    matched = true;
+                }
+                if (currentcharacter == ";") {
+                    newcharacter = ecryptip[std::pair{crypt,12}];
+                    matched = true;
+                }
+                if (currentcharacter == "n") {
+                    newcharacter = ecryptip[std::pair{crypt,13}];
+                    matched = true;
                 }
 
+                if (matched == false) {
+                    newcharacter = currentcharacter;
+                }
+                ipliststandardENC = ipliststandardENC + newcharacter;
             }
+            return 0;
+        } else {
+            return 2;
         }
     } else {
         return 1;
@@ -3052,8 +3182,122 @@ int encryptipliststandard() {
     return 1;
 }
 
-int encryptipliststrict() {
+int readipliststrict() {
+    std::ifstream iplist231;
+    iplist231.open(ipliststrictfile);
+    // FIRST READ FILE TO UNECNRYPTED STRING
+    if (iplist231.is_open() == true) {
+        bool completiong = false;
+        std::string templine;
+        int timery9 = 0;
+        int timer9max = 0;
+        while (completiong == false) {
+            getline(iplist231, templine);
+            if (templine != "") {
+                timery9 = timery9 + 1;
+                if (timery9 >= timer9max) {
+                    if (iplistSTRICTunencrypt != "") {
+                        return 0;
+                    } else {
+                        return 2;
+                    }
+                }
+            } else {
+                iplistSTRICTunencrypt = iplistSTRICTunencrypt + templine + "\n";
+            }
+        }
+        return 1;
+    }
+    return 1;
+}
 
+int encryptipliststrict() {
+    int yargh = readipliststrict();
+    if (yargh == 0) {
+        std::string templine = iplistSTRICTunencrypt;
+        int maxlength = iplistSTRICTunencrypt.length();
+        if (maxlength > 1) {
+            int current = 0;
+            int crypt = int (rand() % 11);
+            std::string currentcharacter;
+            std::string newcharacter;
+            bool matched = false;
+            while (current < maxlength) {
+                matched = false;
+                currentcharacter = templine.substr(current, current + 1);
+                current = current + 1;
+
+                // TRY TO MATCH TO OPTION BELOW, OTHERWISE KEEP CHARACTER SAME!
+                if (currentcharacter == "0") {
+                    newcharacter = ecryptip[std::pair{crypt,0}];
+                    matched = true;
+                }
+                if (currentcharacter == "1") {
+                    newcharacter = ecryptip[std::pair{crypt,1}];
+                    matched = true;
+                }
+                if (currentcharacter == "2") {
+                    newcharacter = ecryptip[std::pair{crypt,2}];
+                    matched = true;
+                }
+                if (currentcharacter == "3") {
+                    newcharacter = ecryptip[std::pair{crypt,3}];
+                    matched = true;
+                }
+                if (currentcharacter == "4") {
+                    newcharacter = ecryptip[std::pair{crypt,4}];
+                    matched = true;
+                }
+                if (currentcharacter == "5") {
+                    newcharacter = ecryptip[std::pair{crypt,5}];
+                    matched = true;
+                }
+                if (currentcharacter == "6") {
+                    newcharacter = ecryptip[std::pair{crypt,6}];
+                    matched = true;
+                }
+                if (currentcharacter == "7") {
+                    newcharacter = ecryptip[std::pair{crypt,7}];
+                    matched = true;
+                }
+                if (currentcharacter == "8") {
+                    newcharacter = ecryptip[std::pair{crypt,8}];
+                    matched = true;
+                }
+                if (currentcharacter == "9") {
+                    newcharacter = ecryptip[std::pair{crypt,9}];
+                    matched = true;
+                }
+                if (currentcharacter == ".") {
+                    newcharacter = ecryptip[std::pair{crypt,10}];
+                    matched = true;
+                }
+                if (currentcharacter == ":") {
+                    newcharacter = ecryptip[std::pair{crypt,11}];
+                    matched = true;
+                }
+                if (currentcharacter == ";") {
+                    newcharacter = ecryptip[std::pair{crypt,12}];
+                    matched = true;
+                }
+                if (currentcharacter == "n") {
+                    newcharacter = ecryptip[std::pair{crypt,13}];
+                    matched = true;
+                }
+
+                if (matched == false) {
+                    newcharacter = currentcharacter;
+                }
+                iplistSTRICTENC = iplistSTRICTENC + newcharacter;
+            }
+            return 0;
+        } else {
+            return 2;
+        }
+    } else {
+        return 1;
+    }
+    return 1;
 }
 
 int unencryptCOG() {
@@ -3288,6 +3532,114 @@ int loadgetstartedHTMLintoram() {
     return 1;
 }
 
+int loadaccountHTMLintoram() {
+    std::string templine;
+    std::ifstream accountpayloadfile;
+    accountpayload = "";
+    accountpayloadfile.open(accountfile);
+    bool completionht = false;
+    int timer7 = 0;
+    int timer7max = 5;
+    if (accountpayloadfile.is_open() == true) {
+        while (completionht != true) {
+            getline(accountpayloadfile, templine);
+            if (templine == "" || templine == "</html>") {
+                timer7 = timer7 + 1;
+                if (timer7 >= timer7max) {
+                    completionht = true;
+                }
+            } else {
+                accountpayload = accountpayload + templine;
+            }
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = accountpayload.length();
+        accountpayload = httpsuccess + std::to_string(length) + beforepayload + accountpayload;
+        accountpayloadfile.close();
+        return 0;
+    } else {
+        accountpayload = httpservererror;
+        accountpayloadfile.close();
+        return 1;
+    }
+    accountpayload = httpservererror;
+    accountpayloadfile.close();
+    return 1;
+}
+
+int loadinstallHTMLintoram() {
+    std::string templine;
+    std::ifstream installHTMLFile;
+    installhtmlpayload = "";
+    installHTMLFile.open(installfile);
+    bool completionht = false;
+    int timer7 = 0;
+    int timer7max = 5;
+    if (installHTMLFile.is_open() == true) {
+        while (completionht != true) {
+            getline(installHTMLFile, templine);
+            if (templine == "" || templine == "</html>") {
+                timer7 = timer7 + 1;
+                if (timer7 >= timer7max) {
+                    completionht = true;
+                }
+            } else {
+                installhtmlpayload = installhtmlpayload + templine;
+            }
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = installhtmlpayload.length();
+        installhtmlpayload = httpsuccess + std::to_string(length) + beforepayload + installhtmlpayload;
+        installHTMLFile.close();
+        return 0;
+    } else {
+        installhtmlpayload = httpservererror;
+        installHTMLFile.close();
+        return 1;
+    }
+    installhtmlpayload = httpservererror;
+    installHTMLFile.close();
+    return 1;
+}
+
+int loadinstallscriptSHHTMLintoram() {
+    std::string templine;
+    std::ifstream installSHFile;
+    installscriptSHpayload = "";
+    installSHFile.open(installBASH);
+    bool completionht = false;
+    int timer7 = 0;
+    int timer7max = 5;
+    if (installSHFile.is_open() == true) {
+        while (completionht != true) {
+            getline(installSHFile, templine);
+            if (templine == "" || templine == "</html>") {
+                timer7 = timer7 + 1;
+                if (timer7 >= timer7max) {
+                    completionht = true;
+                }
+            } else {
+                installscriptSHpayload = installscriptSHpayload + templine;
+            }
+        }
+        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
+        std::string beforepayload = "\n\n";
+        int length = installscriptSHpayload.length();
+        installscriptSHpayload = httpsuccess + std::to_string(length) + beforepayload + installscriptSHpayload;
+        installSHFile.close();
+        return 0;
+    } else {
+        installscriptSHpayload = httpservererror;
+        installSHFile.close();
+        return 1;
+    }
+    installscriptSHpayload = httpservererror;
+    installSHFile.close();
+    return 1;
+}
+
 int loadHTMLINTORAM() {
     loginfo("Loading All Main HTML Pages into RAM!");
     int returnvalue = 0;
@@ -3303,6 +3655,12 @@ int loadHTMLINTORAM() {
     loginfo("Done with signup.html");
     returnvalue = returnvalue + loadgetstartedHTMLintoram();
     loginfo("Done with getstarted.html");
+    returnvalue = returnvalue + loadaccountHTMLintoram();
+    loginfo("Done with account.html");
+    returnvalue = returnvalue + loadinstallHTMLintoram();
+    loginfo("Done with install.html");
+    returnvalue = returnvalue + loadinstallscriptSHHTMLintoram();
+    loginfo("Done with installscript.sh");
     // returnvalue = returnvalue + 
     loginfo("Done Loading into Ram");
     return returnvalue;
