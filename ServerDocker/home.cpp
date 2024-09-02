@@ -145,7 +145,7 @@ const std::string httpfail = "HTTP/1.1 504 OK\nContent-Type:text/html\nContent-L
 const std::string httpforbidden = "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 23\n\n<h1>403: Forbidden</h1>";
 const std::string httpservererror = "HTTP/1.1 505 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
 const std::string httpnotfound = "HTTP/1.1 404 OK\nContent-Type:text/html\nContent-Length: 28\n\n<h1>404: Page Not Found</h1>";
-
+const std::string serveraddress = "10.72.91.159";
 
 
 
@@ -4418,49 +4418,59 @@ void handleConnections443(int server_fd) {
 }
 
 
-////////////////////////////////////////////////////////////
-// HANDLE NETWORKED CONNECTIONS (80) - MAIN HTTP SERVER!! //
-////////////////////////////////////////////////////////////
-void handleHTTPRedirect(int server_fd) {
-    struct sockaddr_in address;
-    socklen_t addrlen = sizeof(address);
-
-    int client_fd = accept(server_fd, (struct sockaddr*)&address, &addrlen);
-    if (client_fd < 0) {
-        perror("Unable to accept");
-        return;
+/////////////////////////////////////////////////////////
+// HANDLE NETWORKED CONNECTIONS (80) - HTTP REDIRECT!! //
+/////////////////////////////////////////////////////////
+void handleConnections80() {
+    int server_fd23;
+    int opt = 1;
+    if((server_fd23 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
     }
 
-    // Simple HTTP response for redirection
-    const char *response =
-        "HTTP/1.1 301 Moved Permanently\r\n"
-        "Location: https://10.72.91.159/ \r\n"
-        "Content-Length: 0\r\n"
-        "Connection: close\r\n"
-        "\r\n";
-
-    // Send the redirect response
-    send(client_fd, response, strlen(response), 0);
-
-    // Close the connection
-    close(client_fd);
-}
-
-void handleConnections80() {
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (setsockopt(server_fd23, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
     struct sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(80);
+    int PORT23 = 80;
+    address.sin_port = htons(PORT23);
+    if (bind(server_fd23, (struct sockaddr*)&address, sizeof(address)) < 0) {
+        perror("Bind failed");
+        close(server_fd23);
+        exit(EXIT_FAILURE);
+    }
+    socklen_t addrlen = sizeof(address);
 
-    bind(server_fd, (struct sockaddr*)&address, sizeof(address));
-    listen(server_fd, 10);
-
-    while (true) {
-        handleHTTPRedirect(server_fd);
+    if (listen(server_fd23, 10) < 0) {
+        perror("Listen failed");
+        close(server_fd23);
+        exit(EXIT_FAILURE);
     }
 
-    close(server_fd);
+    while (true) {
+        
+        loginfo("client received");
+        
+        int client_fd = accept(server_fd23, (struct sockaddr*)&address, &addrlen);
+
+        if (client_fd < 0) {
+            perror("Unable to accept");
+            return;
+        }
+
+        // Simple HTTP response for redirection
+        const std::string response = "HTTP/1.1 301 Moved Permanently\r\nLocation: https://" + serveraddress + "/ \r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+        loginfo("SENDING REDIRECT!");
+        loginfo(response);
+        // Send the redirect response
+        send(client_fd, response.c_str(), response.length(), 0);
+        close(client_fd);
+    }
+    close(server_fd23);
 }
 
 
@@ -4754,54 +4764,9 @@ void handle11830Connections(int server_fd2) {
 
 
 
-
-
-
-
-
-
-
-
-int createnetworkport80() {
-    int PORT = 80;
-    int server_fd, new_socket;
-    ssize_t valread;
-    struct sockaddr_in address;
-    socklen_t addrlen = sizeof(address);
-    std::string hello = "Hello from server";
-    int opt = 1;
-
-    // SETUP NETWORK PORTS
-    if((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket failed");
-        exit(EXIT_FAILURE);
-    }
-
-    // Forcefully attaching socket to the port 80
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
-    }
-
-    // REACHED HERE
-    sendtologopen("...");
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
-
-    // Binding the socket to the network address and port
-    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
-    }
-    if (listen(server_fd, 3) < 0) {
-        perror("listen");
-        exit(EXIT_FAILURE);
-    }
-
-    return server_fd;
-}
-
+////////////////////////////////////////
+// CREATE NETWORKED CONNECTIONS (443) //
+////////////////////////////////////////
 int createnetworkport443() {
     int PORT = 443;
     int server_fd3, new_socket3;
@@ -5752,7 +5717,7 @@ int setup() {
     // OPEN NETWORK SERVER PORTS (1/3)
     int PORT = 80;
     sendtologopen("[INFO] - Opening Server Ports (1/4)");
-    port1 = createnetworkport80();
+    //port1 = createnetworkport80();
     sendtolog("Done");
     sleep(3);
 
