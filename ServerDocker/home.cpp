@@ -43,8 +43,24 @@ const bool testing = false;
 /// VARIABLES ///
 /////////////////
 
-// CONSTANT VARIABLES
-const std::string honeyversion = "0.1";
+// VERSION VARIABLES
+const std::string honeyversion = "0.1.0";
+const std::string honeymainversion = honeyversion.substr(0,1);
+const std::string honeyminorversion = honeyversion.substr(2,1);
+const std::string honeyhotfixversion = honeyversion.substr(4,1);
+std::string latesthoneymainMversion;
+std::string latesthoneyminorMversion;
+std::string latesthoneyhotfixMversion;
+std::string latesthoneyPIMmainversion;
+std::string latesthoneyPIMminorversion;
+std::string latesthoneyPIMhotfixversion;
+std::string latesthoneyPIBmainversion;
+std::string latesthoneyPIBminorversion;
+std::string latesthoneyPIBhotfixversion;
+std::string latesthoneyPITmainversion;
+std::string latesthoneyPITminorversion;
+std::string latesthoneyPIThotfixversion;
+
 const int heartbeattime = 10;
 
 
@@ -62,6 +78,7 @@ bool serverdumpfilefound = false;
 bool searchforupdates = true;
 std::string updatefileinformationserver;
 std::string updatefileinformationhoneypi;
+bool updateavailable = false;
 
 
 // DOCKER VARIABLES
@@ -150,6 +167,19 @@ std::string ipliststandardunencrypt = "";
 std::string iplistSTRICTunencrypt = "";
 std::string ipliststandardENC = "";
 std::string iplistSTRICTENC = "";
+
+
+
+
+// DOCKER COMMANDS
+const char* dockerstopcommand = "";
+const char* dockerpullnewversioncommand = "";
+const char* dockerkillcommand = "";
+const char* dockerstopmariadbcommand = "";
+const char* dockermovetonewversioncommand = "";
+const char* dockerstartnewservercommand = "";
+const char* dockerpscommand = "docker ps > nul:";
+
 
 
 // FILES 
@@ -1409,88 +1439,6 @@ void logcritical(std::string data2) {
 
 
 
-
-////////////////////////////////
-////////////////////////////////
-//// CURL/UPDATE OPERATIONS ////
-////////////////////////////////
-////////////////////////////////
-size_t write_callbackserver(char *ptr, size_t size, size_t nmemb, void *userdata) {
-    updatefileinformationserver = updatefileinformationserver + ptr;
-    return updatefileinformationserver.length();
-}
-
-size_t write_callbackhoneypi(char *ptr, size_t size, size_t nmemb, void *userdata) {
-    updatefileinformationhoneypi = updatefileinformationhoneypi + ptr;
-    return updatefileinformationhoneypi.length();
-}
-
-void checkforserverupdates() {
-    CURL *curl = curl_easy_init();
-    if(curl) {
-        CURLcode res;
-        curl_easy_setopt(curl, CURLOPT_URL, updateserverlocation);
-        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackserver);
-        res = curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-
-        // PERFORM CURL
-        res = curl_easy_perform(curl);
-        std::cout << "RECEIVED GITHUB INFORMATION: " << updatefileinformationserver << std::endl;
-    
-        // CLEAN UP CURL COMMAND
-        curl_easy_cleanup(curl);
-    }
-}
-
-void checkforhoneypiupdates() {
-    CURL *curl = curl_easy_init();
-    if(curl) {
-        CURLcode res;
-        curl_easy_setopt(curl, CURLOPT_URL, updatehoneypilocation);
-        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackhoneypi);
-        res = curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-
-        // PERFORM CURL
-        res = curl_easy_perform(curl);
-        std::cout << "RECEIVED GITHUB INFORMATION: " << updatefileinformationhoneypi << std::endl;
-    
-        // CLEAN UP CURL COMMAND
-        curl_easy_cleanup(curl);
-    }
-}
-
-bool honeypiupdateavailable() {
-    std::string aStd = updatefileinformationhoneypi;
-}
-
-bool serverupdateavailable() {
-    std::string aStd = updatefileinformationserver;
-    if (aStd.length() >= 30) {
-        std::string header1 = aStd.substr(0, 19);
-        if (header1 == "supportedversion = ") {
-            std::string version1 = aStd.substr(19,5);
-            std::string nextcharacter = aStd.substr(24,1);
-            if (nextcharacter == ";") {
-
-            } else {
-                
-            }
-
-        } else {
-            return false;
-        }
-    } else {
-        return false;
-    }
-    return false;
-}
-
-int updatetoNewServer() {
-    
-}
-
-
-
 ////////////////////////////
 ////////////////////////////
 //// MARIADB OPERATIONS ////
@@ -2521,6 +2469,183 @@ std::string generateRandomClientKey() {
 
     return random_string;
 }
+
+
+
+
+
+////////////////////////////////
+////////////////////////////////
+//// CURL/UPDATE OPERATIONS ////
+////////////////////////////////
+////////////////////////////////
+// WRITE CALLBACK FOR SERVER DEVICE CHECK
+size_t write_callbackserver(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    updatefileinformationserver = updatefileinformationserver + ptr;
+    return updatefileinformationserver.length();
+}
+
+// WRITE CALLBACK FOR CLIENT DEVICE CHECK
+size_t write_callbackhoneypi(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    updatefileinformationhoneypi = updatefileinformationhoneypi + ptr;
+    return updatefileinformationhoneypi.length();
+}
+
+// CURL FOR SERVER DEVICE CHECK
+void checkforserverupdates() {
+    CURL *curl = curl_easy_init();
+    char errcurlno[CURL_ERROR_SIZE];
+    CURLcode res;
+    res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errcurlno);
+    if(curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/server.txt");
+        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackserver);
+
+        // PERFORM CURL
+        res = curl_easy_perform(curl);
+        //std::cout << "RECEIVED GITHUB INFORMATION: " << updatefileinformationserver << std::endl;
+
+        if (updatefileinformationserver == "") {
+            logcritical("RECEIVED NULL INSTANCE FOR SERVER VERSION!");
+            logcritical(errcurlno);
+            logcritical(curl_easy_strerror(res));
+        }
+    
+        // CLEAN UP CURL COMMAND
+        curl_easy_cleanup(curl);
+    } else {
+        logcritical("AN ERROR OCCURRED IN CURL");
+        logcritical(errcurlno);
+        logcritical(curl_easy_strerror(res));
+    }
+}
+
+// CURL FOR CLIENT DEVICE CHECK
+void checkforhoneypiupdates() {
+    CURL *curl = curl_easy_init();
+    char errcurlno[CURL_ERROR_SIZE];
+    CURLcode res;
+    res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errcurlno);
+    if(curl) {
+        res = curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/mainversion.txt");
+        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackhoneypi);
+
+        // PERFORM CURL
+        res = curl_easy_perform(curl);
+        //std::cout << "RECEIVED GITHUB INFORMATION: " << updatefileinformationhoneypi << std::endl;
+
+        if (updatefileinformationhoneypi == "") {
+            logcritical("RECEIVED NULL INSTANCE FOR CLIENT VERSION!");
+            logcritical(errcurlno);
+            logcritical(curl_easy_strerror(res));
+        }
+    
+        // CLEAN UP CURL COMMAND
+        curl_easy_cleanup(curl);
+    } else {
+        logcritical("AN ERROR OCCURRED IN CURL");
+        logcritical(errcurlno);
+        logcritical(curl_easy_strerror(res));
+    }
+}
+
+// CHECK TO SEE IF LATEST HONEYPI VERSION FOR CLIENT DEVICES HAS CHANGED
+bool checkhoneypiupdateavailable() {
+    checkforhoneypiupdates();
+    std::string aStd = updatefileinformationhoneypi;
+    if (aStd.length() >= 61) {
+        std::string header1 = aStd.substr(0, 14);
+        if (header1 == "latest.main = ") {
+            std::string version1 = aStd.substr(14,5);
+            std::string nextcharacter = aStd.substr(19,2);
+            latesthoneyPIMmainversion = version1.substr(0,1);
+            latesthoneyPIMminorversion = version1.substr(2,1);
+            latesthoneyPIMhotfixversion = version1.substr(4,1);
+            std::string nextversionheader = aStd.substr(21, 14);
+            if (nextversionheader == "latest.beta") {
+                std::string version2 = aStd.substr(35,5);
+                std::string nextcharacter = aStd.substr(40,2);
+                latesthoneyPIBmainversion = version1.substr(0,1);
+                latesthoneyPIBminorversion = version1.substr(2,1);
+                latesthoneyPIBhotfixversion = version1.substr(4,1);
+                std::string nextversionheader2 = aStd.substr(42, 14);
+                if (nextversionheader2 == "latest.test") {
+                    std::string version2 = aStd.substr(56,5);
+                    latesthoneyPITmainversion = version1.substr(0,1);
+                    latesthoneyPITminorversion = version1.substr(2,1);
+                    latesthoneyPIThotfixversion = version1.substr(4,1);
+                    return true;
+                }
+            }
+        }
+    } else {
+        logwarning("UNABLE TO CHECK FOR CLIENT UPDATES!");
+        return false;
+    }
+    return false;
+}
+
+// CHECK TO SEE IF VERSION IS DIFFERENT THAN LISTED
+bool serverupdateavailable() {
+    if (honeymainversion != latesthoneymainMversion || honeyminorversion != latesthoneyminorMversion || honeyhotfixversion != latesthoneyhotfixMversion) {
+        logwarning("New Server Update Available!");
+        return true;
+    } else {
+        loginfo("No New Version Found");
+        return false;
+    }
+}
+
+// CHECK THAT SERVER HAS A VALID HEADER
+bool checkserverupdateavailable() {
+    checkforserverupdates();
+    std::string aStd = updatefileinformationserver;
+    if (aStd.length() >=19) {
+        std::string header1 = aStd.substr(0, 14);
+        if (header1 == "latest.main = ") {
+            std::string version1 = aStd.substr(14,5);
+            latesthoneymainMversion = version1.substr(0,1);
+            latesthoneyminorMversion = version1.substr(2,1);
+            latesthoneyhotfixMversion = version1.substr(4,1);
+            bool updateavailable23 = serverupdateavailable();
+            return updateavailable23;
+        } else {
+            logcritical("INVALID UPDATE HEADER RECEIVED!");
+            return false;
+        }
+    } else {
+        logwarning("UNABLE TO CHECK FOR UPDATES!");
+        return false;
+    }
+    return false;
+}
+
+// UPDATE SCRIPT - UPDATE TO NEW SERVER VERSION
+int updatetoNewServer() {
+    // START PROCESS OF UPDATING
+    logwarning("SERVER STARTING TO UPDATE!");
+
+    // SMALL DELAY
+    sleep(2);
+
+    // SERVER CHECK DOCKER STATUS
+    loginfo("Checking for Docker Control");
+    int res97 = system(dockerpscommand);
+    if (res97 != 0) {
+        logcritical("UNABLE TO COMPLETE DOCKER COMMAND!");
+        logcritical("TERMINATING UPDATE!");
+        return 1;
+    }
+
+    // CLEAR COG FOLDER
+    loginfo("Emptying COGs in DB");
+    int res98 = mariadbCLEARCOGS_READ();
+    if (res98 != 0) {
+        logcritical("UNABLE TO COMPLETE MARIADB COGs!");
+        logcritical("TERMINIATING UPDATE!");
+    }
+}
+
 
 
 
@@ -3663,8 +3788,14 @@ int loadHTMLINTORAM() {
     loginfo("Done with installscript.sh");
     // returnvalue = returnvalue + 
     loginfo("Done Loading into Ram");
-    return returnvalue;
+
+    if (returnvalue != 0) {
+        std::string warning = "LOADING INTO RAM RETURNED VALUE " + std::to_string(returnvalue) + " CONTINUING";
+        logwarning(warning);
+    }
+    return 0;
 }
+
 
 
 // TEMPORARY READS
@@ -4792,14 +4923,16 @@ int setup() {
 
 
     // CHECK FOR SYSTEM UPDATES
+    sleep(1);
+
     sendtologopen("[INFO] - Checking for Server Updates...");
-    checkforserverupdates();
-    bool serverupdate = serverupdateavailable();
+    bool serverupdate = checkserverupdateavailable();
     sendtolog("Done");
     sendtologopen("[INFO] - Checking for HoneyPi Updates...");
-    checkforhoneypiupdates();
-    bool honeypiupdate = honeypiupdateavailable();
+    bool honeypiupdate = checkhoneypiupdateavailable();
     sendtolog("Done");
+
+    sleep(2);
 
 
 
