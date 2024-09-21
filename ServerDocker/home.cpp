@@ -111,6 +111,7 @@ bool port11829runningstatus = false;
 int packetspam = 0;
 bool waiting230 = false;
 bool api11829 = false;
+bool api11830 = false;
 SSL_CTX *ctx = SSL_CTX_new(TLS_server_method());
 SSL_CTX *create_context() {
     const SSL_METHOD *method;
@@ -1458,8 +1459,7 @@ void logcritical(std::string data2, bool complete) {
 }
 
 void debugout(std::string data2) {
-    data2 = "[DEBUG] - " + data2;
-    sendtolog(data2);
+    logdebug(data2, true);
 }
 
 
@@ -2618,7 +2618,6 @@ bool checkhoneypiupdateavailable() {
 
 // CHECK TO SEE IF VERSION IS DIFFERENT THAN LISTED
 bool serverupdateavailable() {
-    loginfo("Checking for Updates", false);
     if (honeymainversion != latesthoneymainMversion || honeyminorversion != latesthoneyminorMversion || honeyhotfixversion != latesthoneyhotfixMversion) {
         sendtolog("New Server Update Available!");
         return true;
@@ -4758,8 +4757,8 @@ void handle11829Connections(int server_fd2) {
 // HANDLE NETWORKED CONNECTIONS (11830) //
 //////////////////////////////////////////
 void handle11830Connections(int server_fd2) {
-    api11829 = true;
-    while(api11829 == true) {
+    api11830 = true;
+    while(api11830 == true) {
         char buffer[2048] = {0};
         struct sockaddr_in address;
         socklen_t addrlen = sizeof(address);
@@ -4772,7 +4771,7 @@ void handle11830Connections(int server_fd2) {
             perror("accept");
             exit(EXIT_FAILURE);
         } else {
-            loginfo("11829 port initialized");
+            loginfo("11830 port initialized", true);
         }
 
     
@@ -4928,14 +4927,14 @@ int setup() {
 
 
     // DETERMINE NETWORK CONNECTIVITY
-    sendtologopen("[INFO] - Checking Network Connectivity...");
+    loginfo("Checking Network Connectivity...", false);
     int learnt = system("ping -c 5 8.8.8.8 > nul:");
     if (learnt == 0) {
         sendtolog("Done");
     } else {
         sendtolog("ERROR");
-        logcritical("UNABLE TO DETERMINE NETWORK CONNECTIVITY!");
-        logcritical("Killing");
+        logcritical("UNABLE TO DETERMINE NETWORK CONNECTIVITY!", true);
+        logcritical("Killing", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -4950,12 +4949,10 @@ int setup() {
     // CHECK FOR SYSTEM UPDATES
     sleep(1);
 
-    sendtologopen("[INFO] - Checking for Server Updates...");
+    loginfo("Checking for Server Updates...", false);
     bool serverupdate = checkserverupdateavailable();
-    sendtolog("Done");
-    sendtologopen("[INFO] - Checking for HoneyPi Updates...");
+    loginfo("Checking for HoneyPi Updates...", false);
     bool honeypiupdate = checkhoneypiupdateavailable();
-    sendtolog("Done");
 
     sleep(2);
 
@@ -4966,13 +4963,13 @@ int setup() {
     int testing = system("cd /home/crashlogs");
     if (testing != 0) {
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN CRASHLOGS FOLDER!");
+        logcritical("UNABLE TO OPEN CRASHLOGS FOLDER!", true);
         startupchecks = startupchecks + 1;
     } else {
         int working = system("rm *");
         if (working != 0) {
             sendtolog("ERROR");
-            logcritical("UNABLE TO CLEAR CRASHLOGS FOLDER!");
+            logcritical("UNABLE TO CLEAR CRASHLOGS FOLDER!", true);
             startupchecks = startupchecks + 1;
         }
     }
@@ -4989,7 +4986,7 @@ int setup() {
     int migration = 0;
 
     // IPLIST STRICT
-    sendtologopen("[INFO] - Attempting to Read from IP LIST Strict TXT File...");
+    loginfo("Attempting to Read from IP LIST Strict TXT File...", false);
     std::ifstream ipliststrict;
     ipliststrict.open(ipliststrictfile);
     if (ipliststrict.is_open() == true) {
@@ -5005,7 +5002,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - IP LIST STRICT - No Version Found, Writing New Version...");
+            logwarning("IP LIST STRICT - No Version Found, Writing New Version...", false);
             ipliststrict.close();
             std::ofstream ipliststrict;
             ipliststrict.open(ipliststrictfile);
@@ -5014,9 +5011,9 @@ int setup() {
             ipliststrict.flush();
             if (ipliststrict.fail() == true) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTRICT");
+                logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTRICT", true);
                 if (ipliststrict.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 ipliststrict.close();
@@ -5026,16 +5023,19 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different IP List Strict Version, Attempting to Update!");
+                logwarning("Detected Different IP List Strict Version, Attempting to Update...", false);
                 // MIGRATION STEPS
-                logwarning("No migration steps detected");
+
+
+
+                sendtolog("No migration steps detected");
             } else {
-                loginfo("IP LIST STRICT Started...");
+                loginfo("IP LIST STRICT Started...", true);
             }
         }
     } else {
         sendtolog("ERROR!");
-        logcritical("UNABLE TO OPEN IP LIST Strict TXT File!");
+        logcritical("UNABLE TO OPEN IP LIST Strict TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5046,7 +5046,7 @@ int setup() {
 
 
     // IP LIST STANDARD
-    sendtologopen("[INFO] - Attempting to Read from IP List Standard File...");
+    loginfo("Attempting to Read from IP List Standard File...", false);
     std::ifstream ipliststandard;
     ipliststandard.open(ipliststandardfile);
     if(ipliststandard.is_open() == true) {
@@ -5062,7 +5062,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - IP LIST STANDARD - No Version Found, Writing New Version...");
+            logwarning("IP LIST STANDARD - No Version Found, Writing New Version...", false);
             ipliststandard.close();
             std::ofstream ipliststandard;
             ipliststandard.open(ipliststandardfile);
@@ -5071,9 +5071,9 @@ int setup() {
             ipliststandard.flush();
             if (ipliststandard.fail()) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTANDARD");
+                logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTANDARD", true);
                 if (ipliststandard.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 ipliststandard.close();
@@ -5083,16 +5083,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different IP List Standard Version, Attempting to Update!");
+                logwarning("Detected Different IP List Standard Version, Attempting to Update...", false);
                 // MIGRATION STEPS
-                logwarning("NO Migration steps detected");
+                sendtolog("NO Migration steps detected");
             } else {
-                loginfo("IP LIST STANDARD Started...");
+                loginfo("IP LIST STANDARD Started...", true);
             }
         }
     } else {
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN IP LIST Standard TXT File!");
+        logcritical("UNABLE TO OPEN IP LIST Standard TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5103,7 +5103,7 @@ int setup() {
     
 
     // IP LIST MORE INFO
-    sendtologopen("[INFO] - Attempting to Read from IP LIST MORE INFO TXT FILE");
+    loginfo("Attempting to Read from IP LIST MORE INFO TXT FILE", false);
     std::ifstream iplistsmoreinfo;
     iplistsmoreinfo.open(iplistsmoreinfofile);
     if (iplistsmoreinfo.is_open() == true) {
@@ -5119,7 +5119,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - IP LIST MORE INFO - No Version Found, Writing New Version...");
+            logwarning("IP LIST MORE INFO - No Version Found, Writing New Version...", false);
             iplistsmoreinfo.close();
             std::ofstream iplistsmoreinfo;
             iplistsmoreinfo.open(iplistsmoreinfofile);
@@ -5128,9 +5128,9 @@ int setup() {
             iplistsmoreinfo.flush();
             if (iplistsmoreinfo.fail() == true) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO IP LIST MORE INFO");
+                logcritical("AN ERROR OCCURRED WRITING TO IP LIST MORE INFO", true);
                 if (iplistsmoreinfo.bad() == true) {
-                    logcritical("I/O ERROR");
+                    logcritical("I/O ERROR", true);
                 }
                 startupchecks = startupchecks + 1;
                 iplistsmoreinfo.close();
@@ -5140,16 +5140,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different IP List Standard Version, Attempting to Update!");
+                logwarning("Detected Different IP List Standard Version, Attempting to Update...", false);
                 // MIGRATION STEPS
-                logwarning("NO Migration steps detected");
+                sendtolog("NO Migration steps detected");
             } else {
-                loginfo("IP LIST MORE INFO Started...");
+                loginfo("IP LIST MORE INFO Started...", true);
             }
         }
     } else {
         sendtolog("ERROR!");
-        logcritical("UNABLE TO OPEN IP LIST MORE INFO TXT File!");
+        logcritical("UNABLE TO OPEN IP LIST MORE INFO TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5162,7 +5162,7 @@ int setup() {
 
 
     // MAC LIST INFO
-    sendtologopen("[INFO] - Attempting to Read from MAC LIST TXT FILE...");
+    loginfo("Attempting to Read from MAC LIST TXT FILE...", false);
     std::ifstream maclist;
     maclist.open(maclistfile);
     if (maclist.is_open() == true) {
@@ -5178,7 +5178,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - MAC LIST - No Version Found, Writing New Version...");
+            logwarning("MAC LIST - No Version Found, Writing New Version...", false);
             maclist.close();
             std::ofstream maclist;
             maclist.open(maclistfile);
@@ -5187,9 +5187,9 @@ int setup() {
             maclist.flush();
             if (maclist.fail() == true) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO MAC LIST FILE");
+                logcritical("AN ERROR OCCURRED WRITING TO MAC LIST FILE", true);
                 if (maclist.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 maclist.close();
@@ -5199,16 +5199,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different Mac List Version, Attempting to Update!");
+                logwarning("Detected Different Mac List Version, Attempting to Update...", false);
                 // MIGRATION STEPS
-                logwarning("No migration steps detected");
+                sendtolog("No migration steps detected");
             } else {
-                loginfo("MAC LIST Started...");
+                loginfo("MAC LIST Started...", true);
             }
         }
     } else {
         sendtolog("ERROR!");
-        logcritical("UNABLE TO OPEN MAC LIST TXT File!");
+        logcritical("UNABLE TO OPEN MAC LIST TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5219,7 +5219,7 @@ int setup() {
 
 
     // SEVERITY LIST INFO
-    sendtologopen("[INFO] - Attempting to Read from Severity List TXT File...");
+    loginfo("Attempting to Read from Severity List TXT File...", false);
     std::ifstream severitylist;
     severitylist.open(severitylistfile);
     if (severitylist.is_open() == true) {
@@ -5235,7 +5235,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - SEVERITY LIST - No Version Found, Writing New Version...");
+            logwarning("SEVERITY LIST - No Version Found, Writing New Version...", false);
             severitylist.close();
             std::ofstream severitylist;
             severitylist.open(severitylistfile);
@@ -5244,9 +5244,9 @@ int setup() {
             severitylist.flush();
             if (severitylist.fail() == true) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO SEVERITYLIST");
+                logcritical("AN ERROR OCCURRED WRITING TO SEVERITYLIST", true);
                 if (severitylist.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 severitylist.close();
@@ -5256,16 +5256,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different Severity List Version, Attempting to Update!");
+                logwarning("Detected Different Severity List Version, Attempting to Update...", false);
                 // MIGRATION STEPS
-                logwarning("No migration steps detected");
+                sendtolog("No migration steps detected");
             } else {
-                loginfo("SEVERITY LIST Started...");
+                loginfo("SEVERITY LIST Started...", true);
             }
         }
     } else {
         sendtolog("ERROR!");
-        logcritical("UNABLE TO OPEN IP LIST Strict TXT File!");
+        logcritical("UNABLE TO OPEN IP LIST Strict TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5276,7 +5276,7 @@ int setup() {
 
 
     // Accounts/Macs/APIs INFO
-    sendtologopen("[INFO] - Attempting to Read from ACPMAC TXT File...");
+    loginfo("Attempting to Read from ACPMAC TXT File...", false);
     std::ifstream acpmac;
     acpmac.open(acpmacfile);
     if (acpmac.is_open() == true) {
@@ -5292,7 +5292,7 @@ int setup() {
             }
             sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - ACPMAC - No Version Found, Writing New Version...");
+            logwarning("ACPMAC - No Version Found, Writing New Version...", false);
             acpmac.close();
             std::ofstream acpmac;
             acpmac.open(acpmacfile);
@@ -5301,9 +5301,9 @@ int setup() {
             acpmac.flush();
             if (acpmac.fail() == true) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO ACPMAC");
+                logcritical("AN ERROR OCCURRED WRITING TO ACPMAC", true);
                 if (acpmac.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 acpmac.close();
@@ -5313,16 +5313,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different ACPMAC Version, Attempting to Update!");
+                logwarning("Detected Different ACPMAC Version, Attempting to Update...", false);
                 // MIGRATION STEPS
-                logwarning("No migration steps detected");
+                sendtolog("No migration steps detected");
             } else {
-                loginfo("ACPMAC Started...");
+                loginfo("ACPMAC Started...", true);
             }
         }
     } else {
         sendtolog("ERROR!");
-        logcritical("UNABLE TO OPEN ACPMAC TXT File!");
+        logcritical("UNABLE TO OPEN ACPMAC TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5333,7 +5333,7 @@ int setup() {
 
 
     // IPSAFETY INFO
-    sendtologopen("[INFO] - Attempting to Read from IPSAFETY File...");
+    loginfo("Attempting to Read from IPSAFETY File...", false);
     std::ifstream blockedipstream;
     blockedipstream.open(ipliststandardfile);
     if(blockedipstream.is_open() == true) {
@@ -5349,7 +5349,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - IPSAFETY - No Version Found, Writing New Version...");
+            logwarning("IPSAFETY - No Version Found, Writing New Version...", false);
             blockedipstream.close();
             std::ofstream blockedipstream;
             blockedipstream.open(blockedipstreamfile);
@@ -5358,9 +5358,9 @@ int setup() {
             blockedipstream.flush();
             if (blockedipstream.fail()) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO IPSAFETY");
+                logcritical("AN ERROR OCCURRED WRITING TO IPSAFETY", true);
                 if (blockedipstream.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 blockedipstream.close();
@@ -5370,16 +5370,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different IPSAFETY Version, Attempting to Update!");
+                logwarning("Detected Different IPSAFETY Version, Attempting to Update...", false);
                 // MIGRATION STEPS
-                logwarning("NO Migration steps detected");
+                sendtolog("NO Migration steps detected");
             } else {
-                loginfo("IPSAFETY Started...");
+                loginfo("IPSAFETY Started...", true);
             }
         }
     } else {
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN IPSAFETY TXT File!");
+        logcritical("UNABLE TO OPEN IPSAFETY TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5390,7 +5390,7 @@ int setup() {
 
 
     // CONFIG1 INFO
-    sendtologopen("[INFO] - Attempting to Read from SERVERCONFIG1 File...");
+    loginfo("Attempting to Read from SERVERCONFIG1 File...", false);
     std::ifstream config1;
     config1.open(config1file);
     if(config1.is_open() == true) {
@@ -5406,7 +5406,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - SERVERCONFIG1 - No Version Found, Writing New Version...");
+            logwarning("SERVERCONFIG1 - No Version Found, Writing New Version...", false);
             config1.close();
             std::ofstream config1;
             config1.open(config1file);
@@ -5415,9 +5415,9 @@ int setup() {
             config1.flush();
             if (config1.fail()) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO SERVERCONFIG1");
+                logcritical("AN ERROR OCCURRED WRITING TO SERVERCONFIG1", true);
                 if (config1.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 config1.close();
@@ -5427,16 +5427,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different SERVERCONFIG Version, Attempting to Update!");
+                logwarning("Detected Different SERVERCONFIG Version, Attempting to Update...", false);
                 // MIGRATION STEPS
-                logwarning("NO Migration steps detected");
+                sendtolog("NO Migration steps detected");
             } else {
-                loginfo("CONFIG1 Started...");
+                loginfo("CONFIG1 Started...", true);
             }
         }
     } else {
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN SERVERCONFIG1 Standard TXT File!");
+        logcritical("UNABLE TO OPEN SERVERCONFIG1 Standard TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5447,7 +5447,7 @@ int setup() {
 
 
     // USERSTREAM INFO
-    sendtologopen("[INFO] - Attempting to Read from USERSTREAM File...");
+    loginfo("Attempting to Read from USERSTREAM File...", false);
     std::ifstream userstream;
     userstream.open(userstreamfile);
     if(userstream.is_open() == true) {
@@ -5463,7 +5463,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - USERSTREAM - No Version Found, Writing New Version...");
+            logwarning("USERSTREAM - No Version Found, Writing New Version...", false);
             userstream.close();
             std::ofstream userstream;
             userstream.open(userstreamfile);
@@ -5472,9 +5472,9 @@ int setup() {
             userstream.flush();
             if (userstream.fail()) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO USERSTREAM");
+                logcritical("AN ERROR OCCURRED WRITING TO USERSTREAM", true);
                 if (userstream.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 userstream.close();
@@ -5484,16 +5484,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different USERSTREAM Version, Attempting to Update!");
+                logwarning("Detected Different USERSTREAM Version, Attempting to Update...", false);
                 // MIGRATION STEPS
-                logwarning("NO Migration steps detected");
+                sendtolog("NO Migration steps detected");
             } else {
-                loginfo("USERSTREAM Started...");
+                loginfo("USERSTREAM Started...", true);
             }
         }
     } else {
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN USERSTREAM Standard TXT File!");
+        logcritical("UNABLE TO OPEN USERSTREAM Standard TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5504,7 +5504,7 @@ int setup() {
 
 
     // PASSSTREAM INFO
-    sendtologopen("[INFO] - Attempting to Read from PASSSTREAM File...");
+    loginfo("Attempting to Read from PASSSTREAM File...", false);
     std::ifstream passstream;
     passstream.open(passstreamfile);
     if(passstream.is_open() == true) {
@@ -5520,7 +5520,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - PASSSTREAM - No Version Found, Writing New Version...");
+            logwarning("PASSSTREAM - No Version Found, Writing New Version...", false);
             passstream.close();
             std::ofstream passstream;
             passstream.open(passstreamfile);
@@ -5529,9 +5529,9 @@ int setup() {
             passstream.flush();
             if (passstream.fail()) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO PASSSTREAM");
+                logcritical("AN ERROR OCCURRED WRITING TO PASSSTREAM", true);
                 if (passstream.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 passstream.close();
@@ -5541,16 +5541,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different PASSSTREAM Version, Attempting to Update!");
+                logwarning("Detected Different PASSSTREAM Version, Attempting to Update...", false);
                 // MIGRATION STEPS
-                logwarning("NO Migration steps detected");
+                sendtolog("NO Migration steps detected");
             } else {
-                loginfo("PASSSTREAM Started...");
+                loginfo("PASSSTREAM Started...", true);
             }
         }
     } else {
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN PASSSTREAM Standard TXT File!");
+        logcritical("UNABLE TO OPEN PASSSTREAM Standard TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5560,7 +5560,7 @@ int setup() {
 
 
     // FOLDERS ACCESSED INFO
-    sendtologopen("[INFO] - Attempting to Read from FDACCESSED File...");
+    loginfo("Attempting to Read from FDACCESSED File...", false);
     std::ifstream fdaccessed;
     fdaccessed.open(foldersaccessedfile);
     if(fdaccessed.is_open() == true) {
@@ -5576,7 +5576,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - FDACCESSED - No Version Found, Writing New Version...");
+            logwarning("FDACCESSED - No Version Found, Writing New Version...", false);
             fdaccessed.close();
             std::ofstream fdaccessed;
             fdaccessed.open(foldersaccessedfile);
@@ -5585,9 +5585,9 @@ int setup() {
             fdaccessed.flush();
             if (fdaccessed.fail()) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO FDACCESSED");
+                logcritical("AN ERROR OCCURRED WRITING TO FDACCESSED", true);
                 if (fdaccessed.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 fdaccessed.close();
@@ -5597,16 +5597,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different FDACCESSED Version, Attempting to Update!");
+                logwarning("Detected Different FDACCESSED Version, Attempting to Update!", false);
                 // MIGRATION STEPS
-                logwarning("NO Migration steps detected");
+                sendtolog("NO Migration steps detected");
             } else {
-                loginfo("FDACCESSED Started...");
+                loginfo("FDACCESSED Started...", true);
             }
         }
     } else {
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN FDACCESSED Standard TXT File!");
+        logcritical("UNABLE TO OPEN FDACCESSED Standard TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5616,7 +5616,7 @@ int setup() {
 
 
     // FILES ACCESSED INFO
-    sendtologopen("[INFO] - Attempting to Read from FLACCESSED File...");
+    loginfo("Attempting to Read from FLACCESSED File...", false);
     std::ifstream flaccessed;
     flaccessed.open(filesaccessedfile);
     if(flaccessed.is_open() == true) {
@@ -5632,7 +5632,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - FLACCESSED - No Version Found, Writing New Version...");
+            logwarning("FLACCESSED - No Version Found, Writing New Version...", false);
             flaccessed.close();
             std::ofstream flaccessed;
             flaccessed.open(filesaccessedfile);
@@ -5641,9 +5641,9 @@ int setup() {
             flaccessed.flush();
             if (flaccessed.fail()) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO FLACCESSED");
+                logcritical("AN ERROR OCCURRED WRITING TO FLACCESSED", true);
                 if (flaccessed.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 flaccessed.close();
@@ -5653,16 +5653,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different FLACCESSED Version, Attempting to Update!");
+                logwarning("Detected Different FLACCESSED Version, Attempting to Update!", false);
                 // MIGRATION STEPS
-                logwarning("NO Migration steps detected");
+                sendtolog("NO Migration steps detected");
             } else {
-                loginfo("FLACCESSED Started...");
+                loginfo("FLACCESSED Started...", true);
             }
         }
     } else {
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN FLACCESSED Standard TXT File!");
+        logcritical("UNABLE TO OPEN FLACCESSED Standard TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5672,7 +5672,7 @@ int setup() {
 
 
     // CMDS RUN INFO
-    sendtologopen("[INFO] - Attempting to Read from CMDRUN File...");
+    loginfo("Attempting to Read from CMDRUN File...", false);
     std::ifstream cmdaccessed;
     cmdaccessed.open(cmdrunfile);
     if(cmdaccessed.is_open() == true) {
@@ -5688,7 +5688,7 @@ int setup() {
         }
         sendtolog("Done");
         if (compressed == "") {
-            sendtologopen("[WARNING] - CMDRUN - No Version Found, Writing New Version...");
+            logwarning("CMDRUN - No Version Found, Writing New Version...", false);
             cmdaccessed.close();
             std::ofstream cmdaccessed;
             cmdaccessed.open(cmdrunfile);
@@ -5697,9 +5697,9 @@ int setup() {
             cmdaccessed.flush();
             if (cmdaccessed.fail()) {
                 sendtolog("ERROR");
-                logcritical("AN ERROR OCCURRED WRITING TO CMDRUN");
+                logcritical("AN ERROR OCCURRED WRITING TO CMDRUN", true);
                 if (cmdaccessed.bad() == true) {
-                    logcritical("I/O ERROR OCCURRED");
+                    logcritical("I/O ERROR OCCURRED", true);
                 }
                 startupchecks = startupchecks + 1;
                 cmdaccessed.close();
@@ -5709,16 +5709,16 @@ int setup() {
         } else {
             if (compressed != honeyversion) {
                 migration = migration + 1;
-                logwarning("Detected Different CMDRUN Version, Attempting to Update!");
+                logwarning("Detected Different CMDRUN Version, Attempting to Update!", false);
                 // MIGRATION STEPS
-                logwarning("NO Migration steps detected");
+                sendtolog("NO Migration steps detected");
             } else {
-                loginfo("CMDRUN Started...");
+                loginfo("CMDRUN Started...", true);
             }
         }
     } else {
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN CMDRUN Standard TXT File!");
+        logcritical("UNABLE TO OPEN CMDRUN Standard TXT File!", true);
         startupchecks = startupchecks + 1;
         return 1;
         return 1;
@@ -5732,27 +5732,16 @@ int setup() {
     // LOAD IPSAFETY INTO RAM
     // DEPRECATED DUE TO USING MARIADB TO STORE THIS INFORMATION INSTEAD! (8/18/24)
 
-    /*
-    sendtologopen("[INFO] - Loading IPSAFETY Into RAM...");
-    int ram = loadipsafetyintoram();
-    if (ram != 0) {
-        sendtolog("ERROR");
-        logcritical("AN ERROR OCCURRED LOADING IPSAFETY INTO RAM!");
-        startupchecks = startupchecks + 1;
-    } else {
-        sendtolog("Done");
-    }
-    */
 
 
 
     // LOAD MAINHTML INTO RAM
-    sendtologopen("[INFO] - Loading MAINHTML Into RAM...");
+    loginfo("Loading MAINHTML Into RAM...", true);
     int ram1 = loadHTMLINTORAM();
     if (ram1 != 0) {
         sendtolog("ERROR");
-        logcritical("AN ERROR OCCURRED LOADING MAINHTML INTO RAM!");
-        startupchecks = startupchecks + 1;
+        logcritical("AN ERROR OCCURRED LOADING MAINHTML INTO RAM...", false);
+        sendtolog("IGNORING!");
     } else {
         sendtolog("Done");
     }
@@ -5761,8 +5750,8 @@ int setup() {
 
     // CHECK BEFORE REST OF SERVER STARTUP IF FILES WERE NOT CONFIGURED CORRECTLY
     if (startupchecks != 0) {
-        logcritical("STARTUP CHECKS DOES NOT EQUAL 0!");
-        logcritical("STOPPING SERVER!");
+        logcritical("STARTUP CHECKS DOES NOT EQUAL 0!", true);
+        logcritical("STOPPING SERVER!", true);
         return 1;
         return 1;
         return 1;
@@ -5774,22 +5763,23 @@ int setup() {
 
     // START NETWORK PORTS CONFIGURATION
     
-    // OPEN NETWORK SERVER PORTS (1/3)
+    // OPEN NETWORK SERVER PORTS (1/4)
     int PORT = 80;
-    sendtologopen("[INFO] - Opening Server Ports (1/4)");
+    loginfo("Opening Server Ports (1/4)", false);
     //port1 = createnetworkport80();
-    sendtolog("Done");
+    sendtolog("...Done");
     sleep(3);
 
-    PORT = 80;
-    sendtologopen("[INFO] - Opening Server Ports (2/4)");
+    // OPEN NETWORK SERVER PORTS (2/4)
+    PORT = 443;
+    loginfo("Opening Server Ports (2/4)", false);
     port4 = createnetworkport443();
     sendtolog("Done");
     sleep(3);
 
-    // OPEN NETWORK SERVER PORTS (2/3)
+    // OPEN NETWORK SERVER PORTS (3/4)
     PORT = 11829;
-    sendtologopen("[INFO] - Opening Server Ports (3/4)...");
+    loginfo("Opening Server Ports (3/4)", false);
     int server_fd2, new_socket2;
     ssize_t valread2;
     struct sockaddr_in address2;
@@ -5832,8 +5822,8 @@ int setup() {
 
 
 
-    // SERVER PORT LISTEN THREAD (2/3) (11829)
-    sendtologopen("[INFO] - Creating server thread on port 11829 listen...");
+    // SERVER PORT LISTEN THREAD (1/4) (11829)
+    loginfo("Creating server thread on port 11829 listen...", false);
 
     sleep(2);
     std::thread acceptingClientsThread2(handle11829Connections, server_fd2);
@@ -5847,7 +5837,7 @@ int setup() {
 
 
     // OPEN SERVER PORT 11830 FOR TELEMETRY
-    sendtologopen("[INFO] - Opening Server Ports (4/4)...");
+    loginfo("Opening Server Ports (4/4)...", false);
     PORT = 11830;
     int server_fd3, new_socket3;
     ssize_t valread3;
@@ -5891,7 +5881,7 @@ int setup() {
 
 
     // SERVER PORT LISTEN THREAD (3/3) (118.30)
-    sendtologopen("[INFO] - Creating server thread on port 11830 listen...");
+    loginfo("Creating server thread on port 11830 listen...", false);
 
     sleep(2);
     std::thread acceptingClientsThread3(handle11830Connections, server_fd3);
@@ -5905,7 +5895,7 @@ int setup() {
 
 
     if (serverdumpfilefound == true) {
-        loginfo("FUTURE THINGS!");
+        debugout("FUTURE THINGS!");
     }
 
     // SET TIMERS
@@ -5953,7 +5943,7 @@ int main() {
 
 
         // SERVER PORT LISTEN THREAD
-        sendtologopen("[INFO] - Creating server thread on port 443 listen...");
+        loginfo("Creating server thread on port 443 listen...", false);
 
         sleep(2);
         std::thread acceptingClientsThread443(handleConnections443, port4);
@@ -5964,7 +5954,7 @@ int main() {
 
 
         // SERVER PORT LISTEN THREAD
-        sendtologopen("[INFO] - Creating server thread on port 80 listen...");
+        loginfo("Creating server thread on port 80 listen...", false);
 
         sleep(2);
         std::thread acceptingClientsThread80(handleConnections80);
@@ -5975,7 +5965,7 @@ int main() {
 
 
 
-        loginfo("HoneyPi Server has started successfully");
+        loginfo("HoneyPi Server has started successfully", true);
 
         // NETWORK INFORMATION
         char buffer[BUFFER_SIZE];
@@ -5986,7 +5976,7 @@ int main() {
         while(startupchecks == 0 && encounterederrors == 0) {
 
             sleep(60);
-            loginfo("Running = TRUE...");
+            loginfo("Running = TRUE...", true);
 
 
             // TIMERS [3] CHECK
@@ -6032,11 +6022,11 @@ int main() {
             logcritical("ATTEMPTING TO KILL SERVER!!!", true);
             close(serverport1);
             close(serverport2);
-            return;
-            return;
-            return;
-            return;
-            return;
+            return 1;
+            return 1;
+            return 1;
+            return 1;
+            return 1;
         }
     }
 }
