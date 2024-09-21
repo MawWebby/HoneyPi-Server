@@ -1422,16 +1422,43 @@ void sendtolog(std::string data2) {
 void sendtologopen(std::string data2) {
     std::cout << data2;
 }
-void loginfo(std::string data2) {
+
+void logdebug(std::string data2, bool complete) {
+    data2 = "[DEBUG] - " + data2;
+    if (complete == false) {
+        sendtologopen(data2);
+    } else {
+        sendtolog(data2);
+    }
+}
+
+void loginfo(std::string data2, bool complete) {
     data2 = "[INFO] - " + data2;
-    sendtolog(data2);
+    if (complete == false) {
+        sendtologopen(data2);
+    } else {
+        sendtolog(data2);
+    }
 }
-void logwarning(std::string data2) {
+void logwarning(std::string data2, bool complete) {
     data2 = "[WARNING] - " + data2;
-    sendtolog(data2);
+    if (complete == false) {
+        sendtologopen(data2);
+    } else {
+        sendtolog(data2);
+    }
 }
-void logcritical(std::string data2) {
+void logcritical(std::string data2, bool complete) {
     data2 = "[CRITICAL] - " + data2;
+    if (complete == false) {
+        sendtologopen(data2);
+    } else {
+        sendtolog(data2);
+    }
+}
+
+void debugout(std::string data2) {
+    data2 = "[DEBUG] - " + data2;
     sendtolog(data2);
 }
 
@@ -1465,7 +1492,7 @@ int mariadb_test() {
     // Execute query
     sql::ResultSet *res = stmnt->executeQuery("SELECT user FROM credentials");
     
-    loginfo("TRUE");
+    loginfo("TRUE", true);
     res->next();
     std::cout << "User = " << res->getString(1);
 
@@ -1941,7 +1968,7 @@ bool mariadbPIAPI_keyvalid(std::string apikey) {
     sql::ResultSet *res = stmnt->executeQuery(executequery21);
     
     if (res->next() == true) {
-        loginfo("TRUE");
+        loginfo("TRUE", true);
         // FIX THIS PROBLEM, NOT READING RESULT OF A CLOSED SET"?"
         return true;
     } else {
@@ -1990,7 +2017,7 @@ bool mariadbROUTERAPI_keyvalid(std::string apikey) {
 
 
     if (res2->next() == true || res3->next() == true ||res4->next() == true ||res5->next() == true ||res6->next() == true) {
-        logcritical("MATCH SEEN");
+        logcritical("MATCH SEEN", true);
         return true;
     } else {
         return false;
@@ -2122,7 +2149,7 @@ bool mariadbVALIDATE_USER(std::string username, std::string password) {
                 std::string piapi1 = "";
                 *hello3 >> piapi1;
                 if (piapi1 == "1") {
-                    loginfo("THAT IS TRUE");
+                    loginfo("THAT IS TRUE", true);
                     return true;
                 } else {
                     return false;
@@ -2379,7 +2406,7 @@ int mariadbSETCOGLOCKINDB() {
 //// GENERATE API RANDOM STRINGS ////
 /////////////////////////////////////
 std::string generateRandomStringHoneyPI() {
-    loginfo("CREATING NEW HoneyPi API KEY");
+    loginfo("CREATING NEW HoneyPi API KEY", true);
 
     // Define the list of possible characters
     const std::string CHARACTERS = charactermap;
@@ -2402,7 +2429,7 @@ std::string generateRandomStringHoneyPI() {
 }
 
 std::string generateRandomStringRouterAPI() {
-    loginfo("CREATING NEW ROUTER API KEY");
+    loginfo("CREATING NEW ROUTER API KEY", true);
 
     // Define the list of possible characters
     const std::string CHARACTERS = charactermap;
@@ -2425,7 +2452,7 @@ std::string generateRandomStringRouterAPI() {
 }
 
 std::string generateRandomFileName() {
-    loginfo("CREATING NEW RANDOM FILENAME");
+    loginfo("CREATING NEW RANDOM FILENAME", true);
 
     timedetector();
 
@@ -2506,17 +2533,19 @@ void checkforserverupdates() {
         //std::cout << "RECEIVED GITHUB INFORMATION: " << updatefileinformationserver << std::endl;
 
         if (updatefileinformationserver == "") {
-            logcritical("RECEIVED NULL INSTANCE FOR SERVER VERSION!");
-            logcritical(errcurlno);
-            logcritical(curl_easy_strerror(res));
+            logcritical("RECEIVED NULL INSTANCE FOR SERVER VERSION! - ", false);
+            sendtologopen(errcurlno);
+            sendtologopen(" - ");
+            sendtolog(curl_easy_strerror(res));
         }
     
         // CLEAN UP CURL COMMAND
         curl_easy_cleanup(curl);
     } else {
-        logcritical("AN ERROR OCCURRED IN CURL");
-        logcritical(errcurlno);
-        logcritical(curl_easy_strerror(res));
+        logcritical("AN ERROR OCCURRED IN CURL - ", false);
+        sendtologopen(errcurlno);
+        sendtologopen(" - ");
+        sendtolog(curl_easy_strerror(res));
     }
 }
 
@@ -2535,17 +2564,19 @@ void checkforhoneypiupdates() {
         //std::cout << "RECEIVED GITHUB INFORMATION: " << updatefileinformationhoneypi << std::endl;
 
         if (updatefileinformationhoneypi == "") {
-            logcritical("RECEIVED NULL INSTANCE FOR CLIENT VERSION!");
-            logcritical(errcurlno);
-            logcritical(curl_easy_strerror(res));
+            logcritical("RECEIVED NULL INSTANCE FOR CLIENT VERSION! - ", false);
+            sendtologopen(errcurlno);
+            sendtologopen(" - ");
+            sendtolog(curl_easy_strerror(res));
         }
     
         // CLEAN UP CURL COMMAND
         curl_easy_cleanup(curl);
     } else {
-        logcritical("AN ERROR OCCURRED IN CURL");
-        logcritical(errcurlno);
-        logcritical(curl_easy_strerror(res));
+        logcritical("AN ERROR OCCURRED IN CURL - ", false);
+        sendtologopen(errcurlno);
+        sendtologopen(" - ");
+        sendtolog(curl_easy_strerror(res));
     }
 }
 
@@ -2579,7 +2610,7 @@ bool checkhoneypiupdateavailable() {
             }
         }
     } else {
-        logwarning("UNABLE TO CHECK FOR CLIENT UPDATES!");
+        logwarning("UNABLE TO CHECK FOR CLIENT UPDATES!", true);
         return false;
     }
     return false;
@@ -2587,11 +2618,12 @@ bool checkhoneypiupdateavailable() {
 
 // CHECK TO SEE IF VERSION IS DIFFERENT THAN LISTED
 bool serverupdateavailable() {
+    loginfo("Checking for Updates", false);
     if (honeymainversion != latesthoneymainMversion || honeyminorversion != latesthoneyminorMversion || honeyhotfixversion != latesthoneyhotfixMversion) {
-        logwarning("New Server Update Available!");
+        sendtolog("New Server Update Available!");
         return true;
     } else {
-        loginfo("No New Version Found");
+        sendtolog("No New Version Found");
         return false;
     }
 }
@@ -2610,11 +2642,13 @@ bool checkserverupdateavailable() {
             bool updateavailable23 = serverupdateavailable();
             return updateavailable23;
         } else {
-            logcritical("INVALID UPDATE HEADER RECEIVED!");
+            sendtolog("ERROR");
+            logcritical("INVALID UPDATE HEADER RECEIVED!", true);
             return false;
         }
     } else {
-        logwarning("UNABLE TO CHECK FOR UPDATES!");
+        sendtolog("ERROR");
+        logwarning("UNABLE TO CHECK FOR UPDATES!", true);
         return false;
     }
     return false;
@@ -2623,27 +2657,37 @@ bool checkserverupdateavailable() {
 // UPDATE SCRIPT - UPDATE TO NEW SERVER VERSION
 int updatetoNewServer() {
     // START PROCESS OF UPDATING
-    logwarning("SERVER STARTING TO UPDATE!");
+    logwarning("SERVER STARTING TO UPDATE!", true);
 
     // SMALL DELAY
     sleep(2);
 
     // SERVER CHECK DOCKER STATUS
-    loginfo("Checking for Docker Control");
+    loginfo("Checking for Docker Control...", false);
     int res97 = system(dockerpscommand);
     if (res97 != 0) {
-        logcritical("UNABLE TO COMPLETE DOCKER COMMAND!");
-        logcritical("TERMINATING UPDATE!");
+        sendtolog("ERROR!");
+        logcritical("UNABLE TO COMPLETE DOCKER COMMAND!", true);
+        logcritical("TERMINATING UPDATE!", true);
         return 1;
+    } else {
+        sendtolog("done");
     }
 
     // CLEAR COG FOLDER
-    loginfo("Emptying COGs in DB");
+    loginfo("Emptying COGs in DB...", false);
     int res98 = mariadbCLEARCOGS_READ();
     if (res98 != 0) {
-        logcritical("UNABLE TO COMPLETE MARIADB COGs!");
-        logcritical("TERMINIATING UPDATE!");
+        sendtolog("ERROR!");
+        logcritical("UNABLE TO COMPLETE MARIADB COGs!", true);
+        logcritical("TERMINIATING UPDATE!", true);
+    } else {
+        sendtolog("done");
     }
+
+
+
+    // CONTINUE SERVER UPDATES PROCESS HERE!
 }
 
 
@@ -2803,8 +2847,9 @@ int writetoipliststrict(std::string writedata, int position, bool end, bool forc
     }
 
     if (ipliststrictlock == true) {
-        logcritical("UNABLE TO WRITE TO IP LIST STRICT FILE!");
-        logcritical("ipliststrictlock = true");
+        sendtolog("");
+        logcritical("UNABLE TO WRITE TO IP LIST STRICT FILE!", true);
+        logcritical("ipliststrictlock = true", true);
         return 2;
     } else {
         // CHECK FOR STRING TO ALREADY BE IN DB
@@ -2821,9 +2866,9 @@ int writetoipliststrict(std::string writedata, int position, bool end, bool forc
                 ipliststrict << writedata << '\n';
                 if (ipliststrict.fail()) {
                     sendtolog("ERROR");
-                    logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTRICT");
+                    logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTRICT", true);
                     if (ipliststrict.bad() == true) {
-                        logcritical("I/O ERROR OCCURRED");
+                        logcritical("I/O ERROR OCCURRED", true);
                     }
                     startupchecks = startupchecks + 1;
                     ipliststrict.close();
@@ -2861,8 +2906,9 @@ int writetoipliststandard(std::string writedata, int position, bool end, bool fo
     }
 
     if (ipliststandardlock == true) {
-        logcritical("UNABLE TO WRITE TO IP LIST STANDARD FILE!");
-        logcritical("ipliststrictlock = true");
+        sendtolog("ERROR");
+        logcritical("UNABLE TO WRITE TO IP LIST STANDARD FILE!", true);
+        logcritical("ipliststrictlock = true", true);
         return 2;
     } else {
         // CHECK FOR STRING TO ALREADY BE IN DB
@@ -2879,9 +2925,9 @@ int writetoipliststandard(std::string writedata, int position, bool end, bool fo
                 ipliststandard << writedata << '\n';
                 if (ipliststandard.fail()) {
                     sendtolog("ERROR");
-                    logcritical("AN ERROR OCCURRED WRITING TO ipliststandard");
+                    logcritical("AN ERROR OCCURRED WRITING TO ipliststandard", true);
                     if (ipliststandard.bad() == true) {
-                        logcritical("I/O ERROR OCCURRED");
+                        logcritical("I/O ERROR OCCURRED", true);
                     }
                     startupchecks = startupchecks + 1;
                     ipliststandard.close();
@@ -2921,8 +2967,9 @@ int writetoblockediplist(std::string writedata, bool end, bool forcelock) {
     }
 
     if (ipsafetylock == true) {
-        logcritical("UNABLE TO WRITE TO IPSAFETY FILE!");
-        logcritical("ipliststrictlock = true");
+        sendtolog("ERROR");
+        logcritical("UNABLE TO WRITE TO IPSAFETY FILE!", true);
+        logcritical("ipliststrictlock = true", true);
         return 2;
     } else {
         // CHECK FOR STRING TO ALREADY BE IN DB
@@ -2938,10 +2985,9 @@ int writetoblockediplist(std::string writedata, bool end, bool forcelock) {
             if (ipsafety.is_open() == true) {
                 ipsafety << writedata << '\n';
                 if (ipsafety.fail()) {
-                    sendtolog("ERROR");
-                    logcritical("AN ERROR OCCURRED WRITING TO ipliststandard");
+                    logcritical("AN ERROR OCCURRED WRITING TO ipliststandard", true);
                     if (ipsafety.bad() == true) {
-                        logcritical("I/O ERROR OCCURRED");
+                        logcritical("I/O ERROR OCCURRED", true);
                     }
                     startupchecks = startupchecks + 1;
                     ipsafety.close();
@@ -2979,15 +3025,15 @@ int writetoUSERStream(std::string username, bool forcelock) {
     }
 
     if (userstreamlock == true) {
-        logcritical("UNABLE TO WRITE TO USERSTREAM FILE!");
-        logcritical("ipliststrictlock = true");
+        logcritical("UNABLE TO WRITE TO USERSTREAM FILE!", true);
+        logcritical("ipliststrictlock = true", true);
         return 2;
     } else {
         // CHECK FOR STRING TO ALREADY BE IN DB
         userstreamlock = true;
         int checkcommand = checkstringinUSERStream(username);
         if (checkcommand == -1) {
-            logcritical("CHECK OPERATION FAILED!");
+            logcritical("CHECK OPERATION FAILED!", true);
             return 2;
         } else {
             std::ofstream userstream;
@@ -2996,9 +3042,9 @@ int writetoUSERStream(std::string username, bool forcelock) {
                 userstream << username << '\n';
                 if (userstream.fail()) {
                     sendtolog("ERROR");
-                    logcritical("AN ERROR OCCURRED WRITING TO USERSTREAM");
+                    logcritical("AN ERROR OCCURRED WRITING TO USERSTREAM", true);
                     if (userstream.bad() == true) {
-                        logcritical("I/O ERROR OCCURRED");
+                        logcritical("I/O ERROR OCCURRED", true);
                     }
                     startupchecks = startupchecks + 1;
                     userstream.close();
@@ -3016,9 +3062,9 @@ int writetoUSERStream(std::string username, bool forcelock) {
                 userstream << username << '\n';
                 if (userstream.fail()) {
                     sendtolog("ERROR");
-                    logcritical("AN ERROR OCCURRED WRITING TO USERSTREAM");
+                    logcritical("AN ERROR OCCURRED WRITING TO USERSTREAM", true);
                     if (userstream.bad() == true) {
-                        logcritical("I/O ERROR OCCURRED");
+                        logcritical("I/O ERROR OCCURRED", true);
                     }
                     startupchecks = startupchecks + 1;
                     userstream.close();
@@ -3103,8 +3149,8 @@ int analyzecogfile(std::string fileID) {
                 
             }
         } else {
-            logcritical("COG COULD NOT BE OPENED!");
-            logcritical(coglocation);
+            logcritical("COG COULD NOT BE OPENED AT: ", false);
+            sendtolog(coglocation);
             return 1;
             return 1;
             return 1;
@@ -3122,7 +3168,7 @@ int analyzeALLcogfiles() {
     while(testsing == false) {
         int welcoming = analyzecogfile(filenameforcogs[numberturn]);
         if (welcoming != 0 && welcoming != 255) {
-            logcritical("AN ERROR OCCURRED IN COG READING!");
+            logcritical("AN ERROR OCCURRED IN COG READING!", true);
             return 1;
             return 1;
             return 1;
@@ -3766,32 +3812,45 @@ int loadinstallscriptSHHTMLintoram() {
 }
 
 int loadHTMLINTORAM() {
-    loginfo("Loading All Main HTML Pages into RAM!");
+    loginfo("Loading All Main HTML Pages into RAM!", true);
     int returnvalue = 0;
+    loginfo("Loading index.html into RAM...", false);
     returnvalue = returnvalue + loadmainHTMLintoram();
-    loginfo("Done with index.html");
+    sendtolog("DONE");
+    loginfo("Loading pricing.html into RAM...", false);
     returnvalue = returnvalue + loadpricingHTMLintoram();
-    loginfo("Done with pricing.html");
+    sendtolog("DONE");
+    loginfo("Loading blog.html into RAM...", false);
     returnvalue = returnvalue + loadblogHTMLintoram();
-    loginfo("Done with blog.html");
+    sendtolog("DONE");
+    loginfo("Loading login.html into RAM...", false);
     returnvalue = returnvalue + loadloginHTMLintoram();
-    loginfo("Done with login.html");
+    sendtolog("DONE");
+    loginfo("Loading signup.html into RAM...", false);
     returnvalue = returnvalue + loadsignupHTMLintoram();
-    loginfo("Done with signup.html");
+    sendtolog("DONE");
+    loginfo("Loading getstarted.html into RAM...", false);
     returnvalue = returnvalue + loadgetstartedHTMLintoram();
-    loginfo("Done with getstarted.html");
+    sendtolog("DONE");
+    loginfo("Loading account.html into RAM...", false);
     returnvalue = returnvalue + loadaccountHTMLintoram();
-    loginfo("Done with account.html");
+    sendtolog("DONE");
+    loginfo("Loading install.html into RAM...", false);
     returnvalue = returnvalue + loadinstallHTMLintoram();
-    loginfo("Done with install.html");
+    sendtolog("DONE");
+    loginfo("Loading installscript.sh into RAM...", false);
     returnvalue = returnvalue + loadinstallscriptSHHTMLintoram();
-    loginfo("Done with installscript.sh");
+    sendtolog("DONE");
     // returnvalue = returnvalue + 
-    loginfo("Done Loading into Ram");
+    loginfo("Finishing Load into RAM...", false);
 
     if (returnvalue != 0) {
-        std::string warning = "LOADING INTO RAM RETURNED VALUE " + std::to_string(returnvalue) + " CONTINUING";
-        logwarning(warning);
+        sendtolog("ERROR");
+        logwarning("LOADING INTO RAM RETURNED VALUE - ", false);
+        sendtologopen(std::to_string(returnvalue));
+        sendtolog(" - CONTINUING");
+    } else {
+        sendtolog("DONE");
     }
     return 0;
 }
@@ -3943,7 +4002,7 @@ std::string readPrivacyPolicy() {
 // HANDLE NETWORKED CONNECTIONS (443) - MAIN HTTPS SERVER!! //
 //////////////////////////////////////////////////////////////
 void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client_fd, struct sockaddr_in client_addr) {
-    loginfo("HTTP THREAD");
+    loginfo("HTTP THREAD", true);
     std::string ipaddr;
 
     SSL_CTX *ctx = SSL_CTX_new(TLS_server_method());
@@ -3970,18 +4029,18 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
         return;
     }
 
-    loginfo("True through ssl checks");
+    loginfo("True through ssl checks", true);
 
     if (SSL_accept(ssl) <= 0) {
         ERR_print_errors_fp(stderr);
-        logwarning("SSL_ACCEPT NOT TRUE!");
+        logwarning("SSL_ACCEPT NOT TRUE!", true);
     } else {
-        loginfo("TURe");
+        loginfo("TURe", true);
         // Buffer to read the incoming request
         char buffer[2048] = {0};
         int bytes_read = SSL_read(ssl, buffer, sizeof(buffer) - 1);
         int timer89 = 0;
-        logwarning(buffer);
+        logwarning(buffer, true);
         int timer89max = 5;
         bool completed23 = false;
         if (buffer != "" && sizeof(buffer) >= 7) {
@@ -4137,7 +4196,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
                             // LOGINTOACCOUNT
                             if (headerstringpost == "logintoaccount") {
-                                loginfo("logintoaccount received");
+                                loginfo("logintoaccount received", true);
                                 pagefoundpost = true;
                                 int offset = 0;
                                 bool completedlp = false;
@@ -4159,15 +4218,15 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
                                 if (jsonlogin != "") {
                                     // ADD MARIADB CHECK
-                                    loginfo(jsonlogin);
+                                    loginfo(jsonlogin, true);
 
                                     // GO AHEAD TO ANALYZE JSON AND SEND IT TO MARIADB TO VERIFY
                                     std::string userstringverify = jsonlogin.substr(2,8);
-                                    logwarning(userstringverify);
+                                    debugout(userstringverify);
                                     if (userstringverify == "username"){
                                         std::string verifyjson = jsonlogin.substr(11,1);
                                         int analyzenumber = 12;
-                                        logcritical(verifyjson);
+                                        debugout(verifyjson);
                                         if (verifyjson == ":") {
                                             int timering80 = 0;
                                             int timering80max = 80;
@@ -4177,7 +4236,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                             std::string hellostring = "";
                                             std::string username = "";
                                             while (timering80 <= timering80max && timering80set != true && quotations < 2) {
-                                                logwarning(hellostring);
+                                                debugout(hellostring);
                                                 hellostring = jsonlogin.substr(analyzenumber, 1);
                                                 if (hellostring.find('"') != std::string::npos) {
                                                     quotations = quotations + 1;
@@ -4195,7 +4254,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
                                             hellostring = jsonlogin.substr(analyzenumber, 1);
                                             analyzenumber = analyzenumber + 1;
-                                            logcritical(hellostring);
+                                            debugout(hellostring);
 
                                             if (hellostring == ",") {
                                                 // WORK ON VERIFYING PASSWORD
@@ -4208,7 +4267,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                 std::string password = "";
                                                 while (timering90 <= timering90max && timering90set != true && quotations2 < 2) {
                                                     hellostring = jsonlogin.substr(analyzenumber, 1);
-                                                    logwarning(hellostring);
+                                                    debugout(hellostring);
                                                     if (hellostring.find('"') != std::string::npos) {
                                                         quotations2 = quotations2 + 1;
                                                         if (quotations2 > 1) {
@@ -4228,7 +4287,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                 std::cout << "RECEIVED VERIFIED STATUS OF " << verified << std::endl;
                                                 if (verified == true) {
                                                     // CREATE SESSION TOKEN AND REDIRECT
-                                                    loginfo("SENDING TO ACCOUNT PAGE");
+                                                    loginfo("SENDING TO ACCOUNT PAGE", true);
                                                     std::string sessiontoken = generateRandomClientKey();
                                                     mariadbINSERT_SESSIONKEY(username, sessiontoken);
                                                     sleep(1);
@@ -4336,7 +4395,7 @@ void handleConnections443(int server_fd) {
         SSL_CTX_free(ctx);
         return;
     }
-    loginfo("Started!");
+    loginfo("Started!", true);
 
 
 
@@ -4376,7 +4435,7 @@ void handleConnections443(int server_fd) {
                     if (packetspam >= 10) {
                         // STOP CONNECTIONS/ENTER BLOCKING STATE
                         waiting230 = true;
-                        logwarning("LOCKING HTTP PORT FOR NOW (PACKET SPAM)");
+                        logwarning("LOCKING HTTP PORT FOR NOW (PACKET SPAM)", true);
                         timers[2] = time(NULL);
                     }
                 } else {
@@ -4394,7 +4453,7 @@ void handleConnections443(int server_fd) {
 
                 if (differenceintime >= 900) {
                     waiting230 = false;
-                    logwarning("ALLOWING RESTART OF HTTP PROCESS!");
+                    logwarning("ALLOWING RESTART OF HTTP PROCESS!", true);
                 }
 
                 if (waiting230 == false) { 
@@ -4414,7 +4473,7 @@ void handleConnections443(int server_fd) {
     SSL_shutdown(ssl);
     SSL_free(ssl);
     SSL_CTX_free(ctx);
-    logcritical("Finished!");
+    logcritical("Finished!", true);
 }
 
 
@@ -4453,7 +4512,7 @@ void handleConnections80() {
 
     while (true) {
         
-        loginfo("client received");
+        loginfo("client received", true);
         
         int client_fd = accept(server_fd23, (struct sockaddr*)&address, &addrlen);
 
@@ -4464,8 +4523,9 @@ void handleConnections80() {
 
         // Simple HTTP response for redirection
         const std::string response = "HTTP/1.1 301 Moved Permanently\r\nLocation: https://" + serveraddress + "/ \r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-        loginfo("SENDING REDIRECT!");
-        loginfo(response);
+        loginfo("SENDING REDIRECT! - ", false);
+        sendtolog(response);
+
         // Send the redirect response
         send(client_fd, response.c_str(), response.length(), 0);
         close(client_fd);
@@ -4512,7 +4572,7 @@ void handle11829Connections(int server_fd2) {
                     perror("accept");
                     exit(EXIT_FAILURE);
                 } else {
-                    loginfo("11829 port initialized");
+                    loginfo("11829 port initialized", true);
                 }
             
                 read(new_socket2, buffer, 2048);
@@ -5876,9 +5936,10 @@ int main() {
     int startup = setup();
 
     if (startup != 0) {
-        logcritical("STARTUP CHECKS RETURNED EXIT CODE 1");
-        logcritical("THE SYSTEM COULD NOT CONTINUE!");
-        logcritical("ALL DOCKER CONTAINERS WILL BE STOPPED");
+        sendtolog("ERROR");
+        logcritical("STARTUP CHECKS RETURNED EXIT CODE 1", true);
+        logcritical("THE SYSTEM COULD NOT CONTINUE!", true);
+        logcritical("ALL DOCKER CONTAINERS WILL BE STOPPED", true);
 
         close(serverport1);
         close(serverport2);
@@ -5954,16 +6015,28 @@ int main() {
 
         // ENCOUNTERED ERRORS
         if (encounterederrors != 0) {
-            logcritical("HONEYPI-SERVER HAS ENCOUNTERED UNRECOVERABLE ERRORS WHILE RUNNING!");
-            logcritical("HONEYPI-SERVER WILL NOW ATTEMPT A LOG DUMP!");
+            sendtolog("ERROR");
+            logcritical("HONEYPI-SERVER HAS ENCOUNTERED UNRECOVERABLE ERRORS WHILE RUNNING!", true);
+            logcritical("HONEYPI-SERVER WILL NOW ATTEMPT A LOG DUMP!", true);
             
+            
+            // ENCOUNTERED ERRORS LOG DUMP
 
 
-            logcritical("HONEYPI-SERVER WILL NOW ATTEMPT A SAVEFILE DUMP!");
+            logcritical("HONEYPI-SERVER WILL NOW ATTEMPT A SAVEFILE DUMP!", true);
 
-            logcritical("ATTEMPTING TO END SERVER!!!");
+
+            // ENCOUNTERED ERRORS SAVE FILE DUMP
+
+
+            logcritical("ATTEMPTING TO KILL SERVER!!!", true);
             close(serverport1);
             close(serverport2);
+            return;
+            return;
+            return;
+            return;
+            return;
         }
     }
 }
