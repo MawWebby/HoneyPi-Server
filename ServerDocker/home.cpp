@@ -20,6 +20,7 @@
 
 const bool debug = false;
 const bool testing = false;
+const bool newserverupdate = true;
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -208,9 +209,35 @@ const std::string updatehoneypilocation = "https://raw.githubusercontent.com/Maw
 
 
 
+// SYSTEM COMMANDS
+const char* createnewipliststrictfile = "touch /home/listfiles/ipliststrict.txt";
+const char* createnewipliststandardfile = "touch /home/listfiles/ipliststandard.txt";
+const char* createnewiplistRAWfile = "touch /home/listfiles/iplistsraw.txt";
+const char* createnewiplistsmoreinfo = "touch /home/listfiles/iplistsmoreinfo.txt";
+
+
+
+
+// MIGRATION COMMANDS - PT.1
+const char* moveipliststricttonewfile = "mv /home/listfiles/iplisttrict.txt /home/listfiles/ipliststrict2.txt";
+const char* moveipliststandardtonewfile = "mv /home/listfiles/ipliststandard.txt /home/listfiles/ipliststandard2.txt";
+const char* moveiplistsrawtonewfile = "mv /home/listfiles/iplistsraw.txt /home/listfiles/iplistsraw2.txt";
+const char* moveiplistsmoreinfotonewfile = "mv /home/listfiles/iplistsmoreinfo.txt /home/listfiles/iplistsmoreinfo2.txt";
+
+
+
+// MIGRATION COMMANDS - PT.2
+const char* removetempiplistSTRICTfile = "rm /home/listfiles/ipliststrict2.txt";
+const char* removetempiplistSTANDARDfile = "rm /home/listfiles/ipliststandard2.txt";
+const char* removetempiplistRAWfile = "rm /home/listfiles/iplistsraw2.txt";
+const char* removetempiplistMOREINFOfile = "rm /home/listfiles/iplistsmoreinfo2.txt";
+
+
+
 // FILE LOCATIONS
 const char* ipliststrictfile = "/home/listfiles/ipliststrict.txt";
 const char* ipliststandardfile = "/home/listfiles/ipliststandard.txt";
+const char* ipliststrictfile = "/home/listfiles/iplistraw.txt";
 const char* iplistsmoreinfofile = "/home/listfiles/iplistsmoreinfo.txt";
 const char* maclistfile = "/home/listfiles/maclist.txt";
 const char* severitylistfile = "/home/listfiles/severitylist.txt";
@@ -2604,6 +2631,7 @@ void checkforhoneypiupdates() {
 bool checkhoneypiupdateavailable() {
     checkforhoneypiupdates();
     std::string aStd = updatefileinformationhoneypi;
+    loginfo(aStd, true);
     if (aStd.length() >= 61) {
         std::string header1 = aStd.substr(0, 14);
         if (header1 == "latest.main = ") {
@@ -2630,6 +2658,7 @@ bool checkhoneypiupdateavailable() {
             }
         }
     } else {
+        sendtolog("ERROR");
         logwarning("UNABLE TO CHECK FOR CLIENT UPDATES!", true);
         return false;
     }
@@ -5049,22 +5078,67 @@ int setup() {
             if (compressed != honeyversion) {
                 migration = migration + 1;
                 logwarning("Detected Different IP List Strict Version, Attempting to Update...", false);
+                
                 // MIGRATION STEPS
+                // CREATE TEMP FILE pt1
+                // MOVE CONTENTS TO TEMP FILE pt2
+                // DELETE OLD FILE pt3
+                // MAKE NEW FILE pt4
+                // ADD VERSION ID pt5
+                // MOVE ALL CONTENT BACK pt6
+                // DELETE OLD FILE pt7
+                // TEST PATCH pt8
+                int res24 = system("moveipliststricttonewfile");
+                if (res24 == 0) {
 
-
-
-                sendtolog("No migration steps detected");
+                }
+                
             } else {
                 loginfo("IP LIST STRICT Started...", true);
             }
         }
     } else {
-        sendtolog("ERROR!");
-        logcritical("UNABLE TO OPEN IP LIST Strict TXT File!", true);
-        startupchecks = startupchecks + 1;
-        return 1;
-        return 1;
-        return 1;
+        sendtolog("NO FILE FOUND!");
+        if (newserverupdate == true) {
+            logwarning("Attempting to Create New IP List Strict File...", false);
+            int res23 = system(createnewipliststrictfile);
+            if (res23 == 0) {
+                std::ofstream ipliststrict;
+                ipliststrict.open(ipliststrictfile);
+                if (ipliststrict.is_open() == true) {
+                    sendtolog("DONE");
+                    loginfo("Attempting to write file version...", false);
+                    ipliststrict.seekp(0);
+                    ipliststrict << currentversionID << '\n';
+                    ipliststrict.flush();
+                    if (ipliststrict.fail() == true) {
+                        sendtolog("ERROR");
+                        logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTRICT", true);
+                        if (ipliststrict.bad() == true) {
+                            logcritical("I/O ERROR OCCURRED", true);
+                        }
+                        startupchecks = startupchecks + 1;
+                        ipliststrict.close();
+                    }
+                    sleep(0.5);
+                    sendtolog("Done");
+                }
+            } else {
+                sendtolog("ERROR!");
+                logcritical("UNABLE TO OPEN IP LIST Strict TXT File!", true);
+                startupchecks = startupchecks + 1;
+                return 1;
+                return 1;
+                return 1;
+            }
+        } else {
+            sendtolog("ERROR!");
+            logcritical("UNABLE TO OPEN IP LIST Strict TXT File!", true);
+            startupchecks = startupchecks + 1;
+            return 1;
+            return 1;
+            return 1;
+        }
     }
     ipliststrict.close();
     
