@@ -293,6 +293,11 @@ const std::map <std::pair<int, int>, std::string> mariadbchangeportstatusheader 
     {{3,1}, "UPDATE serverstatus SET port11830running = '1'"},
 };
 
+const std::map <std::pair<std::string, int>, std::string> mariadbadderrorheader = {
+    {{"port80error", 1}, "UPDATE serverstatus SET port80error = poert80error + 1"},
+};
+
+
 
 // FILE LOCK VARIABLES
 bool ipliststrictlock = false;
@@ -1462,6 +1467,21 @@ void debugout(std::string data2) {
     logdebug(data2, true);
 }
 
+
+
+/////////////////////////
+// THE MAIN CRASH LOOP //
+/////////////////////////
+// HARDCRASH - PERMANENT LOCKOUT
+// SECTOR - SECTOR THAT IS AFFECTED (0-P80; 1-P443; 2-P11829; 3-P11830; 4-MARIADB; 5-MARIADBHANDLER; 6-STATUSMARIADB; 7-READ/WRITEERROR; 8-ENCRYPTION_ERROR; 9-COG_STORE_ERROR)
+// SEVERITY - SEVERITY OF INCIDENT
+// MESSAGE - MESSAGE TO BE DISPLAYED IN RUNNING LOG FILE!
+int crashloop(bool hardcrash, int sector, std::string message) {
+
+
+
+    return 0;
+}
 
 
 
@@ -4867,9 +4887,14 @@ int createnetworkport443() {
 }
 
 
-/////////////////////////
-// THE MAIN CRASH LOOP //
-/////////////////////////
+
+
+
+
+
+
+
+
 
 
 
