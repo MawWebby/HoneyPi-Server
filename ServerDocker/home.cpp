@@ -214,6 +214,7 @@ const char* createnewipliststrictfile = "touch /home/listfiles/ipliststrict.txt"
 const char* createnewipliststandardfile = "touch /home/listfiles/ipliststandard.txt";
 const char* createnewiplistRAWfile = "touch /home/listfiles/iplistsraw.txt";
 const char* createnewiplistsmoreinfo = "touch /home/listfiles/iplistsmoreinfo.txt";
+const char* createnewerrorlogfile = "touch /home/serverdump/errors.txt";
 
 
 
@@ -237,7 +238,7 @@ const char* removetempiplistMOREINFOfile = "rm /home/listfiles/iplistsmoreinfo2.
 // FILE LOCATIONS
 const char* ipliststrictfile = "/home/listfiles/ipliststrict.txt";
 const char* ipliststandardfile = "/home/listfiles/ipliststandard.txt";
-const char* ipliststrictfile = "/home/listfiles/iplistraw.txt";
+const char* iplistRAWfile = "/home/listfiles/iplistraw.txt";
 const char* iplistsmoreinfofile = "/home/listfiles/iplistsmoreinfo.txt";
 const char* maclistfile = "/home/listfiles/maclist.txt";
 const char* severitylistfile = "/home/listfiles/severitylist.txt";
@@ -267,6 +268,7 @@ const char* installBASH = "/home/htmlmainweb/installscript.sh";
 const char* htmlfolder = "/home/htmlmainweb";
 const char* signuphtmlfile = "/home/htmlmainweb/signup.html";
 const char* configpagehtml = "/home/htmlmainweb/config.html";
+const char* errorlog = "/home/serverdump/errors.txt";
 const char* filearguments = "ios::in | ios::out";
 const char* legendstring = "MyChiefDog79";
 // FIX LATER FOR KEEPALIVE OPERATIONS
@@ -361,6 +363,68 @@ bool calculatingtime = false;
 // 4 - 6-Hour Maintenance Timer
 // 5 - 30-Minute Wait for COGs
 
+
+
+
+// ERROR MESSAGES
+// SECTOR - SECTOR THAT IS AFFECTED (0-P80; 1-P443; 2-P11829; 3-P11830; 4-MARIADB; 5-MARIADBHANDLER; 6-STATUSMARIADB; 7-READ/WRITEERROR; 8-ENCRYPTION_ERROR; 9-COG_STORE_ERROR)
+// SEVERITY - SEVERITY OF INCIDENT
+std::map<std::pair<int,int>, bool> servercrash = {
+    {{0,0}, false},
+    {{0,1}, false},
+    {{0,2}, false},
+    {{0,3}, true},
+
+    {{1,0}, false},
+    {{1,1}, false},
+    {{1,2}, false},
+    {{1,3}, true},
+
+    {{2,0}, false},
+    {{2,1}, false},
+    {{2,2}, false},
+    {{2,3}, true},
+
+    {{3,0}, false},
+    {{3,1}, false},
+    {{3,2}, false},
+    {{3,3}, true},
+
+    {{4,0}, false},
+    {{4,1}, false},
+    {{4,2}, true},
+    {{4,3}, true},
+
+    {{5,0}, false},
+    {{5,1}, false},
+    {{5,2}, true},
+    {{5,3}, true},
+
+    {{6,0}, false},
+    {{6,1}, true},
+    {{6,2}, true},
+    {{6,3}, true},
+
+    {{7,0}, false},
+    {{7,1}, true},
+    {{7,2}, true},
+    {{7,3}, true},
+
+    {{8,0}, false},
+    {{8,1}, false},
+    {{8,2}, true},
+    {{8,3}, true},
+
+    {{9,0}, false},
+    {{9,1}, false},
+    {{9,2}, false},
+    {{9,3}, true},
+
+    {{10,0}, false},
+    {{10,1}, true},
+    {{10,2}, true},
+    {{10,3}, true},
+};
 
 
 
@@ -1452,6 +1516,7 @@ int timedetector() {
 void sendtolog(std::string data2) {
     std::cout << data2 << std::endl;
 }
+
 void sendtologopen(std::string data2) {
     std::cout << data2;
 }
@@ -1473,6 +1538,7 @@ void loginfo(std::string data2, bool complete) {
         sendtolog(data2);
     }
 }
+
 void logwarning(std::string data2, bool complete) {
     data2 = "[WARNING] - " + data2;
     if (complete == false) {
@@ -1481,6 +1547,7 @@ void logwarning(std::string data2, bool complete) {
         sendtolog(data2);
     }
 }
+
 void logcritical(std::string data2, bool complete) {
     data2 = "[CRITICAL] - " + data2;
     if (complete == false) {
@@ -1488,6 +1555,11 @@ void logcritical(std::string data2, bool complete) {
     } else {
         sendtolog(data2);
     }
+}
+
+void logerror(std::string headerdata2, std::string errormessage) {
+    std::string data2 = "[ERROR] - " + headerdata2 + " - " + errormessage;
+    sendtolog(data2);
 }
 
 void debugout(std::string data2) {
@@ -1500,14 +1572,45 @@ void debugout(std::string data2) {
 // THE MAIN CRASH LOOP //
 /////////////////////////
 // HARDCRASH - PERMANENT LOCKOUT
-// SECTOR - SECTOR THAT IS AFFECTED (0-P80; 1-P443; 2-P11829; 3-P11830; 4-MARIADB; 5-MARIADBHANDLER; 6-STATUSMARIADB; 7-READ/WRITEERROR; 8-ENCRYPTION_ERROR; 9-COG_STORE_ERROR)
+// SECTOR - SECTOR THAT IS AFFECTED (0-P80; 1-P443; 2-P11829; 3-P11830; 4-MARIADB; 5-MARIADBHANDLER; 6-STATUSMARIADB; 7-READ/WRITEERROR; 8-ENCRYPTION_ERROR; 9-COG_STORE_ERROR; 10-ERROR_MODULE)
 // SEVERITY - SEVERITY OF INCIDENT
-// MESSAGE - MESSAGE TO BE DISPLAYED IN RUNNING LOG FILE!
-int crashloop(bool hardcrash, int sector, std::string message) {
+// MODULE - NAME OF MODULE TO BE DISPLAYED
+// HEADERMESSAGE - MESSAGE TO BE DISPLAYED IN RUNNING LOG FILE!
+// ERRORMESSAGE - LIBRARY MESSAGE (IF APPLICABLE :) )
+int crashloop(int sector, int severity, bool loopback, std::string module, std::string headermessage, std::string errormessage) {
+    bool hardcrash = servercrash[std::pair{sector,severity}];
+    if (errormessage == "") {
+        errormessage = "No further information provided...";
+    }
+    
+    if (hardcrash == true) {
+        // HARD CRASH
+        // ADD MORE HERE LATER FOR FULL CRASH TO QUICK AND WRITE TO FILES!
 
 
-
-    return 0;
+    } else {
+        // SOFT CRASH
+        std::ofstream errormodule;
+        errormodule.open(errorlog);
+        if (errormodule.is_open()) {
+            errormodule << "[ERROR] - " << module << " - " << headermessage << " - " << errormessage << std::endl;
+        } else {
+            if (loopback == true) {
+                logerror("ERROR MODULE", "UNABLE TO WRITE TO ERROR LOG (ERROR 2)");
+                crashloop(sector, 3, true, module, headermessage, errormessage);
+            } else {
+                int res26 = system(createnewerrorlogfile);
+                if (res26 != 0) {
+                    logerror(module, headermessage + errormessage);
+                    logerror("ERROR MODULE", "UNABLE TO CREATE ERROR LOG (ERROR 1)");
+                    crashloop(sector, 3, true, module, headermessage, errormessage);
+                } else {
+                    crashloop(sector, severity, true, module, headermessage, errormessage);
+                }
+            }
+        }
+    }
+    return 1;
 }
 
 
@@ -1522,28 +1625,36 @@ int crashloop(bool hardcrash, int sector, std::string message) {
 // MARIADB TEST
 int mariadb_test() {
     
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
 
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
 
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
 
-    // Execute query
-    sql::ResultSet *res = stmnt->executeQuery("SELECT user FROM credentials");
+        // Execute query
+        sql::ResultSet *res = stmnt->executeQuery("SELECT user FROM credentials");
+        
+        loginfo("TRUE", true);
+        res->next();
+        std::cout << "User = " << res->getString(1);
+
+        return 0;
+    } catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }
+
     
-    loginfo("TRUE", true);
-    res->next();
-    std::cout << "User = " << res->getString(1);
-
-    return 0;
 }
 
 // CHECK FOR IP ADDRESS IN serversecurity
@@ -4975,6 +5086,8 @@ int setup() {
     // DETERMINE TIME
     startuptime = time(NULL);
     startupchecks = startupchecks + timedetector();
+
+    mariadb_test();
 
 
 
