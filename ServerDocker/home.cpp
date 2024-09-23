@@ -426,6 +426,50 @@ std::map<std::pair<int,int>, bool> servercrash = {
     {{10,3}, true},
 };
 
+// ADD SERVER ERRORS!
+std::map<int, std::string> addservererrors = {
+    {0,""},
+    {1,""},
+    {2,""},
+    {3,""},
+    {4,""},
+    {5,""},
+    {6,""},
+    {7,""},
+    {8,""},
+    {9,""},
+    {10,""},
+};
+
+// VIEW SERVER ERRORS
+std::map<int, std::string> viewservererrors = {
+    {0,""},
+    {1,""},
+    {2,""},
+    {3,""},
+    {4,""},
+    {5,""},
+    {6,""},
+    {7,""},
+    {8,""},
+    {9,""},
+    {10,""},
+};
+
+// CLEAR SERVER ERRORS
+std::map<int, std::string> clearservererrors = {
+    {0,""},
+    {1,""},
+    {2,""},
+    {3,""},
+    {4,""},
+    {5,""},
+    {6,""},
+    {7,""},
+    {8,""},
+    {9,""},
+    {10,""},
+};
 
 
 
@@ -1582,14 +1626,17 @@ int crashloop(int sector, int severity, bool loopback, std::string module, std::
     if (errormessage == "") {
         errormessage = "No further information provided...";
     }
-    
+
     if (hardcrash == true) {
         // HARD CRASH
         // ADD MORE HERE LATER FOR FULL CRASH TO QUICK AND WRITE TO FILES!
-
+        logerror("ERROR MODULE", "HARD CRASH CALLED BUT NOT IMPLEMENTED!");
 
     } else {
         // SOFT CRASH
+
+
+        // ADD MARIADB ERROR COUNTER!!!
         std::ofstream errormodule;
         errormodule.open(errorlog);
         if (errormodule.is_open()) {
@@ -1605,6 +1652,7 @@ int crashloop(int sector, int severity, bool loopback, std::string module, std::
                     logerror("ERROR MODULE", "UNABLE TO CREATE ERROR LOG (ERROR 1)");
                     crashloop(sector, 3, true, module, headermessage, errormessage);
                 } else {
+                    logerror(module, headermessage + errormessage);
                     crashloop(sector, severity, true, module, headermessage, errormessage);
                 }
             }
@@ -5192,7 +5240,7 @@ int setup() {
                 migration = migration + 1;
                 logwarning("Detected Different IP List Strict Version, Attempting to Update...", false);
                 
-                // MIGRATION STEPS
+                // MIGRATION STEPS:
                 // CREATE TEMP FILE pt1
                 // MOVE CONTENTS TO TEMP FILE pt2
                 // DELETE OLD FILE pt3
@@ -5201,7 +5249,8 @@ int setup() {
                 // MOVE ALL CONTENT BACK pt6
                 // DELETE OLD FILE pt7
                 // TEST PATCH pt8
-                int res24 = system("moveipliststricttonewfile");
+                
+                int res24 = 0; //system(moveipliststricttonewfile);
                 if (res24 == 0) {
 
                 }
