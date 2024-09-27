@@ -234,6 +234,10 @@ const char* removetempiplistRAWfile = "rm /home/listfiles/iplistsraw2.txt";
 const char* removetempiplistMOREINFOfile = "rm /home/listfiles/iplistsmoreinfo2.txt";
 
 
+// COG FILE OPERATIONS
+const char* createcogfile = "touch /home/crashlogs/";
+const char* createcogfileend = ".txt";
+
 
 // FILE LOCATIONS
 const char* ipliststrictfile = "/home/listfiles/ipliststrict.txt";
@@ -367,48 +371,60 @@ bool calculatingtime = false;
 
 
 // ERROR MESSAGES
-// SECTOR - SECTOR THAT IS AFFECTED (0-P80; 1-P443; 2-P11829; 3-P11830; 4-MARIADB; 5-MARIADBHANDLER; 6-STATUSMARIADB; 7-READ/WRITEERROR; 8-ENCRYPTION_ERROR; 9-COG_STORE_ERROR)
+// SECTOR - SECTOR THAT IS AFFECTED (0-P80; 1-P443; 2-P11829; 3-P11830; 
+//                                   4-MARIADB; 5-MARIADBHANDLER; 6-STATUSMARIADB; 7-READ/WRITEERROR(IO/ERROR);
+//                                   8-ENCRYPTION_ERROR; 9-COG_STORE_ERROR; 10-API_HANDLER; 11-INTEGRATION; 
+//                                   12-PACKET_FILTERING; 13-DNS; 14-BACKUP/STORE; 15-ATTEMPTED_EXPLOIT)
 // SEVERITY - SEVERITY OF INCIDENT
-std::map<std::pair<int,int>, bool> servercrash = {
-    {{0,0}, false},
-    {{0,1}, false},
-    {{0,2}, false},
-    {{0,3}, true},
+// ACTION - WHAT TO DO WITH SECTOR/SECURITY
+//          NUMBER = ADD NUMBER
+//          LOG = LOG INTO ERROR LOG / ADD NUMBER
+//          LOCK = LOCK MODULE FROM RUNNING (P80, P443, P11829, P11830)
+//          SOFT = SOFTCRASH MODULE OR OTHER
+//          SOFTALL = SOFTCRASH ALL MODULES/THREADS
+//          HARD = HARDCRASH ALL MODULES
 
-    {{1,0}, false},
-    {{1,1}, false},
-    {{1,2}, false},
-    {{1,3}, true},
+// FIX THIS BY ADDING LOCKS TO EACH PORT
+std::map<std::pair<int,int>, std::string> servercrash = {
+    {{0,0}, "NUMBER"},  // NUMBER = HTTP/HTTPS GENERAL ERROR THAT I DON'T WANT TO CATALOG 50 MILLION TIMES
+    {{0,1}, "LOG"},     // LOG = MORE SERIOUS ERROR LIKE BLOCKED IP ADDRESS OR TARGETTED ATTACK
+    {{0,2}, "LOCK"},    // LOCK = MORE SERIOUS YET ERROR LIKE DDOS - BLOCK ALL ON ACCESS PORT
+    {{0,3}, "HARD"},    // HARD = SUSPECTED INTRUSION - IMMEDIATELY SAVE SERVER STATE AND HARD CRASH IMMEDIATELY
 
-    {{2,0}, false},
-    {{2,1}, false},
-    {{2,2}, false},
-    {{2,3}, true},
+    {{1,0}, "NUMBER"},  // NUMBER = HTTPS GENERAL ERROR THAT I DON'T WANT TO CATALOG 50 MILLION TIMES
+    {{1,1}, "LOG"},     // LOG = MORE SERIOUS ERROR LIKE BLOCKING A PARTICULAR IP THAT WOULD BE NICE TO HAVE IN THE LOG
+    {{1,2}, "LOCK"},    // LOCK = MORE SERIOUS YET AS BLCOKING PORT TEMPORARILY AND SENDING FAILED REQUESTS TO EACH IMPACTED CLIENT
+    {{1,3}, "HARD"},    // HARD = SUSPECTED INTRUSION - IMMEDIATELY SAVE SERVER STATE AND HARD CRASH IMMEDIATELY
 
-    {{3,0}, false},
-    {{3,1}, false},
-    {{3,2}, false},
-    {{3,3}, true},
+    {{2,0}, "NUMBER"},  // NUMBER = 
+    {{2,1}, "LOG"},     // LOG = 
+    {{2,2}, "LOCK"},    // LOCK = 
+    {{2,3}, "HARD"},    // HARD = SUSPECTED INTRUSION - IMMEDIATELY SAVE SERVER STATE AND HARD CRASH IMMEDIATELY
 
-    {{4,0}, false},
-    {{4,1}, false},
-    {{4,2}, true},
-    {{4,3}, true},
+    {{3,0}, "NUMBER"},  // NUMBER = 
+    {{3,1}, "LOG"},     // LOG = 
+    {{3,2}, "LOCK"},    // LOCK = 
+    {{3,3}, "HARD"},    // HARD = SUSPECTED INTRUSION - IMMEDIATELY SAVE SERVER STATE AND HARD CRASH IMMEDIATELY
+
+    {{4,0}, "NUMBER"},  // NUMBER = ONLY INCLUDE NUMBERS FOR MARIADB GENERAL ERRORS LIKE NO USER FOUND
+    {{4,1}, "LOG"},     // LOG = LOG ERRORS INVOLVING INVALID CREDENTIALS OR SOMETHING LIKE THAT FOR API
+    {{4,2}, "SOFT"},    // SOFT = SOFT MODULE RESET MARIADB HANDLER
+    {{4,3}, "HARD"},    // HARD = SUSPECTED INTRUSION - IMMEDIATELY SAVE SERVER STATE AND HARD CRASH IMMEDIATELY
 
     {{5,0}, false},
     {{5,1}, false},
     {{5,2}, true},
     {{5,3}, true},
 
-    {{6,0}, false},
-    {{6,1}, true},
-    {{6,2}, true},
-    {{6,3}, true},
+    {{6,0}, false},     //
+    {{6,1}, true},      //
+    {{6,2}, true},      //
+    {{6,3}, true},      //
 
-    {{7,0}, false},
-    {{7,1}, true},
-    {{7,2}, true},
-    {{7,3}, true},
+    {{7,0}, "LOG"},     // LOG - LOG THE FILE I/O OR OTHER ERROR
+    {{7,1}, "SOFT"},    // SOFT = SOFT RESET THE FILE WRITING MODULE
+    {{7,2}, "HARD"},    // HARD = UNABLE TO WRITE ANYTHING TO FILE SYSTEM - PREVENT LOSS OF DATA IMMEDIATELY!
+    {{7,3}, "HARD"},    // HARD = SUSPECTED INTRUSION - IMMEDIATELY SAVE SERVER STATE AND HARD CRASH IMMEDIATELY
 
     {{8,0}, false},
     {{8,1}, false},
@@ -424,6 +440,31 @@ std::map<std::pair<int,int>, bool> servercrash = {
     {{10,1}, true},
     {{10,2}, true},
     {{10,3}, true},
+
+    {{11,0}, false},
+    {{11,1}, true},
+    {{11,2}, true},
+    {{11,3}, true},
+
+    {{12,0}, false},
+    {{12,1}, true},
+    {{12,2}, true},
+    {{12,3}, true},
+
+    {{13,0}, false},
+    {{13,1}, true},
+    {{13,2}, true},
+    {{13,3}, true},
+
+    {{14,0}, false},
+    {{14,1}, true},
+    {{14,2}, true},
+    {{14,3}, true},
+
+    {{15,0}, false},
+    {{15,1}, true},
+    {{15,2}, true},
+    {{15,3}, true},
 };
 
 // ADD SERVER ERRORS!
@@ -1622,12 +1663,13 @@ void debugout(std::string data2) {
 // HEADERMESSAGE - MESSAGE TO BE DISPLAYED IN RUNNING LOG FILE!
 // ERRORMESSAGE - LIBRARY MESSAGE (IF APPLICABLE :) )
 int crashloop(int sector, int severity, bool loopback, std::string module, std::string headermessage, std::string errormessage) {
-    bool hardcrash = servercrash[std::pair{sector,severity}];
+    std::string hardcrash = servercrash[std::pair{sector,severity}];
     if (errormessage == "") {
         errormessage = "No further information provided...";
     }
 
-    if (hardcrash == true) {
+    // FIX THIS WITH NEW PARAMETERS
+    if (hardcrash == "true") {
         // HARD CRASH
         // ADD MORE HERE LATER FOR FULL CRASH TO QUICK AND WRITE TO FILES!
         logerror("ERROR MODULE", "HARD CRASH CALLED BUT NOT IMPLEMENTED!");
