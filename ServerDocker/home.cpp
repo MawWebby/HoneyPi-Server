@@ -4256,14 +4256,17 @@ int loadmainHTMLintoram() {
         int length = mainhtmlpayload.length();
         mainhtmlpayload = httpsuccess + std::to_string(length) + beforepayload + mainhtmlpayload;
         htmlmain.close();
+        sendtolog("Done");
         return 0;
     } else {
         mainhtmlpayload = httpservererror;
         htmlmain.close();
+        sendtolog("ERROR");
         return 1;
     }
     mainhtmlpayload = httpservererror;
     htmlmain.close();
+    sendtolog("ERROR");
     return 1;
 }
 
@@ -4292,14 +4295,17 @@ int loadpricingHTMLintoram() {
         int length = pricinghtmlpayload.length();
         pricinghtmlpayload = httpsuccess + std::to_string(length) + beforepayload + pricinghtmlpayload;
         htmlprice.close();
+        sendtolog("Done");
         return 0;
     } else {
         pricinghtmlpayload = httpservererror;
         htmlprice.close();
+        sendtolog("ERROR");
         return 1;
     }
     pricinghtmlpayload = httpservererror;
     htmlprice.close();
+    sendtolog("ERROR");
     return 1;
 }
 
@@ -4328,14 +4334,17 @@ int loadblogHTMLintoram() {
         int length = blogpayload.length();
         blogpayload = httpsuccess + std::to_string(length) + beforepayload + blogpayload;
         bloghtml.close();
+        sendtolog("Done");
         return 0;
     } else {
         blogpayload = httpservererror;
         bloghtml.close();
+        sendtolog("ERROR");
         return 1;
     }
     blogpayload = httpservererror;
     bloghtml.close();
+    sendtolog("ERROR");
     return 1;
 }
 
@@ -4365,14 +4374,17 @@ int loadloginHTMLintoram() {
         int length = loginpayload.length();
         loginpayload = httpsuccess + std::to_string(length) + beforepayload + loginpayload;
         loginhtml.close();
+        sendtolog("Done");
         return 0;
     } else {
         loginpayload = httpservererror;
         loginhtml.close();
+        sendtolog("ERROR");
         return 1;
     }
     loginpayload = httpservererror;
     loginhtml.close();
+    sendtolog("ERROR");
     return 1;
 }
 
@@ -4401,14 +4413,17 @@ int loadsignupHTMLintoram() {
         int length = signuppayload.length();
         signuppayload = httpsuccess + std::to_string(length) + beforepayload + signuppayload;
         signuphtml.close();
+        sendtolog("Done");
         return 0;
     } else {
         loginpayload = httpservererror;
         signuphtml.close();
+        sendtolog("ERROR");
         return 1;
     }
     loginpayload = httpservererror;
     signuphtml.close();
+    sendtolog("ERROR");
     return 1;
 }
 
@@ -4437,14 +4452,17 @@ int loadgetstartedHTMLintoram() {
         int length = getstartedpayload.length();
         getstartedpayload = httpsuccess + std::to_string(length) + beforepayload + getstartedpayload;
         getstartedstream.close();
+        sendtolog("Done");
         return 0;
     } else {
         getstartedpayload = httpservererror;
         getstartedstream.close();
+        sendtolog("ERROR");
         return 1;
     }
     getstartedpayload = httpservererror;
     getstartedstream.close();
+    sendtolog("ERROR");
     return 1;
 }
 
@@ -4473,14 +4491,17 @@ int loadaccountHTMLintoram() {
         int length = accountpayload.length();
         accountpayload = httpsuccess + std::to_string(length) + beforepayload + accountpayload;
         accountpayloadfile.close();
+        sendtolog("Done");
         return 0;
     } else {
         accountpayload = httpservererror;
         accountpayloadfile.close();
+        sendtolog("ERROR");
         return 1;
     }
     accountpayload = httpservererror;
     accountpayloadfile.close();
+    sendtolog("ERROR");
     return 1;
 }
 
@@ -4509,14 +4530,17 @@ int loadinstallHTMLintoram() {
         int length = installhtmlpayload.length();
         installhtmlpayload = httpsuccess + std::to_string(length) + beforepayload + installhtmlpayload;
         installHTMLFile.close();
+        sendtolog("Done");
         return 0;
     } else {
         installhtmlpayload = httpservererror;
         installHTMLFile.close();
+        sendtolog("ERROR");
         return 1;
     }
     installhtmlpayload = httpservererror;
     installHTMLFile.close();
+    sendtolog("ERROR");
     return 1;
 }
 
@@ -4545,53 +4569,48 @@ int loadinstallscriptSHHTMLintoram() {
         int length = installscriptSHpayload.length();
         installscriptSHpayload = httpsuccess + std::to_string(length) + beforepayload + installscriptSHpayload;
         installSHFile.close();
+        sendtolog("Done");
         return 0;
     } else {
         installscriptSHpayload = httpservererror;
         installSHFile.close();
+        sendtolog("ERROR");
         return 1;
     }
     installscriptSHpayload = httpservererror;
     installSHFile.close();
+    sendtolog("ERROR");
     return 1;
 }
 
 int loadHTMLINTORAM() {
-    loginfo("Loading All Main HTML Pages into RAM!", true);
+    loginfo("HTML - Loading All Main HTML Pages into RAM!", true);
     int returnvalue = 0;
-    loginfo("Loading index.html into RAM...", false);
+    loginfo("HTML - Loading index.html into RAM...", false);
     returnvalue = returnvalue + loadmainHTMLintoram();
-    sendtolog("DONE");
-    loginfo("Loading pricing.html into RAM...", false);
+    loginfo("HTML - Loading pricing.html into RAM...", false);
     returnvalue = returnvalue + loadpricingHTMLintoram();
-    sendtolog("DONE");
-    loginfo("Loading blog.html into RAM...", false);
+    loginfo("HTML - Loading blog.html into RAM...", false);
     returnvalue = returnvalue + loadblogHTMLintoram();
-    sendtolog("DONE");
-    loginfo("Loading login.html into RAM...", false);
+    loginfo("HTML - Loading login.html into RAM...", false);
     returnvalue = returnvalue + loadloginHTMLintoram();
-    sendtolog("DONE");
-    loginfo("Loading signup.html into RAM...", false);
+    loginfo("HTML - Loading signup.html into RAM...", false);
     returnvalue = returnvalue + loadsignupHTMLintoram();
-    sendtolog("DONE");
-    loginfo("Loading getstarted.html into RAM...", false);
+    loginfo("HTML - Loading getstarted.html into RAM...", false);
     returnvalue = returnvalue + loadgetstartedHTMLintoram();
-    sendtolog("DONE");
-    loginfo("Loading account.html into RAM...", false);
+    loginfo("HTML - Loading account.html into RAM...", false);
     returnvalue = returnvalue + loadaccountHTMLintoram();
-    sendtolog("DONE");
-    loginfo("Loading install.html into RAM...", false);
+    loginfo("HTML - Loading install.html into RAM...", false);
     returnvalue = returnvalue + loadinstallHTMLintoram();
-    sendtolog("DONE");
-    loginfo("Loading installscript.sh into RAM...", false);
+    loginfo("HTML - Loading installscript.sh into RAM...", false);
     returnvalue = returnvalue + loadinstallscriptSHHTMLintoram();
-    sendtolog("DONE");
+
     // returnvalue = returnvalue + 
-    loginfo("Finishing Load into RAM...", false);
+    loginfo("HTML - Finishing Loading into RAM...", false);
 
     if (returnvalue != 0) {
         sendtolog("ERROR");
-        logwarning("LOADING INTO RAM RETURNED VALUE - ", false);
+        logwarning("HTML - LOADING INTO RAM RETURNED VALUE - ", false);
         sendtologopen(std::to_string(returnvalue));
         sendtolog(" - CONTINUING");
     } else {
