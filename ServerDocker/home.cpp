@@ -374,11 +374,14 @@ bool calculatingtime = false;
 // SECTOR - SECTOR THAT IS AFFECTED (0-P80; 1-P443; 2-P11829; 3-P11830; 
 //                                   4-MARIADB; 5-MARIADBHANDLER; 6-STATUSMARIADB; 7-READ/WRITEERROR(IO/ERROR);
 //                                   8-ENCRYPTION_ERROR; 9-COG_STORE_ERROR; 10-API_HANDLER; 11-INTEGRATION; 
-//                                   12-PACKET_FILTERING; 13-DNS; 14-BACKUP/STORE; 15-ATTEMPTED_EXPLOIT)
+//                                   12-PACKET_FILTERING; 13-DNS; 14-BACKUP/STORE; 15-ATTEMPTED_EXPLOIT
+//                                   16-UPDATES; )
 // SEVERITY - SEVERITY OF INCIDENT
 // ACTION - WHAT TO DO WITH SECTOR/SECURITY
+//          IGNORE = IGNORE THE ERROR AND CONTINUE
 //          NUMBER = ADD NUMBER
 //          LOG = LOG INTO ERROR LOG / ADD NUMBER
+//          RESTART = ATTEMPT TO RESTART THE MODULE THAT IS NOT WORKING (MARIADB, STATUSMARIADB, INTEGRATION, DNS)
 //          LOCK = LOCK MODULE FROM RUNNING (P80, P443, P11829, P11830)
 //          SOFT = SOFTCRASH MODULE OR OTHER
 //          SOFTALL = SOFTCRASH ALL MODULES/THREADS
@@ -411,60 +414,65 @@ std::map<std::pair<int,int>, std::string> servercrash = {
     {{4,2}, "SOFT"},    // SOFT = SOFT MODULE RESET MARIADB HANDLER
     {{4,3}, "HARD"},    // HARD = SUSPECTED INTRUSION - IMMEDIATELY SAVE SERVER STATE AND HARD CRASH IMMEDIATELY
 
-    {{5,0}, false},
-    {{5,1}, false},
-    {{5,2}, true},
-    {{5,3}, true},
+    {{5,0}, "NUMBER"},  // NUMBER = 
+    {{5,1}, "LOG"},     // LOG = 
+    {{5,2}, "SOFTALL"}, // SOFTALL = 
+    {{5,3}, "HARD"},    // HARD = 
 
-    {{6,0}, false},     //
-    {{6,1}, true},      //
-    {{6,2}, true},      //
-    {{6,3}, true},      //
+    {{6,0}, "IGNORE"},  // IGNORE = JUST IGNORE THE ERROR AND CONTINUE
+    {{6,1}, "IGNORE"},  // IGNORE = JUST IGNORE THE ERROR AND CONTINUE
+    {{6,2}, "LOG"},     // LOG = LOG THE ERROR OF THE STATUS, BUT OTHERWISE DON'T DO ANYTHING
+    {{6,3}, "HARD"},    // APPARENTLY THE ERROR IS SERIOUS ENOUGH WHERE IT NEEDS TO LOCK THE SERVER AND CRASH EVERYTHING
 
     {{7,0}, "LOG"},     // LOG - LOG THE FILE I/O OR OTHER ERROR
     {{7,1}, "SOFT"},    // SOFT = SOFT RESET THE FILE WRITING MODULE
     {{7,2}, "HARD"},    // HARD = UNABLE TO WRITE ANYTHING TO FILE SYSTEM - PREVENT LOSS OF DATA IMMEDIATELY!
     {{7,3}, "HARD"},    // HARD = SUSPECTED INTRUSION - IMMEDIATELY SAVE SERVER STATE AND HARD CRASH IMMEDIATELY
 
-    {{8,0}, false},
-    {{8,1}, false},
-    {{8,2}, true},
-    {{8,3}, true},
+    {{8,0}, "NUMBER"},
+    {{8,1}, "NUMBER"},
+    {{8,2}, "LOG"},
+    {{8,3}, "SOFT"},
 
-    {{9,0}, false},
-    {{9,1}, false},
-    {{9,2}, false},
-    {{9,3}, true},
+    {{9,0}, "LOG"},
+    {{9,1}, "LOG"},
+    {{9,2}, "SOFTALL"},
+    {{9,3}, "HARD"},
 
-    {{10,0}, false},
-    {{10,1}, true},
-    {{10,2}, true},
-    {{10,3}, true},
+    {{10,0}, "NUMBER"},
+    {{10,1}, "LOG"},
+    {{10,2}, "LOCK"},
+    {{10,3}, "HARD"},
 
-    {{11,0}, false},
-    {{11,1}, true},
-    {{11,2}, true},
-    {{11,3}, true},
+    {{11,0}, "NUMBER"},
+    {{11,1}, "LOG"},
+    {{11,2}, "LOG"},
+    {{11,3}, "SOFT"},
 
-    {{12,0}, false},
-    {{12,1}, true},
-    {{12,2}, true},
-    {{12,3}, true},
+    {{12,0}, "NUMBER"},
+    {{12,1}, "LOG"},
+    {{12,2}, "SOFT"},
+    {{12,3}, "HARD"},
 
-    {{13,0}, false},
-    {{13,1}, true},
-    {{13,2}, true},
-    {{13,3}, true},
+    {{13,0}, "NUMBER"},
+    {{13,1}, "LOG"},
+    {{13,2}, "SOFT"},
+    {{13,3}, "HARD"},
 
-    {{14,0}, false},
-    {{14,1}, true},
-    {{14,2}, true},
-    {{14,3}, true},
+    {{14,0}, "LOG"},
+    {{14,1}, "RESTART"},
+    {{14,2}, "SOFTALL"},
+    {{14,3}, "HARD"},
 
-    {{15,0}, false},
-    {{15,1}, true},
-    {{15,2}, true},
-    {{15,3}, true},
+    {{15,0}, "RESTART"},
+    {{15,1}, "SOFTALL"},
+    {{15,2}, "HARD"},
+    {{15,3}, "HARD"},
+
+    {{16,0}, "NUMBER"},
+    {{16,1}, "NUMBER"},
+    {{16,2}, "LOG"},
+    {{16,3}, "UPDATES"},
 };
 
 // ADD SERVER ERRORS!
@@ -1714,7 +1722,42 @@ int crashloop(int sector, int severity, bool loopback, std::string module, std::
 
 // MARIADB TEST
 int mariadb_test() {
-    
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+
+        // Execute query
+        sql::ResultSet *res = stmnt->executeQuery("SELECT user FROM credentials");
+        
+        loginfo("TRUE", true);
+        res->next();
+        std::cout << "User = " << res->getString(1);
+
+        return 0;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+}
+
+// ADD IP ADDRESS IN serversecurity
+int mariadb_ADDIPADDR(std::string ipaddr) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
     try {
         // Instantiate Driver
         sql::Driver* driver = sql::mariadb::get_driver_instance();
@@ -1729,149 +1772,137 @@ int mariadb_test() {
 
         // Create a new Statement
         std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-
-        // Execute query
-        sql::ResultSet *res = stmnt->executeQuery("SELECT user FROM credentials");
+        int timetoreset = time(NULL) + 120;
         
-        loginfo("TRUE", true);
-        res->next();
-        std::cout << "User = " << res->getString(1);
-
+        // Execute query
+        std::string executequery34 = mariadbaddaddrheader + ipaddr + "'," + "1," + "false," + std::to_string(timetoreset) + ")";
+        sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+        
         return 0;
-    } catch(sql::SQLException& e){
+    }
+
+    // ADD SQL EXCEPTION
+    catch(sql::SQLException& e){
         crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
         std::cerr << "Error in task: " << e.what() << std::endl;
         return 1;
-    }
-
-    
+    } 
+    return 255;
 }
 
 // CHECK FOR IP ADDRESS IN serversecurity
 int mariadb_CHECKIPADDR(std::string ipaddr) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
 
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
 
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery21 = mariadbcheckaddrheader + ipaddr + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery21);
-    
-    if (res->next() == true) {
-        // FIX THIS PROBLEM, NOT READING RESULT OF A CLOSED SET"?"
-        return 1;
-    } else {
-        return 0;
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery21 = mariadbcheckaddrheader + ipaddr + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery21);
+        
+        if (res->next() == true) {
+            // FIX THIS PROBLEM, NOT READING RESULT OF A CLOSED SET"?"
+            return 1;
+        } else {
+            mariadb_ADDIPADDR(ipaddr);
+            return 0;
+        }
     }
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    } 
 
     // RETURN 255 - IPADDR NOT FOUND IN DB PREVIOUSLY
     return 255;
 }
 
-// ADD IP ADDRESS IN serversecurity
-int mariadb_ADDIPADDR(std::string ipaddr) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    int timetoreset = time(NULL) + 120;
-    
-    // Execute query
-    std::string executequery34 = mariadbaddaddrheader + ipaddr + "'," + "1," + "false," + std::to_string(timetoreset) + ")";
-    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
-
-    return 0;
-}
-
 // ADD BLOCKED IP ADDRESS IN serversecurity
 int mariadb_BLOCKIPADDR(std::string ipaddr) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
 
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
 
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbblockipaddrheader + ipaddr + "'";
+        sql::ResultSet *res6 = stmnt->executeQuery(executequery36);
+        
+        return 0;
+    }
     
-    // Execute query
-    std::string executequery36 = mariadbblockipaddrheader + ipaddr + "'";
-    sql::ResultSet *res6 = stmnt->executeQuery(executequery36);
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 255;
 }
 
 // UNBLOCK IP ADDRESS IN serversecurity
 int mariadb_UNBLOCKIPADDR(std::string ipaddr) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
 
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
 
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery36 = mariadbubblockipaddrheader + ipaddr + "'";
-    sql::ResultSet *res6 = stmnt->executeQuery(executequery36);
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbubblockipaddrheader + ipaddr + "'";
+        sql::ResultSet *res6 = stmnt->executeQuery(executequery36);
 
-    return 0;
+        return 0;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 255;
 }
 
 // ADD PACKET TO IP ADDRESS IN serversecurity
 int mariadb_ADDPACKETTOIPADDR(std::string ipaddr) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery36 = mariadbreadpacketcountipaddr + ipaddr + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery36);
-
-    if (res->next() == true) {
-        int testers = res->getInt(1);
-        testers = testers + 1;
-
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
         // Instantiate Driver
         sql::Driver* driver = sql::mariadb::get_driver_instance();
 
@@ -1887,493 +1918,13 @@ int mariadb_ADDPACKETTOIPADDR(std::string ipaddr) {
         std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
         
         // Execute query
-        std::string executequery36 = mariadbwritepacketcountipaddr + std::to_string(testers) + mariadbwritepacketcountipaddr2 + ipaddr + "'";
-        sql::ResultSet *res = stmnt->executeQuery(executequery36);
-        
-        return 0;
-    } else {
-        return 1;
-    }
-    return 1;
-}
-
-// REMOVE PACKET FROM IP ADDRESS
-int mariadb_REMOVEPACKETFROMIPADDR( std::string ipaddr) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery36 = mariadbreadpacketcountipaddr + ipaddr + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery36);
-
-    if (res->next() == true) {
-        int testers = res->getInt(1);
-        testers = testers - 1;
-
-        // Instantiate Driver
-        sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-        // Configure Connection
-        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-        // Establish Connection
-        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-        // Create a new Statement
-        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-        
-        // Execute query
-        std::string executequery36 = mariadbwritepacketcountipaddr + std::to_string(testers) + mariadbwritepacketcountipaddr2 + ipaddr + "'";
-        sql::ResultSet *res = stmnt->executeQuery(executequery36);
-        
-        return 0;
-    } else {
-        return 1;
-    }
-    return 1;
-}
-
-// IP ADDRESS IS DEVELOPER BLOCKED AND WON'T CONTINUE SEARCHING
-bool mariadb_READDEVBLOCK(std::string ipaddr) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery36 = mariadbDEVBLOCKFLAG + ipaddr + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery36);
-
-    if (res->next() == true) {
-        if (res->getInt(1) == true) {
-            return true;
-        } else {
-            return false;
-        }
-    } else {
-        return false;
-    }
-    return false;
-}
-
-// REMOVE OLD IP ADDR
-int mariadb_REMOVEOLDIPADDR(std::string ipaddr) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery36 = mariadbremoveoldipaddr + ipaddr + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery36);
-
-    return 0;
-}
-
-// CLEAR IP ADDRESSES (MAINTENANCE AND DECREASE PACKETS FOR OTHER IPs)
-int mariadb_MAINTENANCE() {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery36 = mariadbmaintenance;
-    sql::ResultSet *res = stmnt->executeQuery(executequery36);
-    std::string ipaddr;
-    std::istream *blob = res -> getBlob(1);
-    while(blob->eof() != true) {
-        *blob >> ipaddr;
-        bool devflagset = mariadb_READDEVBLOCK(ipaddr);
-        if (devflagset != true) {
-            int resultofcheck = mariadb_CHECKIPADDR(ipaddr);
-            if (resultofcheck == 1) {
-                // DO NOTHING - ADD MORE FOR TEMP BANS BUT NOT RIGHT NOW
-                int test = 0;
-            } else {
-                // REMOVE OLD IP ADDRESSES THAT DON'T CORRESPOND TO ANYTHING IMPORTANT
-                int remove = mariadb_REMOVEOLDIPADDR(ipaddr);
-            }
-        }
-    }
-    return 0;
-}
-
-// MARIADB LAST TIME TO PACKET
-int mariadb_LASTTIMETOPACKET(std::string ipaddr) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery36 = mariadbpacketheader + ipaddr + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery36);
-
-    int lasttime = res->getInt(1);
-    return lasttime;
-}
-
-// READ THE VALUE OF PI API
-std::string mariadbREAD_VALUEPIAPI(std::string user) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery36 = mariadbuserpiapikey + user + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery36);
-
-    std::istream *hello = res->getBlob(1);
-    std::string piapi = "";
-    *hello >> piapi;
-    return piapi;
-}
-
-// READ THE VALU7E OF ROUTER API
-std::string mariadbREAD_VALUEROUTERAPI(std::string user, int apinumber) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    std::string executequery38 = "";
-    
-    // SWITCH TO MAKE RIGHT NUMBER
-    switch(apinumber) {
-        case 0:
-            executequery38 = "SELECT honeyrouterapi FROM credentials WHERE user = '";
-            break;
-        case 1:
-            executequery38 = "SELECT honeyrouterapi2 FROM credentials WHERE user = '";
-            break;
-        case 2:
-            executequery38 = "SELECT honeyrouterapi3 FROM credentials WHERE user = '";
-            break;
-        case 3:
-            executequery38 = "SELECT honeyrouterapi4 FROM credentials WHERE user = '";
-            break;
-        case 4:
-            executequery38 = "SELECT honeyrouterapi5 FROM credentials WHERE user = '";
-            break;
-    }
-
-    // Execute query
-    executequery38 = executequery38 + user + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery38);
-    std::istream *hello = res->getBlob(1);
-    std::string rouapi = "";
-    *hello >> rouapi;
-    return rouapi;
-}
-
-// READ THE VALUE OF THE EMAIL ADDRESS
-std::string mariadbREAD_EMAILADDRESS(std::string user) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery36 = mariadbreademail + user + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery36);
-
-    std::istream *hello = res->getBlob(1);
-    std::string piapi = "";
-    *hello >> piapi;
-    return piapi;
-}
-
-// RESET THE PASSWORD DB ACCESS
-int mariadbRESET_PASSWORD(std::string user, std::string pass, std::string pass2) {
-    if (pass == pass2) {
-        // Instantiate Driver
-        sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-        // Configure Connection
-        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-        // Establish Connection
-        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-        // Create a new Statement
-        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-        
-        // Execute query
-        std::string executequery36 = mariadbresetpasswordheader + pass + "' WHERE user = '" + user + "'";
+        std::string executequery36 = mariadbreadpacketcountipaddr + ipaddr + "'";
         sql::ResultSet *res = stmnt->executeQuery(executequery36);
 
-        return 0;
-    }
-    return 2;
-}
+        if (res->next() == true) {
+            int testers = res->getInt(1);
+            testers = testers + 1;
 
-// RESET THE EMAIL DB ACCESS
-/*
-int mariadbRESET_EMAIL(std::string user, std::string emailaddress) {
-
-
-    return 0;
-}
-*/
-
-// MARIADB PI API KEY VALIDATION
-bool mariadbPIAPI_keyvalid(std::string apikey) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery21 = headerforAPIKeyValid + "'" + apikey + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery21);
-    
-    if (res->next() == true) {
-        loginfo("TRUE", true);
-        // FIX THIS PROBLEM, NOT READING RESULT OF A CLOSED SET"?"
-        return true;
-    } else {
-        return false;
-    }
-    return false;
-}
-
-// MARIADB ROUTER API KEY VALIDATION
-// FIX LATER
-bool mariadbROUTERAPI_keyvalid(std::string apikey) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-
-
-
-
-
-    // FIX THIS LOOP BY ANALYZING ONE_BY_ONE AND COMBINING AT END OF RESULT WITH 5 ELSES    
-
-
-
-
-    std::string executequery22 = headerforAPIKeyValid3 + "'" + apikey + "'";
-    std::string executequery23 = headerforAPIKeyValid4 + "'" + apikey + "'";
-    std::string executequery24 = headerforAPIKeyValid5 + "'" + apikey + "'";
-    std::string executequery25 = headerforAPIKeyValid6 + "'" + apikey + "'";
-    std::string executequery26 = headerforAPIKeyValid2 + "'" + apikey + "'";
-    sql::ResultSet *res2 = stmnt->executeQuery(executequery22);
-    sql::ResultSet *res3 = stmnt->executeQuery(executequery23);
-    sql::ResultSet *res4 = stmnt->executeQuery(executequery24);
-    sql::ResultSet *res5 = stmnt->executeQuery(executequery25);
-    sql::ResultSet *res6 = stmnt->executeQuery(executequery26);
-
-
-    if (res2->next() == true || res3->next() == true ||res4->next() == true ||res5->next() == true ||res6->next() == true) {
-        logcritical("MATCH SEEN", true);
-        return true;
-    } else {
-        return false;
-    }
-    return false;
-}
-
-// MARIADB NEW USER/PASSWORD/EMAIL INSERTION
-int mariadbNEW_USER(std::string username, std::string password, std::string emailaddress) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery32 = insertintocredheader + valuestoinsertupe + valuesheader + "'" + username + "'" + commaheader + "'" + password + "'" + commaheader + "'" + emailaddress + "'" + commaheader + " true" + ")";
-    sql::ResultSet *res6 = stmnt->executeQuery(executequery32);
-
-
-    return 0;
-}
-
-// MARIADB INSERT NEW HONEY PI API KEY
-int mariadbINSERT_PIKEY(std::string honeypikey, std::string username) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery34 = updatecredheader + valuetoinsertSETPIAPI + "'" + honeypikey + "'" + valuetoinsertWHERE + "'" + username + "'";
-    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
-
-    return 0;
-}
-
-// MARIADB INSERT NEW HONEY ROUTER API 
-// FIX THIS PROBLEM OF NEEDING 5 APIS FOR ONE ACCOUNT
-int mariadbINSERT_ROUTERKEY(std::string routerkey, int slottoinsert, std::string username) {
-    if (slottoinsert == 0) {
-        // FIX TO ADD READ AND DETERMINE THE FIRST EMPTY SLOT
-    }
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery34 = updatecredheader + valuetoinsertSETPIAPI + "'" + routerkey + "'" + valuetoinsertWHERE + "'" + username + "'";
-    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
-
-    return 0;
-}
-
-// MARIADB VALIDATE USER CREDENTIALS
-bool mariadbVALIDATE_USER(std::string username, std::string password) {
-    bool credentialsmatch = false;
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery36 = mariadbverifyuserpassheader + username + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery36);
-    if (res->next() == true) {
-        std::istream *hello = res->getBlob(1);
-        std::string piapi = "";
-        *hello >> piapi;
-
-        if (piapi == password) {
-            credentialsmatch = true;
             // Instantiate Driver
             sql::Driver* driver = sql::mariadb::get_driver_instance();
 
@@ -2389,112 +1940,29 @@ bool mariadbVALIDATE_USER(std::string username, std::string password) {
             std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
             
             // Execute query
-            std::string executequery362 = mariadbuserverifyvalidheader + username + "'";
-            sql::ResultSet *res2 = stmnt->executeQuery(executequery362);
-
-            if (res2->next() == true) {
-                std::istream *hello3 = res2->getBlob(1);
-                std::string piapi1 = "";
-                *hello3 >> piapi1;
-                if (piapi1 == "1") {
-                    loginfo("THAT IS TRUE", true);
-                    return true;
-                } else {
-                    return false;
-                }
-            }
+            std::string executequery36 = mariadbwritepacketcountipaddr + std::to_string(testers) + mariadbwritepacketcountipaddr2 + ipaddr + "'";
+            sql::ResultSet *res = stmnt->executeQuery(executequery36);
+            
+            return 0;
         } else {
-            credentialsmatch = false;
-            return false;
+            return 1;
         }
-    } else {
+        return 1;
+    } 
 
-        // ADD INVALID USER
-        return false;
-    }    
-
-    // ADD INVALID USER
-    return false;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 255;
 }
 
-// MARIADB INSERT NEW CLIENT SESSION KEY
-int mariadbINSERT_SESSIONKEY(std::string username, std::string sessionToken) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery34 = mariadbinsertsessionheader + sessionToken + "' WHERE user='" + username + "'";
-    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
-
-    return 0;
-}
-
-// MARIADB CHECK-IN SCRIPT
-int mariadbCHECKIN_HONEYPI(std::string apikey) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery34 = mariadbcheckinhoneypiheader + apikey + "'";
-    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
-
-    return 0;
-}
-
-// MARIADB ROTATE CREDENTIALS/HOUR
-int mariadbROTATE_CREDENTIALShour() {
-
-
-
-
-    return 0;
-}
-
-// REMOVE ALL SESSION TOKENS EVERY 24 HOURS
-int mariadbREMOVE_SESSIONTOKENS() {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
-
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
-
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
-
-
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery34 = mariadbloadalluserswithsessiontokens;
-    sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
-    std::string user;
-    std::istream *blob = res6 -> getBlob(1);
-    while(blob->eof() != true) {
-        *blob >> user;
+// REMOVE PACKET FROM IP ADDRESS
+int mariadb_REMOVEPACKETFROMIPADDR(std::string ipaddr) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
         // Instantiate Driver
         sql::Driver* driver = sql::mariadb::get_driver_instance();
 
@@ -2510,85 +1978,940 @@ int mariadbREMOVE_SESSIONTOKENS() {
         std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
         
         // Execute query
-        std::string executequery36 = mariadbremovesessionID24hours;
-        sql::ResultSet *res8 = stmnt->executeQuery(executequery36);
+        std::string executequery36 = mariadbreadpacketcountipaddr + ipaddr + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery36);
+
+        if (res->next() == true) {
+            int testers = res->getInt(1);
+            testers = testers - 1;
+
+            // Instantiate Driver
+            sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+            // Configure Connection
+            sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+            sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+            // Establish Connection
+            std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+            // Create a new Statement
+            std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+            
+            // Execute query
+            std::string executequery36 = mariadbwritepacketcountipaddr + std::to_string(testers) + mariadbwritepacketcountipaddr2 + ipaddr + "'";
+            sql::ResultSet *res = stmnt->executeQuery(executequery36);
+            
+            return 0;
+        } else {
+            return 1;
+        }
+        return 1;
     }
+    
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 255;
+}
+
+// IP ADDRESS IS DEVELOPER BLOCKED AND WON'T CONTINUE SEARCHING
+bool mariadb_READDEVBLOCK(std::string ipaddr) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbDEVBLOCKFLAG + ipaddr + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery36);
+
+        if (res->next() == true) {
+            if (res->getInt(1) == true) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+        return false;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return true;
+    }   
+    return true;
+}
+
+// REMOVE OLD IP ADDR
+int mariadb_REMOVEOLDIPADDR(std::string ipaddr) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbremoveoldipaddr + ipaddr + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery36);
+
+        return 0;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 255;
+}
+
+// CLEAR IP ADDRESSES (MAINTENANCE AND DECREASE PACKETS FOR OTHER IPs)
+int mariadb_MAINTENANCE() {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbmaintenance;
+        sql::ResultSet *res = stmnt->executeQuery(executequery36);
+        std::string ipaddr;
+        std::istream *blob = res -> getBlob(1);
+        while(blob->eof() != true) {
+            *blob >> ipaddr;
+            bool devflagset = mariadb_READDEVBLOCK(ipaddr);
+            if (devflagset != true) {
+                int resultofcheck = mariadb_CHECKIPADDR(ipaddr);
+                if (resultofcheck == 1) {
+                    // DO NOTHING - ADD MORE FOR TEMP BANS BUT NOT RIGHT NOW
+                    int test = 0;
+                } else {
+                    // REMOVE OLD IP ADDRESSES THAT DON'T CORRESPOND TO ANYTHING IMPORTANT
+                    int remove = mariadb_REMOVEOLDIPADDR(ipaddr);
+                }
+            }
+        }
+        return 0;
+    }
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 255;
+}
+
+// MARIADB LAST TIME TO PACKET
+int mariadb_LASTTIMETOPACKET(std::string ipaddr) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbpacketheader + ipaddr + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery36);
+
+        int lasttime = res->getInt(1);
+        return lasttime;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 0;
+    }   
     return 0;
+}
+
+// READ THE VALUE OF PI API
+std::string mariadbREAD_VALUEPIAPI(std::string user) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbuserpiapikey + user + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery36);
+
+        std::istream *hello = res->getBlob(1);
+        std::string piapi = "";
+        *hello >> piapi;
+        return piapi;
+    }
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return "ERROR";
+    }   
+    return "ERROR";
+}
+
+// READ THE VALU7E OF ROUTER API
+std::string mariadbREAD_VALUEROUTERAPI(std::string user, int apinumber) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        std::string executequery38 = "";
+        
+        // SWITCH TO MAKE RIGHT NUMBER
+        switch(apinumber) {
+            case 0:
+                executequery38 = "SELECT honeyrouterapi FROM credentials WHERE user = '";
+                break;
+            case 1:
+                executequery38 = "SELECT honeyrouterapi2 FROM credentials WHERE user = '";
+                break;
+            case 2:
+                executequery38 = "SELECT honeyrouterapi3 FROM credentials WHERE user = '";
+                break;
+            case 3:
+                executequery38 = "SELECT honeyrouterapi4 FROM credentials WHERE user = '";
+                break;
+            case 4:
+                executequery38 = "SELECT honeyrouterapi5 FROM credentials WHERE user = '";
+                break;
+        }
+
+        // Execute query
+        executequery38 = executequery38 + user + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery38);
+        std::istream *hello = res->getBlob(1);
+        std::string rouapi = "";
+        *hello >> rouapi;
+        return rouapi;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return "ERROR";
+    }   
+    return "ERROR";
+}
+
+// READ THE VALUE OF THE EMAIL ADDRESS
+std::string mariadbREAD_EMAILADDRESS(std::string user) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbreademail + user + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery36);
+
+        std::istream *hello = res->getBlob(1);
+        std::string piapi = "";
+        *hello >> piapi;
+        return piapi;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return "ERROR";
+    }   
+    return "ERROR";
+}
+
+// RESET THE PASSWORD DB ACCESS
+int mariadbRESET_PASSWORD(std::string user, std::string pass, std::string pass2) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        if (pass == pass2) {
+            // Instantiate Driver
+            sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+            // Configure Connection
+            sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+            sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+            // Establish Connection
+            std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+            // Create a new Statement
+            std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+            
+            // Execute query
+            std::string executequery36 = mariadbresetpasswordheader + pass + "' WHERE user = '" + user + "'";
+            sql::ResultSet *res = stmnt->executeQuery(executequery36);
+
+            return 0;
+        }
+        return 2;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
+}
+
+// RESET THE EMAIL DB ACCESS
+/*
+int mariadbRESET_EMAIL(std::string user, std::string emailaddress) {
+
+
+    return 0;
+}
+*/
+
+// MARIADB PI API KEY VALIDATION
+bool mariadbPIAPI_keyvalid(std::string apikey) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery21 = headerforAPIKeyValid + "'" + apikey + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery21);
+        
+        if (res->next() == true) {
+            loginfo("TRUE", true);
+            // FIX THIS PROBLEM, NOT READING RESULT OF A CLOSED SET"?"
+            return true;
+        } else {
+            return false;
+        }
+        return false;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return false;
+    }   
+    return false;
+}
+
+// MARIADB ROUTER API KEY VALIDATION
+// FIX LATER
+bool mariadbROUTERAPI_keyvalid(std::string apikey) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+
+
+
+
+
+        // FIX THIS LOOP BY ANALYZING ONE_BY_ONE AND COMBINING AT END OF RESULT WITH 5 ELSES    
+
+
+
+
+        std::string executequery22 = headerforAPIKeyValid3 + "'" + apikey + "'";
+        std::string executequery23 = headerforAPIKeyValid4 + "'" + apikey + "'";
+        std::string executequery24 = headerforAPIKeyValid5 + "'" + apikey + "'";
+        std::string executequery25 = headerforAPIKeyValid6 + "'" + apikey + "'";
+        std::string executequery26 = headerforAPIKeyValid2 + "'" + apikey + "'";
+        sql::ResultSet *res2 = stmnt->executeQuery(executequery22);
+        sql::ResultSet *res3 = stmnt->executeQuery(executequery23);
+        sql::ResultSet *res4 = stmnt->executeQuery(executequery24);
+        sql::ResultSet *res5 = stmnt->executeQuery(executequery25);
+        sql::ResultSet *res6 = stmnt->executeQuery(executequery26);
+
+
+        if (res2->next() == true || res3->next() == true ||res4->next() == true ||res5->next() == true ||res6->next() == true) {
+            logcritical("MATCH SEEN", true);
+            return true;
+        } else {
+            return false;
+        }
+        return false;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return false;
+    }   
+    return false;
+}
+
+// MARIADB NEW USER/PASSWORD/EMAIL INSERTION
+// FIX THIS
+int mariadbNEW_USER(std::string username, std::string password, std::string pass2, std::string emailaddress, std::string country, std::string referrer, std::string securitykey) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery32 = insertintocredheader + valuestoinsertupe + valuesheader + "'" + username + "'" + commaheader + "'" + password + "'" + commaheader + "'" + emailaddress + "'" + commaheader + " true" + ")";
+        sql::ResultSet *res6 = stmnt->executeQuery(executequery32);
+
+
+        return 0;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
+}
+
+// MARIADB INSERT NEW HONEY PI API KEY
+int mariadbINSERT_PIKEY(std::string honeypikey, std::string username) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery34 = updatecredheader + valuetoinsertSETPIAPI + "'" + honeypikey + "'" + valuetoinsertWHERE + "'" + username + "'";
+        sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+
+        return 0;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
+}
+
+// MARIADB INSERT NEW HONEY ROUTER API 
+// FIX THIS PROBLEM OF NEEDING 5 APIS FOR ONE ACCOUNT
+int mariadbINSERT_ROUTERKEY(std::string routerkey, int slottoinsert, std::string username) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        if (slottoinsert == 0) {
+            // FIX TO ADD READ AND DETERMINE THE FIRST EMPTY SLOT
+        }
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery34 = updatecredheader + valuetoinsertSETPIAPI + "'" + routerkey + "'" + valuetoinsertWHERE + "'" + username + "'";
+        sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+
+        return 0;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
+}
+
+// MARIADB VALIDATE USER CREDENTIALS
+bool mariadbVALIDATE_USER(std::string username, std::string password) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        bool credentialsmatch = false;
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbverifyuserpassheader + username + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery36);
+        if (res->next() == true) {
+            std::istream *hello = res->getBlob(1);
+            std::string piapi = "";
+            *hello >> piapi;
+
+            if (piapi == password) {
+                credentialsmatch = true;
+                // Instantiate Driver
+                sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+                // Configure Connection
+                sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+                sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+                // Establish Connection
+                std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+                // Create a new Statement
+                std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+                
+                // Execute query
+                std::string executequery362 = mariadbuserverifyvalidheader + username + "'";
+                sql::ResultSet *res2 = stmnt->executeQuery(executequery362);
+
+                if (res2->next() == true) {
+                    std::istream *hello3 = res2->getBlob(1);
+                    std::string piapi1 = "";
+                    *hello3 >> piapi1;
+                    if (piapi1 == "1") {
+                        loginfo("THAT IS TRUE", true);
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            } else {
+                credentialsmatch = false;
+                return false;
+            }
+        } else {
+
+            // ADD INVALID USER
+            return false;
+        }    
+
+        // ADD INVALID USER
+        return false;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return false;;
+    }   
+    return false;
+}
+
+// MARIADB INSERT NEW CLIENT SESSION KEY
+int mariadbINSERT_SESSIONKEY(std::string username, std::string sessionToken) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery34 = mariadbinsertsessionheader + sessionToken + "' WHERE user='" + username + "'";
+        sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+
+        return 0;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
+}
+
+// MARIADB CHECK-IN SCRIPT - CHECKIN FOR HONEYPOTS
+int mariadbCHECKIN_HONEYPI(std::string apikey) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery34 = mariadbcheckinhoneypiheader + apikey + "'";
+        sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+
+        return 0;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
+}
+
+// MARIADB ROTATE CREDENTIALS/HOUR
+int mariadbROTATE_CREDENTIALShour() {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
+}
+
+// REMOVE ALL SESSION TOKENS EVERY 24 HOURS
+int mariadbREMOVE_SESSIONTOKENS() {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery34 = mariadbloadalluserswithsessiontokens;
+        sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+        std::string user;
+        std::istream *blob = res6 -> getBlob(1);
+        while(blob->eof() != true) {
+            *blob >> user;
+            // Instantiate Driver
+            sql::Driver* driver = sql::mariadb::get_driver_instance();
+
+            // Configure Connection
+            sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+            sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+
+            // Establish Connection
+            std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+
+
+            // Create a new Statement
+            std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+            
+            // Execute query
+            std::string executequery36 = mariadbremovesessionID24hours;
+            sql::ResultSet *res8 = stmnt->executeQuery(executequery36);
+        }
+        return 0;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // MARIADB ROTATE CREDENTIALS/DAY
 int mariadbROTATE_CREDENTIALSday() {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
-
-
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // MARIADB INVALIDATE CREDENTIALS
 int mariadbINVALIDATE_CREDENTIALS(std::string user, std::string pass, std::string email) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
-
-
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // MARIADB PAYMENT RECEIVED
 int mariadbRECEIVE_PAYMENT(std::string user, bool truereceive) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
-
-
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // MARIADB SET PAYMENT PLAN
 int mariadbSET_PAYMENT(std::string user, int paymentlevel) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
-
-
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // REMOVE PI API FROM DB
 int mariadbREMOVE_PIAPI(std::string user) {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        // Instantiate Driver
+        sql::Driver* driver = sql::mariadb::get_driver_instance();
 
-    // Configure Connection
-    sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
-    sql::Properties properties({{"user", "root"}, {"password", legendstring}});
+        // Configure Connection
+        sql::SQLString url("jdbc:mariadb://172.17.0.2:3306/honey");
+        sql::Properties properties({{"user", "root"}, {"password", legendstring}});
 
-    // Establish Connection
-    std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
+        // Establish Connection
+        std::unique_ptr<sql::Connection> conn(driver->connect(url, properties));
 
 
-    // Create a new Statement
-    std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
-    
-    // Execute query
-    std::string executequery36 = mariadbremovepiapiheader + user + "'";
-    sql::ResultSet *res = stmnt->executeQuery(executequery36);
+        // Create a new Statement
+        std::unique_ptr<sql::Statement> stmnt(conn->createStatement());
+        
+        // Execute query
+        std::string executequery36 = mariadbremovepiapiheader + user + "'";
+        sql::ResultSet *res = stmnt->executeQuery(executequery36);
 
-    return 0;
+        return 0;
+    } 
+
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // REMOVE ROUTER API FROM DB
 int mariadbREMOVE_ROUTERAPI(std::string user, int number) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
-
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // REMOVE USER FROM DB
 int mariadbREMOVE_USER(std::string user, std::string pass) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
-
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // CHANGE RUNNING PORT STATUS IN SERVER DB
@@ -2596,54 +2919,114 @@ int mariadbREMOVE_USER(std::string user, std::string pass) {
 int mariadbCHANGEPORTSTATUS(int port,bool status) {
     std::string dbpayload = "";
 //    dbpayload = mariadbchangeportstatusheader[{port, status}];
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // REVIEW SERVER STATUS
 int mariadbREVIEWSTATUS() {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
-
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // ADD COG TO DB
 int mariadbADDCOGTODB(std::string) {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
-
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // RETURN TOP MOST COG
 std::string mariadbTOPCOG() {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return "";
+    }
 
-
-
-    return "";
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return "ERROR";
+    }   
+    return "ERROR";
 }
 
 // CLEAR COGS
 int mariadbCLEARCOGS_START() {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
-
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // MARIADB CLEAR COGS
 int mariadbCLEARCOGS_READ() {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
-
-
-    return 0;
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 // SET FLAG TO PREVENT COGS FROM BEING ADDED WHILE THEY ARE BEING WRITTEN
 int mariadbSETCOGLOCKINDB() {
+    // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    try {
+        return 0;
+    }
 
+    // CATCH EXCEPTIONS
+    catch(sql::SQLException& e){
+        crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
+        std::cerr << "Error in task: " << e.what() << std::endl;
+        return 1;
+    }   
+    return 1;
 }
 
 
