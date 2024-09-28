@@ -208,7 +208,7 @@ int cogswaiting = 0;
 // URL LOCATIONS
 const std::string updateserverlocation = "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/server.txt";
 const std::string updatehoneypilocation = "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/mainversion.txt";
-
+const char* updatehtmlmainweb = "cd /home/pi/honeynvme/current/htmlmain/ && git pull https://github.com/MawWebby/HoneyPi-Website.git current-main > nul:";
 
 
 // SYSTEM COMMANDS
@@ -6154,6 +6154,18 @@ int setup() {
         } else {
             sendtolog("DONE");
         }
+    }
+
+
+
+    // CALL NEW HTML MAIN WEB PAGES
+    loginfo("HTML - Updating to Main Head...", false);
+    int res256 = system(updatehtmlmainweb);
+    if (res256 == 0) {
+        sendtolog("DONE");
+    } else {
+        sendtolog("ERROR");
+        logcritical("AN ERROR OCCURRED ATTEMPTING TO UPDATE WITH MAIN HEAD!", true);
     }
 
 
