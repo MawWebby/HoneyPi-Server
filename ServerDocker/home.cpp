@@ -109,6 +109,8 @@ int port11830clientsIPdata[1];
 bool runningport80 = true;
 bool port80runningstatus = false;
 bool port11829runningstatus = false;
+bool port443runningstatus = false;
+bool port11830runningstatus = false;
 int packetspam = 0;
 bool waiting230 = false;
 bool api11829 = false;
@@ -4634,7 +4636,7 @@ std::string readPrivacyPolicy() {
 // HANDLE NETWORKED CONNECTIONS (443) - MAIN HTTPS SERVER!! //
 //////////////////////////////////////////////////////////////
 void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client_fd, struct sockaddr_in client_addr) {
-    loginfo("HTTP THREAD", true);
+    loginfo("HTTPS THREAD", true);
     std::string ipaddr;
 
     SSL_CTX *ctx = SSL_CTX_new(TLS_server_method());
@@ -4983,11 +4985,9 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
 void handleConnections443(int server_fd) {
 
-    port80runningstatus = true;
+    port443runningstatus = true;
     int threadnumber = 0;    
-
     static bool initialized = false;
-    port80runningstatus = true;
     char buffer[2048] = {0};
     struct sockaddr_in address, client_addr;
     socklen_t addrlen = sizeof(address);
@@ -5023,7 +5023,7 @@ void handleConnections443(int server_fd) {
     }
 
     if (!SSL_CTX_check_private_key(ctx)) {
-        fprintf(stderr, "Private key does not match the public certificate\n");
+        logcritical("THE PRIVATE KEY DOES NOT MATCH THE PUBLIC CERTIFICATE!", true);
         SSL_CTX_free(ctx);
         return;
     }
@@ -5031,12 +5031,12 @@ void handleConnections443(int server_fd) {
 
 
 
-    while (port80runningstatus == true) {
+    while (port443runningstatus == true) {
         
 
         int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_addr_len);
         if (client_fd < 0) {
-            perror("Unable to accept");
+            loginfo("UNABLE TO ACCEPT HTTPS CONNECTION", true);
             SSL_CTX_free(ctx);
             exit(EXIT_FAILURE);
         } else {
@@ -5050,7 +5050,8 @@ void handleConnections443(int server_fd) {
             SSL_set_fd(ssl, client_fd);
 
             inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
-            std::cout << "Connection from: " << client_ip << '\n';
+            loginfo("Connection from: ", false);
+            sendtolog(client_ip);
             std::string clientipstd = client_ip;
 
             //int allowed = mariadb_CHECKIPADDR(client_ip);
@@ -5067,7 +5068,7 @@ void handleConnections443(int server_fd) {
                     if (packetspam >= 10) {
                         // STOP CONNECTIONS/ENTER BLOCKING STATE
                         waiting230 = true;
-                        logwarning("LOCKING HTTP PORT FOR NOW (PACKET SPAM)", true);
+                        logwarning("LOCKING HTTPS PORT FOR NOW (PACKET SPAM)", true);
                         timers[2] = time(NULL);
                     }
                 } else {
@@ -5089,14 +5090,164 @@ void handleConnections443(int server_fd) {
                 }
 
                 if (waiting230 == false) { 
-                    threadnumber = threadnumber + 1;
-                    if (threadnumber >= 10000) {
-                        threadnumber = 0;
+                    // SWITCH OF 30 CONSECUTIVE THREADS FOR HTTPS (443)
+                    switch (threadnumber) {
+                        case 0: {
+                            std::thread threadnametrigger00(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger00.detach();
+                            break;
+                        }
+                        case 1: {
+                            std::thread threadnametrigger01(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger01.detach();
+                            break;
+                        }
+                        case 2: {
+                            std::thread threadnametrigger02(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger02.detach();
+                            break;
+                        }
+                        case 3: {
+                            std::thread threadnametrigger03(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger03.detach();
+                            break;
+                        }
+                        case 4: {
+                            std::thread threadnametrigger04(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger04.detach();
+                            break;
+                        }
+                        case 5: {
+                            std::thread threadnametrigger05(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger05.detach();
+                            break;
+                        }
+                        case 6: {
+                            std::thread threadnametrigger06(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger06.detach();
+                            break;
+                        }
+                        case 7: {
+                            std::thread threadnametrigger07(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger07.detach();
+                            break;
+                        }
+                        case 8: {
+                            std::thread threadnametrigger08(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger08.detach();
+                            break;
+                        }
+                        case 9: {
+                            std::thread threadnametrigger09(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger09.detach();
+                            break;
+                        }
+                        case 10: {
+                            std::thread threadnametrigger10(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger10.detach();
+                            break;
+                        }
+                        case 11: {
+                            std::thread threadnametrigger11(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger11.detach();
+                            break;
+                        }
+                        case 12: {
+                            std::thread threadnametrigger12(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger12.detach();
+                            break;
+                        }
+                        case 13: {
+                            std::thread threadnametrigger13(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger13.detach();
+                            break;
+                        }
+                        case 14: {
+                            std::thread threadnametrigger14(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger14.detach();
+                            break;
+                        }
+                        case 15: {
+                            std::thread threadnametrigger15(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger15.detach();
+                            break;
+                        }
+                        case 16: {
+                            std::thread threadnametrigger16(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger16.detach();
+                            break;
+                        }
+                        case 17: {
+                            std::thread threadnametrigger17(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger17.detach();
+                            break;
+                        }
+                        case 18: {
+                            std::thread threadnametrigger18(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger18.detach();
+                            break;
+                        }
+                        case 19: {
+                            std::thread threadnametrigger19(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger19.detach();
+                            break;
+                        }
+                        case 20: {
+                            std::thread threadnametrigger20(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger20.detach();
+                            break;
+                        }
+                        case 21: {
+                            std::thread threadnametrigger21(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger21.detach();
+                            break;
+                        }
+                        case 22: {
+                            std::thread threadnametrigger22(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger22.detach();
+                            break;
+                        }
+                        case 23: {
+                            std::thread threadnametrigger23(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger23.detach();
+                            break;
+                        }
+                        case 24: {
+                            std::thread threadnametrigger24(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger24.detach();
+                            break;
+                        }
+                        case 25: {
+                            std::thread threadnametrigger25(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger25.detach();
+                            break;
+                        }
+                        case 26: {
+                            std::thread threadnametrigger26(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger26.detach();
+                            break;
+                        }
+                        case 27: {
+                            std::thread threadnametrigger27(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger27.detach();
+                            break;
+                        }
+                        case 28: {
+                            std::thread threadnametrigger28(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger28.detach();
+                            break;
+                        }
+                        case 29: {
+                            std::thread threadnametrigger29(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger29.detach();
+                            break;
+                        }
                     }
-                    std::string threadname = "https" + std::to_string(threadnumber);
-                    std::thread threadnametrigger(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
-                // setThreadName(threadname);
-                    threadnametrigger.detach();
+                    if (threadnumber == 29) {
+                        threadnumber = 0;
+                    } else {
+                        threadnumber = threadnumber + 1;
+                    }
                 }
             }
         }   
@@ -5116,12 +5267,12 @@ void handleConnections80() {
     int server_fd23;
     int opt = 1;
     if((server_fd23 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket failed");
+        logcritical("SOCKET FAILED (80)", true);
         exit(EXIT_FAILURE);
     }
 
     if (setsockopt(server_fd23, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-        perror("setsockopt");
+        logcritical("SETSOCKOPT ERROR (80)", true);
         exit(EXIT_FAILURE);
     }
     struct sockaddr_in address;
@@ -5130,37 +5281,32 @@ void handleConnections80() {
     int PORT23 = 80;
     address.sin_port = htons(PORT23);
     if (bind(server_fd23, (struct sockaddr*)&address, sizeof(address)) < 0) {
-        perror("Bind failed");
+        logcritical("BIND FAILED (80)", true);
         close(server_fd23);
         exit(EXIT_FAILURE);
     }
     socklen_t addrlen = sizeof(address);
 
     if (listen(server_fd23, 10) < 0) {
-        perror("Listen failed");
+        logcritical("LISTEN FAILED (80)", true);
         close(server_fd23);
         exit(EXIT_FAILURE);
     }
 
+    // WHILE RUNNING LOOP FOR HTTP, WAITING FOR CLIENTS TO CONNECT
     while (true) {
-        
-        loginfo("client received", true);
-        
         int client_fd = accept(server_fd23, (struct sockaddr*)&address, &addrlen);
 
         if (client_fd < 0) {
-            perror("Unable to accept");
-            return;
+            logcritical("UNABLE TO ACCEPT CONNECTION (80)", true);
+        } else {
+            // Simple HTTP response for redirection
+            const std::string response = "HTTP/1.1 301 Moved Permanently\r\nLocation: https://" + serveraddress + "/ \r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+
+            // Send the redirect response
+            send(client_fd, response.c_str(), response.length(), 0);
+            close(client_fd);
         }
-
-        // Simple HTTP response for redirection
-        const std::string response = "HTTP/1.1 301 Moved Permanently\r\nLocation: https://" + serveraddress + "/ \r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-        loginfo("SENDING REDIRECT! - ", false);
-        sendtolog(response);
-
-        // Send the redirect response
-        send(client_fd, response.c_str(), response.length(), 0);
-        close(client_fd);
     }
     close(server_fd23);
 }
@@ -5172,8 +5318,177 @@ void handleConnections80() {
 ////////////////////////////////////////////////////////////
 // HANDLE NETWORKED CONNECTIONS (11829) - MAIN API SERVER //
 ////////////////////////////////////////////////////////////
-void handle11829Connections(int server_fd2) {
+void apiconnectionthread(int clientID) {
+    char buffer[2048] = {0};
+    read(new_socket2, buffer, 2048);
+    sendtologopen(buffer);
+    std::string bufferstd = buffer;
+
+    if (bufferstd.length() >= 8) {
+        // READ BUFFER LENGTH HERE
+        
+        // MAKE SURE THAT IT IS A VALID STRING
+        std::string buffertests = bufferstd.substr(0,1);
+        std::string realstring;
+
+        if (buffertests == "{") {
+            // START READING STATEMENTS
+            buffertests = bufferstd.substr(1,5);
+            bool shiftfound = false;
+
+            // CORRESPONDING TO ABCDE; ADD TEN CASES !SHIFTS!
+            if (buffertests == "ABCDE") {
+                // SHIFT 0
+                shiftfound = true;
+                realstring = bufferstd.substr(6, bufferstd.length() - 6);
+            }
+            if (buffertests == "BCDEF") {
+                // SHIFT +1
+                shiftfound = true;
+                realstring = bufferstd.substr(6, bufferstd.length() - 6);
+            }
+            if (buffertests == "CDEFG") {
+                // SHIFT +2
+                shiftfound = true;
+                realstring = bufferstd.substr(6, bufferstd.length() - 6);
+            }
+            if (buffertests == "DEFGH") {
+                // SHIFT +3
+                shiftfound = true;
+                realstring = bufferstd.substr(6, bufferstd.length() - 6);
+            }
+            if (buffertests == "EFGHI") {
+                // SHIFT +4
+                shiftfound = true;
+                realstring = bufferstd.substr(6, bufferstd.length() - 6);
+            }
+            if (buffertests == "FGHIJ") {
+                // SHIFT +5
+                shiftfound = true;
+                realstring = bufferstd.substr(6, bufferstd.length() - 6);
+            }
+            if (buffertests == "zABCD") {
+                // SHIFT -1
+                shiftfound = true;
+                realstring = bufferstd.substr(6, bufferstd.length() - 6);
+            }
+            if (buffertests == "yzABC") {
+                // SHIFT -2
+                shiftfound = true;
+                realstring = bufferstd.substr(6, bufferstd.length() - 6);
+            }
+            if (buffertests == "xyzAB") {
+                // SHIFT -3
+                shiftfound = true;
+                realstring = bufferstd.substr(6, bufferstd.length() - 6);
+            }
+            if (buffertests == "wxyzA") {
+                // SHIFT -4
+                shiftfound = true;
+                realstring = bufferstd.substr(6, bufferstd.length() - 6);
+            }
+            if (buffertests == "vwxyz") {
+                // SHIFT -5
+                shiftfound = true;
+                realstring = bufferstd.substr(6, bufferstd.length() - 6);
+            }
+
+
+
+
+
+            // SHIFT HAS BEEN FOUND, START ANALYZING THE ACTUAL STRING
+            if (shiftfound == true && realstring != "") {
+                // CONTINUE ANALYZING
+                if (realstring.length() >= 7) {
+                    // PING VERSION 0.1
+                    if (realstring.substr(0,6) == "status") {
+                        // PING FOR HONEYPI THINGS
+                    }
+                    
+                    // REPORT NEW COG
+                    if (realstring.substr(0,6) == "report") {
+                        if (cogswaiting >= 20) {
+                            while (cogswaiting >= 20) {
+                                sleep(3);
+                                int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                            }
+                        }
+                        int send_res=send(new_socket2,apisendcog.c_str(),apisendcog.length(),0);
+                    }
+
+                    // CREATE NEW SERVER ACCOUNT
+                    if (realstring.substr(0.6) == "create") {
+
+                    }
+
+                    // RESET PASSWORD
+                    if (realstring.substr(0,6) == "passwo") {
+                        
+                    }
+
+                    // LOAD/CREATE API KEY
+                    if (realstring.substr(0.6) == "apikey") {
+                        if (realstring.length() >= 12) {
+                            if (realstring.substr(6,1) == ",") {
+                                if (realstring.substr(7,5) == "show:") {
+                                    if (realstring.length() >= 15) {
+                                        if (realstring.substr(12,3) == "pi}") {
+                                            // SHOW THE HONEYPI API FOR PI
+
+                                        }
+
+                                        if (realstring.substr(12,3) == "rou") {
+                                            // SHOW THE HONEYPI API FOR PI
+
+                                        }
+                                    } else {
+                                        // SEND ERROR ON API PORT
+                                        int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                                    }
+                                }
+                                
+                                if (realstring == "creat") {
+                                    // CREATE NEW HONEYPI API TOKENS
+                                }
+                            } else {
+                                // SEND ERROR ON API PORT
+                                int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                            }
+                        } else {
+                            // SEND ERROR ON API PORT
+                            int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                        }
+                    }
+                } else {
+                    if (realstring.length() >= 4) {
+
+                        // PING FOR HONEYPI NEW
+                        if (realstring.substr(0,4) == "ping") {
+                            // NEW PING FOR HONEYPI
+                        }
+                    } else {
+                        // SEND ERROR ON API PORT
+                        int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                    }
+                }
+            } else {
+                // SEND ERROR ON API PORT
+                int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+            }
+        } else {
+            // SEND ERROR ON API PORT
+            int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+        }
+    } else {
+        // SEND ERROR ON API PORT
+        int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+    }
+}
+
+void handle11829Connections(int server_fd2, int clientID) {
     api11829 = true;
+    int apithreadnumber = 0;
     while(api11829 == true) {
         char buffer[2048] = {0};
         struct sockaddr_in address;
@@ -5188,7 +5503,7 @@ void handle11829Connections(int server_fd2) {
         socklen_t client_addr_len = sizeof(client_addr);
         
 
-        if ((new_socket = accept(server_fd, (struct sockaddr*)&client_addr, &client_addr_len)) < 0) {
+        if ((clientID = accept(server_fd, (struct sockaddr*)&client_addr, &client_addr_len)) < 0) {
             // NOTHING
         } else {
             char client_ip[INET_ADDRSTRLEN];
@@ -5201,175 +5516,166 @@ void handle11829Connections(int server_fd2) {
 
             if (allowed == true) {
                 if ((new_socket2 = accept(server_fd2, (struct sockaddr*)&address, &addrlen)) < 0) {
-                    perror("accept");
-                    exit(EXIT_FAILURE);
+                    loginfo("ERROR ACCEPTING API CONNECTION", true);
                 } else {
                     loginfo("11829 port initialized", true);
-                }
-            
-                read(new_socket2, buffer, 2048);
-                sendtologopen(buffer);
-                std::string bufferstd = buffer;
-
-                if (bufferstd.length() >= 8) {
-                    // READ BUFFER LENGTH HERE
-                    
-                    // MAKE SURE THAT IT IS A VALID STRING
-                    std::string buffertests = bufferstd.substr(0,1);
-                    std::string realstring;
-
-                    if (buffertests == "{") {
-                        // START READING STATEMENTS
-                        buffertests = bufferstd.substr(1,5);
-                        bool shiftfound = false;
-
-                        // CORRESPONDING TO ABCDE; ADD TEN CASES !SHIFTS!
-                        if (buffertests == "ABCDE") {
-                            // SHIFT 0
-                            shiftfound = true;
-                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                    switch (apithreadnumber) {
+                        case 0: {
+                            std::thread apithreadnumber00(apiconnectionthread, clientID);
+                            apithreadnumber00.detach();
+                            break;
                         }
-                        if (buffertests == "BCDEF") {
-                            // SHIFT +1
-                            shiftfound = true;
-                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        case 1: {
+                            std::thread apithreadnumber01(apiconnectionthread, clientID);
+                            apithreadnumber01.detach();
+                            break;
                         }
-                        if (buffertests == "CDEFG") {
-                            // SHIFT +2
-                            shiftfound = true;
-                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        case 2: {
+                            std::thread apithreadnumber02(apiconnectionthread, clientID);
+                            apithreadnumber02.detach();
+                            break;
                         }
-                        if (buffertests == "DEFGH") {
-                            // SHIFT +3
-                            shiftfound = true;
-                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        case 3: {
+                            std::thread apithreadnumber03(apiconnectionthread, clientID);
+                            apithreadnumber03.detach();
+                            break;
                         }
-                        if (buffertests == "EFGHI") {
-                            // SHIFT +4
-                            shiftfound = true;
-                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        case 4: {
+                            std::thread apithreadnumber04(apiconnectionthread, clientID);
+                            apithreadnumber04.detach();
+                            break;
                         }
-                        if (buffertests == "FGHIJ") {
-                            // SHIFT +5
-                            shiftfound = true;
-                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        case 5: {
+                            std::thread apithreadnumber05(apiconnectionthread, clientID);
+                            apithreadnumber05.detach();
+                            break;
                         }
-                        if (buffertests == "zABCD") {
-                            // SHIFT -1
-                            shiftfound = true;
-                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        case 6: {
+                            std::thread apithreadnumber06(apiconnectionthread, clientID);
+                            apithreadnumber06.detach();
+                            break;
                         }
-                        if (buffertests == "yzABC") {
-                            // SHIFT -2
-                            shiftfound = true;
-                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        case 7: {
+                            std::thread apithreadnumber07(apiconnectionthread, clientID);
+                            apithreadnumber07.detach();
+                            break;
                         }
-                        if (buffertests == "xyzAB") {
-                            // SHIFT -3
-                            shiftfound = true;
-                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        case 8: {
+                            std::thread apithreadnumber08(apiconnectionthread, clientID);
+                            apithreadnumber08.detach();
+                            break;
                         }
-                        if (buffertests == "wxyzA") {
-                            // SHIFT -4
-                            shiftfound = true;
-                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        case 9: {
+                            std::thread apithreadnumber09(apiconnectionthread, clientID);
+                            apithreadnumber09.detach();
+                            break;
                         }
-                        if (buffertests == "vwxyz") {
-                            // SHIFT -5
-                            shiftfound = true;
-                            realstring = bufferstd.substr(6, bufferstd.length() - 6);
+                        case 10: {
+                            std::thread apithreadnumber10(apiconnectionthread, clientID);
+                            apithreadnumber10.detach();
+                            break;
                         }
-
-
-
-
-
-                        // SHIFT HAS BEEN FOUND, START ANALYZING THE ACTUAL STRING
-                        if (shiftfound == true && realstring != "") {
-                            // CONTINUE ANALYZING
-                            if (realstring.length() >= 7) {
-                                // PING VERSION 0.1
-                                if (realstring.substr(0,6) == "status") {
-                                    // PING FOR HONEYPI THINGS
-                                }
-                                
-                                // REPORT NEW COG
-                                if (realstring.substr(0,6) == "report") {
-                                    if (cogswaiting >= 20) {
-                                        while (cogswaiting >= 20) {
-                                            sleep(3);
-                                            int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
-                                        }
-                                    }
-                                    int send_res=send(new_socket2,apisendcog.c_str(),apisendcog.length(),0);
-                                }
-
-                                // CREATE NEW SERVER ACCOUNT
-                                if (realstring.substr(0.6) == "create") {
-
-                                }
-
-                                // RESET PASSWORD
-                                if (realstring.substr(0,6) == "passwo") {
-                                    
-                                }
-
-                                // LOAD/CREATE API KEY
-                                if (realstring.substr(0.6) == "apikey") {
-                                    if (realstring.length() >= 12) {
-                                        if (realstring.substr(6,1) == ",") {
-                                            if (realstring.substr(7,5) == "show:") {
-                                                if (realstring.length() >= 15) {
-                                                    if (realstring.substr(12,3) == "pi}") {
-                                                        // SHOW THE HONEYPI API FOR PI
-
-                                                    }
-
-                                                    if (realstring.substr(12,3) == "rou") {
-                                                        // SHOW THE HONEYPI API FOR PI
-
-                                                    }
-                                                } else {
-                                                    // SEND ERROR ON API PORT
-                                                    int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
-                                                }
-                                            }
-                                            
-                                            if (realstring == "creat") {
-                                                // CREATE NEW HONEYPI API TOKENS
-                                            }
-                                        } else {
-                                            // SEND ERROR ON API PORT
-                                            int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
-                                        }
-                                    } else {
-                                        // SEND ERROR ON API PORT
-                                        int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
-                                    }
-                                }
-                            } else {
-                                if (realstring.length() >= 4) {
-
-                                    // PING FOR HONEYPI NEW
-                                    if (realstring.substr(0,4) == "ping") {
-                                        // NEW PING FOR HONEYPI
-                                    }
-                                } else {
-                                    // SEND ERROR ON API PORT
-                                    int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
-                                }
-                            }
-                        } else {
-                            // SEND ERROR ON API PORT
-                            int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                        case 11: {
+                            std::thread apithreadnumber11(apiconnectionthread, clientID);
+                            apithreadnumber11.detach();
+                            break;
                         }
-                    } else {
-                        // SEND ERROR ON API PORT
-                        int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                        case 12: {
+                            std::thread apithreadnumber12(apiconnectionthread, clientID);
+                            apithreadnumber12.detach();
+                            break;
+                        }
+                        case 13: {
+                            std::thread apithreadnumber13(apiconnectionthread, clientID);
+                            apithreadnumber13.detach();
+                            break;
+                        }
+                        case 14: {
+                            std::thread apithreadnumber14(apiconnectionthread, clientID);
+                            apithreadnumber14.detach();
+                            break;
+                        }
+                        case 15: {
+                            std::thread apithreadnumber15(apiconnectionthread, clientID);
+                            apithreadnumber15.detach();
+                            break;
+                        }
+                        case 16: {
+                            std::thread apithreadnumber16(apiconnectionthread, clientID);
+                            apithreadnumber16.detach();
+                            break;
+                        }
+                        case 17: {
+                            std::thread apithreadnumber17(apiconnectionthread, clientID);
+                            apithreadnumber17.detach();
+                            break;
+                        }
+                        case 18: {
+                            std::thread apithreadnumber18(apiconnectionthread, clientID);
+                            apithreadnumber18.detach();
+                            break;
+                        }
+                        case 19: {
+                            std::thread apithreadnumber19(apiconnectionthread, clientID);
+                            apithreadnumber19.detach();
+                            break;
+                        }
+                        case 20: {
+                            std::thread apithreadnumber20(apiconnectionthread, clientID);
+                            apithreadnumber20.detach();
+                            break;
+                        }
+                        case 21: {
+                            std::thread apithreadnumber21(apiconnectionthread, clientID);
+                            apithreadnumber21.detach();
+                            break;
+                        }
+                        case 22: {
+                            std::thread apithreadnumber22(apiconnectionthread, clientID);
+                            apithreadnumber22.detach();
+                            break;
+                        }
+                        case 23: {
+                            std::thread apithreadnumber23(apiconnectionthread, clientID);
+                            apithreadnumber23.detach();
+                            break;
+                        }
+                        case 24: {
+                            std::thread apithreadnumber24(apiconnectionthread, clientID);
+                            apithreadnumber24.detach();
+                            break;
+                        }
+                        case 25: {
+                            std::thread apithreadnumber25(apiconnectionthread, clientID);
+                            apithreadnumber25.detach();
+                            break;
+                        }
+                        case 26: {
+                            std::thread apithreadnumber26(apiconnectionthread, clientID);
+                            apithreadnumber26.detach();
+                            break;
+                        }
+                        case 27: {
+                            std::thread apithreadnumber27(apiconnectionthread, clientID);
+                            apithreadnumber27.detach();
+                            break;
+                        }
+                        case 28: {
+                            std::thread apithreadnumber28(apiconnectionthread, clientID);
+                            apithreadnumber28.detach();
+                            break;
+                        }
+                        case 29: {
+                            std::thread apithreadnumber29(apiconnectionthread, clientID);
+                            apithreadnumber29.detach();
+                            break;
+                        }
                     }
-                } else {
-                    // SEND ERROR ON API PORT
-                    int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                    if (apithreadnumber == 29) {
+                        apithreadnumber = 0;
+                    } else {
+                        apithreadnumber = apithreadnumber + 1;
+                    }
                 }
             } else {
                 // SEND ERROR ON API PORT
@@ -5389,19 +5695,19 @@ void handle11829Connections(int server_fd2) {
 //////////////////////////////////////////
 // HANDLE NETWORKED CONNECTIONS (11830) //
 //////////////////////////////////////////
-void handle11830Connections(int server_fd2) {
+void handle11830Connections(int server_fd11830) {
     api11830 = true;
     while(api11830 == true) {
         char buffer[2048] = {0};
-        struct sockaddr_in address;
-        socklen_t addrlen = sizeof(address);
-        int new_socket2;
-        ssize_t valread;
-        std::string hello = "Hello from server";
+        struct sockaddr_in address11830;
+        socklen_t addrlen11830 = sizeof(address11830);
+        int new_socket11830;
+        ssize_t valread11830;
+        std::string hello11830 = "Hello from server";
     //   socklen_t client_addr_len = sizeof(client_addr);
 
-        if ((new_socket2 = accept(server_fd2, (struct sockaddr*)&address, &addrlen)) < 0) {
-            perror("accept");
+        if ((new_socket11830 = accept(server_fd11830, (struct sockaddr*)&address11830, &addrlen11830)) < 0) {
+            logcritical("UNABLE TO ACCEPT CONNECTION (11830)", true);
             exit(EXIT_FAILURE);
         } else {
             loginfo("11830 port initialized", true);
@@ -5411,7 +5717,7 @@ void handle11830Connections(int server_fd2) {
  //       std::fill_n(buffer, 2048, "");
 //        char client_ip[INET_ADDRSTRLEN];
  //       inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
-        read(new_socket2, buffer, 2048);
+        read(new_socket11830, buffer, 2048);
         sendtologopen(buffer);
         std::string bufferstd = buffer;
 
@@ -5447,7 +5753,7 @@ void handle11830Connections(int server_fd2) {
 
 
  //        Send a hello message to the client
-         send(new_socket2, hello.c_str(), hello.size(), 0);
+         send(new_socket2, hello11830.c_str(), hello11830.size(), 0);
          std::cout << "Hello message sent" << std::endl;
     }
 }
@@ -5470,13 +5776,13 @@ int createnetworkport443() {
 
     // SETUP NETWORK PORTS
     if((server_fd3 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket failed");
+        logcritical("SOCKET OPTION FAILED! (443)", true);
         exit(EXIT_FAILURE);
     }
 
     // Forcefully attaching socket to the port 80
     if (setsockopt(server_fd3, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-        perror("setsockopt");
+        logcritical("SETSOCKOPT FAILED (443)", true);
         exit(EXIT_FAILURE);
     }
 
@@ -5488,11 +5794,11 @@ int createnetworkport443() {
 
     // Binding the socket to the network address and port
     if (bind(server_fd3, (struct sockaddr*)&address3, sizeof(address3)) < 0) {
-        perror("bind failed");
+        logcritical("BIND FAILED (443)", true);
         exit(EXIT_FAILURE);
     }
     if (listen(server_fd3, 3) < 0) {
-        perror("listen");
+        logcritical("LISTEN FAILURE!", true);
         exit(EXIT_FAILURE);
     }
 
