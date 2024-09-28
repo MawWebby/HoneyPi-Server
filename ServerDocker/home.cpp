@@ -6818,8 +6818,8 @@ int setup() {
     loginfo("Creating server thread on port 11829 listen...", false);
 
     sleep(2);
-    std::thread acceptingClientsThread2(handle11829Connections, server_fd2);
-    acceptingClientsThread2.detach();
+    std::thread thread11829(handle11829Connections, server_fd2, 0);
+    thread11829.detach();
     sleep(1);
 
     sendtolog("Done");
