@@ -15,9 +15,11 @@ RUN apt-get install -y libcurl4
 RUN apt-get install -y libcurl4-openssl-dev
 
 # Expose Needed Ports
-EXPOSE 80
+EXPOSE 80       
+EXPOSE 443
 EXPOSE 11829
 EXPOSE 11830
+EXPOSE 22221
 
 # GENERATE OPENSSL KEYS
 RUN mkdir /certs

@@ -222,7 +222,7 @@ const char* createnewerrorlogfile = "touch /home/serverdump/errors.txt";
 
 
 // MIGRATION COMMANDS - PT.1
-const char* moveipliststricttonewfile = "mv /home/listfiles/iplisttrict.txt /home/listfiles/ipliststrict2.txt";
+const char* moveipliststricttonewfile = "mv /home/listfiles/ipliststrict.txt /home/listfiles/ipliststrict2.txt";
 const char* moveipliststandardtonewfile = "mv /home/listfiles/ipliststandard.txt /home/listfiles/ipliststandard2.txt";
 const char* moveiplistsrawtonewfile = "mv /home/listfiles/iplistsraw.txt /home/listfiles/iplistsraw2.txt";
 const char* moveiplistsmoreinfotonewfile = "mv /home/listfiles/iplistsmoreinfo.txt /home/listfiles/iplistsmoreinfo2.txt";
@@ -230,10 +230,17 @@ const char* moveiplistsmoreinfotonewfile = "mv /home/listfiles/iplistsmoreinfo.t
 
 
 // MIGRATION COMMANDS - PT.2
+const char* removeipliststrictfile = "rm /home/listfiles/ipliststrict.txt > nul:";
+
 const char* removetempiplistSTRICTfile = "rm /home/listfiles/ipliststrict2.txt";
 const char* removetempiplistSTANDARDfile = "rm /home/listfiles/ipliststandard2.txt";
 const char* removetempiplistRAWfile = "rm /home/listfiles/iplistsraw2.txt";
 const char* removetempiplistMOREINFOfile = "rm /home/listfiles/iplistsmoreinfo2.txt";
+
+
+
+// MIGRATION COMMANDS PT.3
+const char* removeoriginaliplistSTRICTfile = "rm /home/listfiles/ipliststrict.txt";
 
 
 // COG FILE OPERATIONS
@@ -1722,9 +1729,10 @@ int crashloop(int sector, int severity, bool loopback, std::string module, std::
 ////////////////////////////
 ////////////////////////////
 
-// MARIADB TEST
-int mariadb_test() {
+// MARIADB PING
+int mariadb_ping() {
     // ADD TRY FUNCTION FOR EXCEPTION HANDLING
+    loginfo("Checking MariaDB Status...", false);
     try {
         // Instantiate Driver
         sql::Driver* driver = sql::mariadb::get_driver_instance();
@@ -1742,19 +1750,24 @@ int mariadb_test() {
         // Execute query
         sql::ResultSet *res = stmnt->executeQuery("SELECT user FROM credentials");
         
-        loginfo("TRUE", true);
-        res->next();
-        std::cout << "User = " << res->getString(1);
-
-        return 0;
+        if (res->next() == true) {
+            sendtolog("OK");
+            return 0;
+        } else {
+            sendtolog("ERROR");
+            return 1;
+        }
+        //std::cout << "User = " << res->getString(1);
     } 
 
     // CATCH EXCEPTIONS
     catch(sql::SQLException& e){
+        sendtolog("ERROR");
         crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
         std::cerr << "Error in task: " << e.what() << std::endl;
         return 1;
     }   
+    return 255;
 }
 
 // ADD IP ADDRESS IN serversecurity
@@ -3217,8 +3230,7 @@ void checkforhoneypiupdates() {
 bool checkhoneypiupdateavailable() {
     checkforhoneypiupdates();
     std::string aStd = updatefileinformationhoneypi;
-    loginfo(aStd, true);
-    if (aStd.length() >= 61) {
+    if (aStd.length() >= 60) {
         std::string header1 = aStd.substr(0, 14);
         if (header1 == "latest.main = ") {
             std::string version1 = aStd.substr(14,5);
@@ -3226,28 +3238,51 @@ bool checkhoneypiupdateavailable() {
             latesthoneyPIMmainversion = version1.substr(0,1);
             latesthoneyPIMminorversion = version1.substr(2,1);
             latesthoneyPIMhotfixversion = version1.substr(4,1);
-            std::string nextversionheader = aStd.substr(21, 14);
-            if (nextversionheader == "latest.beta") {
-                std::string version2 = aStd.substr(35,5);
+            std::string nextversionheader = aStd.substr(20, 14);
+            if (nextversionheader == "latest.beta = ") {
+                std::string version2 = aStd.substr(34,5);
                 std::string nextcharacter = aStd.substr(40,2);
-                latesthoneyPIBmainversion = version1.substr(0,1);
-                latesthoneyPIBminorversion = version1.substr(2,1);
-                latesthoneyPIBhotfixversion = version1.substr(4,1);
-                std::string nextversionheader2 = aStd.substr(42, 14);
-                if (nextversionheader2 == "latest.test") {
-                    std::string version2 = aStd.substr(56,5);
-                    latesthoneyPITmainversion = version1.substr(0,1);
-                    latesthoneyPITminorversion = version1.substr(2,1);
-                    latesthoneyPIThotfixversion = version1.substr(4,1);
+                latesthoneyPIBmainversion = version2.substr(0,1);
+                latesthoneyPIBminorversion = version2.substr(2,1);
+                latesthoneyPIBhotfixversion = version2.substr(4,1);
+                std::string nextversionheader2 = aStd.substr(40, 14);
+                if (nextversionheader2 == "latest.test = ") {
+                    std::string version4 = aStd.substr(54,5);
+                    latesthoneyPITmainversion = version4.substr(0,1);
+                    latesthoneyPITminorversion = version4.substr(2,1);
+                    latesthoneyPIThotfixversion = version4.substr(4,1);
+                    sendtolog("Done");
                     return true;
+                } else {
+                    sendtolog("ERROR");
+                    logwarning("INVALID CLIENT_VERSION RECEIVED-3!", true);
+                    loginfo(aStd, true);
+                    std::cout << aStd.length() << std::endl;
+                    return false;
                 }
+            } else {
+                sendtolog("ERROR");
+                logwarning("INVALID CLIENT_VERSION RECEIVED-2!", true);
+                loginfo(aStd, true);
+                std::cout << aStd.length() << std::endl;
+                return false;
             }
+        } else {
+            sendtolog("ERROR");
+            logwarning("INVALID CLIENT_VERSION RECEIVED-1!", true);
+            loginfo(aStd, true);
+            std::cout << aStd.length() << std::endl;
+            return false;
         }
     } else {
         sendtolog("ERROR");
         logwarning("UNABLE TO CHECK FOR CLIENT UPDATES!", true);
+        loginfo(aStd, true);
+        std::cout << aStd.length() << std::endl;
         return false;
     }
+    loginfo(aStd, true);
+    std::cout << aStd.length() << std::endl;
     return false;
 }
 
@@ -5343,7 +5378,7 @@ void handleConnections443(int server_fd) {
                             break;
                         }
                     }
-                    if (threadnumber == 29) {
+                    if (threadnumber == 49) {
                         threadnumber = 0;
                     } else {
                         threadnumber = threadnumber + 1;
@@ -5941,7 +5976,7 @@ int setup() {
     sendtolog("");
     sendtolog("");
     sendtolog("");
-    sendtolog("Program by Matthew Whitworth (MawWebby)");
+    sendtolog("Server by Matthew Whitworth (MawWebby)");
     sendtolog("Version: " + honeyversion);
     sendtolog("");
     sendtolog("");
@@ -5966,8 +6001,11 @@ int setup() {
     startuptime = time(NULL);
     startupchecks = startupchecks + timedetector();
 
-    mariadb_test();
 
+
+
+    // PING MARIADB SERVER TO VERIFY CONNECTION
+    startupchecks = startupchecks + mariadb_ping();
 
 
 
@@ -6006,17 +6044,20 @@ int setup() {
 
 
     // VERIFY SERVER FOLDERS ARE OPEN
-    int testing = system("cd /home/crashlogs");
+    loginfo("Validating COG Directory...", false);
+    int testing = system("touch /home/crashlogs/test.txt");
     if (testing != 0) {
         sendtolog("ERROR");
-        logcritical("UNABLE TO OPEN CRASHLOGS FOLDER!", true);
+        logcritical("UNABLE TO WRITE TO CRASHLOGS FOLDER!", true);
         startupchecks = startupchecks + 1;
     } else {
-        int working = system("rm *");
+        int working = system("rm /home/crashlogs/test.txt");
         if (working != 0) {
             sendtolog("ERROR");
             logcritical("UNABLE TO CLEAR CRASHLOGS FOLDER!", true);
             startupchecks = startupchecks + 1;
+        } else {
+            sendtolog("DONE");
         }
     }
 
@@ -6070,24 +6111,98 @@ int setup() {
             if (compressed != honeyversion) {
                 migration = migration + 1;
                 logwarning("Detected Different IP List Strict Version, Attempting to Update...", false);
+                ipliststrict.close();
                 
                 // MIGRATION STEPS:
-                // CREATE TEMP FILE pt1
-                // MOVE CONTENTS TO TEMP FILE pt2
-                // DELETE OLD FILE pt3
-                // MAKE NEW FILE pt4
-                // ADD VERSION ID pt5
-                // MOVE ALL CONTENT BACK pt6
-                // DELETE OLD FILE pt7
-                // TEST PATCH pt8
-                
-                int res24 = 0; //system(moveipliststricttonewfile);
-                if (res24 == 0) {
+                // PT1 - MOVE IPFILE TO 2
+                // PT2 - CREATE NEW FILE
+                // PT3 - ADD NEW VERSION IDENTIFIER
+                // PT4 - MOVE CONTENTS BACK
+                // PT5 - REMOVE OLD FILE
 
+                // PART 1  ---
+                int res249 = system(moveipliststricttonewfile);
+                // ipliststrict.ifstream
+                if (res249 == 0) {
+
+                    // PART 2  ---
+                    //int res2NOT = system(removeipliststrictfile);
+                    int res250 = system(createnewipliststrictfile);
+                    if (res250 == 0) {
+
+                        // PART 3  ---
+                        std::ofstream ipliststrict;
+                        ipliststrict.open(ipliststrictfile);
+                        if (ipliststrict.is_open() == true) {
+                            ipliststrict << "Version: " << honeyversion << std::endl << std::endl << std::endl;
+                            
+                            // PART 4  ---
+                            int testing902 = 0;
+                            int testing902max = 7;
+                            bool completionghb = false;
+                            std::ifstream iplistTEMP;
+                            iplistTEMP.open("/home/listfiles/ipliststrict2.txt");
+                            if (iplistTEMP.is_open() == true) {
+                                std::string templine23;
+                                while (completionghb != true && testing902max >= testing902) {
+                                    getline(iplistTEMP, templine23);
+                                    if (templine23 == "") {
+                                        testing902 = testing902 + 1;
+                                    } else {
+                                        if (templine23.length() >= 9) {
+                                            std::string subtempline23 = templine23.substr(0,7);
+                                            if (subtempline23 != "Version") {
+                                                testing902 = 0;
+                                                ipliststrict << templine23 << std::endl;
+                                            }
+                                        } else {
+                                            testing902 = 0;
+                                            ipliststrict << templine23 << std::endl;
+                                        }
+                                    }
+                                    if (testing902 >= testing902max) {
+                                        completionghb = true;
+                                    }
+                                }
+                                iplistTEMP.close();
+                                // PT5 ---
+                                int res251 = system(removetempiplistSTRICTfile);
+                                if (res251 == 0) {
+                                    sendtolog("COMPLETED!");
+                                    sleep(2);
+                                } else {
+                                    sendtolog("ERROR");
+                                    logcritical("AN ERROR OCCURRED IN IP LIST STRICT MIGRATION (5)!", true);
+                                    sleep(2);
+                                    startupchecks = startupchecks + 1;
+                                }
+                            } else {
+                                sendtolog("ERROR");
+                                logcritical("AN ERROR OCCURRED IN IP LIST STRICT MIGRATION (4)!", true);
+                                sleep(2);
+                                startupchecks = startupchecks + 1;
+                            }
+                        } else {
+                            sendtolog("ERROR");
+                            logcritical("AN ERROR OCCURRED IN IP LIST STRICT MIGRATION (3)!", true);
+                            sleep(2);
+                            startupchecks = startupchecks + 1;
+                        }
+                    } else {
+                        sendtolog("ERROR");
+                        logcritical("AN ERROR OCCURRED IN IP LIST STRICT MIGRATION (2)!", true);
+                        sleep(2);
+                        startupchecks = startupchecks + 1;
+                    }                    
+                } else {
+                    sendtolog("ERROR");
+                    logcritical("AN ERROR OCCURRED IN IP LIST STRICT MIGRATION (1)!", true);
+                    sleep(2);
+                    startupchecks = startupchecks + 1;
                 }
-                
             } else {
                 loginfo("IP LIST STRICT Started...", true);
+                sleep(0.5);
             }
         }
     } else {
@@ -6115,11 +6230,13 @@ int setup() {
                     }
                     sleep(0.5);
                     sendtolog("Done");
+                    sleep(2);
                 }
             } else {
                 sendtolog("ERROR!");
                 logcritical("UNABLE TO OPEN IP LIST Strict TXT File!", true);
                 startupchecks = startupchecks + 1;
+                sleep(2);
                 return 1;
                 return 1;
                 return 1;
@@ -6128,6 +6245,7 @@ int setup() {
             sendtolog("ERROR!");
             logcritical("UNABLE TO OPEN IP LIST Strict TXT File!", true);
             startupchecks = startupchecks + 1;
+            sleep(2);
             return 1;
             return 1;
             return 1;
@@ -6176,8 +6294,94 @@ int setup() {
             if (compressed != honeyversion) {
                 migration = migration + 1;
                 logwarning("Detected Different IP List Standard Version, Attempting to Update...", false);
+                ipliststandard.close();
+
                 // MIGRATION STEPS
-                sendtolog("NO Migration steps detected");
+                // PT1 - MOVE IPFILE TO 2
+                // PT2 - CREATE NEW FILE
+                // PT3 - ADD NEW VERSION IDENTIFIER
+                // PT4 - MOVE CONTENTS BACK
+                // PT5 - REMOVE OLD FILE
+
+                // PART 1 ---
+                int res256 = system(moveipliststandardtonewfile);
+                if (res256 == 0) {
+
+                    // PART 2  ---
+                    int res257 = system(createnewipliststandardfile);
+                    if (res257 == 0) {
+
+                        // PART 3  ---
+                        std::ofstream ipliststandard;
+                        ipliststandard.open(ipliststandardfile);
+                        if (ipliststandard.is_open() == true) {
+                            ipliststandard << "Version: " << honeyversion << std::endl << std::endl << std::endl;
+
+                            // PART 4 ---
+                            int testing903 = 0;
+                            int testing903max = 7;
+                            bool completionghc = false;
+                            std::ifstream iplistTEMPSTAN;
+                            iplistTEMPSTAN.open("/home/listfiles/ipliststandard2.txt");
+                            if (iplistTEMPSTAN.is_open() == true) {
+                                std::string templine24;
+                                while (completionghc != true && testing903max >= testing903) {
+                                    getline(iplistTEMPSTAN, templine24);
+                                    if (templine24 == "") {
+                                        testing903 = testing903 + 1;
+                                    } else {
+                                        if (templine24.length() >= 9) {
+                                            std::string subtempline24 = templine24.substr(0,7);
+                                            if (subtempline24 != "Version") {
+                                                testing903 = 0;
+                                                ipliststandard << templine24 << std::endl;
+                                            } 
+                                        } else {
+                                            testing903 = 0;
+                                            ipliststandard << templine24 << std::endl;
+                                        }
+                                    }
+                                    if (testing903 >= testing903max) {
+                                        completionghc = true;
+                                    }
+                                }
+                                iplistTEMPSTAN.close();
+
+                                // PART 5  ---
+                                int res258 = system(removetempiplistSTANDARDfile);
+                                if (res258 == 0) {
+                                    sendtolog("COMPLETED!");
+                                    sleep(2);
+                                } else {
+                                    sendtolog("ERROR");
+                                    logcritical("AN ERROR OCCURRED IN IP LIST STRICT MIGRATION (5)!", true);
+                                    sleep(2);
+                                    startupchecks = startupchecks + 1;
+                                }
+                            } else {
+                                sendtolog("ERROR");
+                                logcritical("AN ERROR OCCURRED IN IP LIST STRICT MIGRATION (4)!", true);
+                                sleep(2);
+                                startupchecks = startupchecks + 1;
+                            }
+                        } else {
+                            sendtolog("ERROR");
+                            logcritical("AN ERROR OCCURRED IN IP LIST STRICT MIGRATION (3)!", true);
+                            sleep(2);
+                            startupchecks = startupchecks + 1;
+                        }
+                    } else {
+                        sendtolog("ERROR");
+                        logcritical("AN ERROR OCCURRED IN IP LIST STRICT MIGRATION (2)!", true);
+                        sleep(2);
+                        startupchecks = startupchecks + 1;
+                    }
+                } else {
+                    sendtolog("ERROR");
+                    logcritical("AN ERROR OCCURRED IN IP LIST STNDARD MIGRATION (1)!", true);
+                    sleep(2);
+                    startupchecks = startupchecks + 1;
+                }
             } else {
                 loginfo("IP LIST STANDARD Started...", true);
             }
