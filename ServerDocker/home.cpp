@@ -5242,6 +5242,106 @@ void handleConnections443(int server_fd) {
                             threadnametrigger29.detach();
                             break;
                         }
+                        case 30: {
+                            std::thread threadnametrigger30(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger30.detach();
+                            break;
+                        }
+                        case 31: {
+                            std::thread threadnametrigger31(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger31.detach();
+                            break;
+                        }
+                        case 32: {
+                            std::thread threadnametrigger32(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger32.detach();
+                            break;
+                        }
+                        case 33: {
+                            std::thread threadnametrigger33(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger33.detach();
+                            break;
+                        }
+                        case 34: {
+                            std::thread threadnametrigger34(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger34.detach();
+                            break;
+                        }
+                        case 35: {
+                            std::thread threadnametrigger35(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger35.detach();
+                            break;
+                        }
+                        case 36: {
+                            std::thread threadnametrigger36(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger36.detach();
+                            break;
+                        }
+                        case 37: {
+                            std::thread threadnametrigger37(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger37.detach();
+                            break;
+                        }
+                        case 38: {
+                            std::thread threadnametrigger38(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger38.detach();
+                            break;
+                        }
+                        case 39: {
+                            std::thread threadnametrigger39(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger39.detach();
+                            break;
+                        }
+                        case 40: {
+                            std::thread threadnametrigger40(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger40.detach();
+                            break;
+                        }
+                        case 41: {
+                            std::thread threadnametrigger41(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger41.detach();
+                            break;
+                        }
+                        case 42: {
+                            std::thread threadnametrigger42(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger42.detach();
+                            break;
+                        }
+                        case 43: {
+                            std::thread threadnametrigger43(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger43.detach();
+                            break;
+                        }
+                        case 44: {
+                            std::thread threadnametrigger44(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger44.detach();
+                            break;
+                        }
+                        case 45: {
+                            std::thread threadnametrigger45(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger45.detach();
+                            break;
+                        }
+                        case 46: {
+                            std::thread threadnametrigger46(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger46.detach();
+                            break;
+                        }
+                        case 47: {
+                            std::thread threadnametrigger47(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger47.detach();
+                            break;
+                        }
+                        case 48: {
+                            std::thread threadnametrigger48(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger48.detach();
+                            break;
+                        }
+                        case 49: {
+                            std::thread threadnametrigger49(httpsconnectionthread, ssl, client_ip, client_fd, client_addr);
+                            threadnametrigger49.detach();
+                            break;
+                        }
                     }
                     if (threadnumber == 29) {
                         threadnumber = 0;
