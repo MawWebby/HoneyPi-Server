@@ -156,10 +156,10 @@ std::string blogpayload;
 std::string accountpayload;
 std::string installhtmlpayload;
 std::string installscriptSHpayload;
-const std::string httpfail = "HTTP/1.1 504 OK\nContent-Type:text/html\nContent-Length: 30\n\n<h1>504: Gateway Time-Out</h1>";
-const std::string httpforbidden = "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 23\n\n<h1>403: Forbidden</h1>";
-const std::string httpservererror = "HTTP/1.1 505 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
-const std::string httpnotfound = "HTTP/1.1 404 OK\nContent-Type:text/html\nContent-Length: 28\n\n<h1>404: Page Not Found</h1>";
+const std::string httpfail = "HTTP/1.0 504 OK\nContent-Type:text/html\nContent-Length: 30\n\n<h1>504: Gateway Time-Out</h1>";
+const std::string httpforbidden = "HTTP/1.0 403 OK\nContent-Type:text/html\nContent-Length: 23\n\n<h1>403: Forbidden</h1>";
+const std::string httpservererror = "HTTP/1.0 505 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
+const std::string httpnotfound = "HTTP/1.0 404 OK\nContent-Type:text/html\nContent-Length: 28\n\n<h1>404: Page Not Found</h1>";
 const std::string serveraddress = "10.72.91.159";
 
 
@@ -178,6 +178,7 @@ const std::string apisendliststandard = "HAPI/1.1 200 OK\nContent-Type:text/text
 const std::string apisendlist2standard = "\n\n{state: success; crypt: ";
 const std::string apisendlist3standard = "; let: ";
 const std::string apisendlist4standard = "}";
+const std::string httpsuccess = "HTTP/1.0 200 OK\r\nContent-Type:text/html\r\nConnection: close\r\nContent-Length: ";
 std::string ipliststandardunencrypt = "";
 std::string iplistSTRICTunencrypt = "";
 std::string ipliststandardENC = "";
@@ -4298,7 +4299,6 @@ int loadmainHTMLintoram() {
                 mainhtmlpayload = mainhtmlpayload + templine;
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\r\nContent-Type:text/html\r\nConnection: close\r\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = mainhtmlpayload.length();
         mainhtmlpayload = httpsuccess + std::to_string(length) + beforepayload + mainhtmlpayload;
@@ -4337,7 +4337,6 @@ int loadpricingHTMLintoram() {
                 pricinghtmlpayload = pricinghtmlpayload + templine;
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = pricinghtmlpayload.length();
         pricinghtmlpayload = httpsuccess + std::to_string(length) + beforepayload + pricinghtmlpayload;
@@ -4376,7 +4375,6 @@ int loadblogHTMLintoram() {
                 blogpayload = blogpayload + templine;
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = blogpayload.length();
         blogpayload = httpsuccess + std::to_string(length) + beforepayload + blogpayload;
@@ -4416,7 +4414,6 @@ int loadloginHTMLintoram() {
             }
         }
         // Connection: close\r\n
-        std::string httpsuccess = "HTTP/1.1 200 OK\r\nContent-Type:text/html\r\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = loginpayload.length();
         loginpayload = httpsuccess + std::to_string(length) + beforepayload + loginpayload;
@@ -4455,7 +4452,6 @@ int loadsignupHTMLintoram() {
                 signuppayload = signuppayload + templine + "\n";
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\r\nContent-Type:text/html\r\nConnection: close\r\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = signuppayload.length();
         signuppayload = httpsuccess + std::to_string(length) + beforepayload + signuppayload;
@@ -4494,7 +4490,6 @@ int loadgetstartedHTMLintoram() {
                 getstartedpayload = getstartedpayload + templine;
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = getstartedpayload.length();
         getstartedpayload = httpsuccess + std::to_string(length) + beforepayload + getstartedpayload;
@@ -4533,7 +4528,6 @@ int loadaccountHTMLintoram() {
                 accountpayload = accountpayload + templine;
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = accountpayload.length();
         accountpayload = httpsuccess + std::to_string(length) + beforepayload + accountpayload;
@@ -4572,7 +4566,6 @@ int loadinstallHTMLintoram() {
                 installhtmlpayload = installhtmlpayload + templine;
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = installhtmlpayload.length();
         installhtmlpayload = httpsuccess + std::to_string(length) + beforepayload + installhtmlpayload;
@@ -4611,7 +4604,6 @@ int loadinstallscriptSHHTMLintoram() {
                 installscriptSHpayload = installscriptSHpayload + templine;
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = installscriptSHpayload.length();
         installscriptSHpayload = httpsuccess + std::to_string(length) + beforepayload + installscriptSHpayload;
@@ -4689,7 +4681,6 @@ std::string readTOSFree() {
                 tospayload = tospayload + templine;
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = tospayload.length();
         tospayload = httpsuccess + std::to_string(length) + beforepayload + tospayload;
@@ -4723,7 +4714,6 @@ std::string readTOSPro() {
                 tospayload = tospayload + templine;
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = tospayload.length();
         tospayload = httpsuccess + std::to_string(length) + beforepayload + tospayload;
@@ -4757,7 +4747,6 @@ std::string readTOSEnterprise() {
                 tospayload = tospayload + templine;
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = tospayload.length();
         tospayload = httpsuccess + std::to_string(length) + beforepayload + tospayload;
@@ -4791,7 +4780,6 @@ std::string readPrivacyPolicy() {
                 tospayload = tospayload + templine;
             }
         }
-        std::string httpsuccess = "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ";
         std::string beforepayload = "\n\n";
         int length = tospayload.length();
         tospayload = httpsuccess + std::to_string(length) + beforepayload + tospayload;
@@ -4860,6 +4848,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
             
             if (bufferstring.length() >= 7) {
                 // CHANGE HERE FROM GET: / TO GET /
+                logcritical(headerrequest, true);
                 if (headerrequest == "GET ") {
                     std::string maindirectory = bufferstring.substr(4,1);
 
@@ -4990,8 +4979,9 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                 micronumber = micronumber + 1;
                                 timey9000 = timey9000 + 1;
                                 microstring = bufferstring.substr(micronumber, 1);
+                                loginfo(microstring, true);
                                 if (microstring != "H" && microstring != "/" && microstring != " ") {
-                                    if (dashesreceived > 1) {
+                                    if (dashesreceived > 0) {
                                         headerstringpost = headerstringpost + microstring;
                                     }
                                 }
@@ -5004,6 +4994,9 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                     dashesreceived = dashesreceived + 1;
                                 }
                             }
+
+                            sendtologopen("ENOUGH!~");
+                            sendtolog(headerstringpost);
 
                             // LOGINTOACCOUNT
                             if (headerstringpost == "logintoaccount") {
@@ -5107,10 +5100,42 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                     // SEND MODIFIED JSON WITH SUCCESS, CLIENT TOKEN, AND ADDRESS TO FORWARD TO...
                                                     std::string sendpayloadforlength = std::string("{") + doublequote + std::string("state") + doublequote + ":" + doublequote + "ok" + doublequote + "," + doublequote + "token" + doublequote + ":" + doublequote + sessiontoken + doublequote + "," + doublequote + "redirect" + doublequote + ":" + doublequote + "account.html" + doublequote + "}";
                                                     contentlength = sendpayloadforlength.length();
-                                                    std::string sendpayloadtoclient = "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length: " + std::to_string(contentlength) + "\r\n" + sendpayloadforlength;
+                                                    std::string sendpayloadtoclient = "HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nContent-Length: " + std::to_string(contentlength) + "\r\n" + "\r\n" + sendpayloadforlength;
+                                                    sendtolog("SENDING TO CLIENT...");
                                                     int send_res=SSL_write(ssl, sendpayloadtoclient.c_str(), sendpayloadtoclient.length());
-                                                    sendtologopen("Sent Payload: ");
-                                                    sendtolog(sendpayloadtoclient);
+                                                    if (send_res <= 0) {
+                                                        // Log a critical error message
+                                                        logcritical("AN ERROR OCCURRED SENDING SESSION TOKEN!", true);
+                                                        // Determine the specific SSL error using SSL_get_error
+                                                        int ssl_error_code = SSL_get_error(ssl, send_res);
+                                                        switch (ssl_error_code) {
+                                                            case SSL_ERROR_WANT_WRITE:
+                                                                logcritical("SSL_ERROR_WANT_WRITE: The operation did not complete, try again later.", true);
+                                                                break;
+                                                            case SSL_ERROR_WANT_READ:
+                                                                logcritical("SSL_ERROR_WANT_READ: The operation did not complete, try to read more data.", true);
+                                                                break;
+                                                            case SSL_ERROR_SYSCALL:
+                                                                logcritical("SSL_ERROR_SYSCALL: A system call error occurred.", true);
+                                                                break;
+                                                            case SSL_ERROR_SSL:
+                                                                logcritical("SSL_ERROR_SSL: A failure occurred in the SSL library.", true);
+                                                                break;
+                                                            default:
+                                                                logcritical("Unknown SSL error occurred.", true);
+                                                        }
+                                                        // Print additional detailed error messages from OpenSSL's error queue
+                                                        unsigned long err_code;
+                                                        while ((err_code = ERR_get_error()) != 0) {
+                                                            char err_buf[256];
+                                                            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+                                                            logcritical(std::string("SSL Error: ") + err_buf, true); // Log each SSL error
+                                                        }
+                                                    } else {
+                                                        // Log the successful send operation
+                                                        sendtologopen("Sent Payload: ");
+                                                        sendtolog(sendpayloadtoclient);
+                                                    }
                                                 } else {
                                                     int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
                                                 }
@@ -5140,6 +5165,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                 int send_res=SSL_write(ssl,httpfail.c_str(),httpfail.length());
                             }
                         } else {
+                            sendtolog("ERROR OCCURED, dATA NOT LONG ENOUGH");
                             int send_res=SSL_write(ssl,httpfail.c_str(),httpfail.length());
                         }                        
                     } else {
@@ -5155,7 +5181,8 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
         }
         
     } 
-    
+    close(client_fd);
+    return;
     //sleep(600);
     //mariadb_REMOVEPACKETFROMIPADDR(ipaddr);
 } 
@@ -5231,6 +5258,13 @@ void handleConnections443(int server_fd) {
             sendtolog(client_ip);
             std::string clientipstd = client_ip;
 
+            if (clientipstd == "172.17.0.1") {
+                loginfo("P443 - RECEIVED LOCALHOST REQUEST, IGNORING...", false);
+                sendtolog(clientipstd);
+                return;
+            }
+
+            // FIX THIS
             //int allowed = mariadb_CHECKIPADDR(client_ip);
             int allowed = 0;
 
@@ -6127,7 +6161,7 @@ int setup() {
     sendtolog("");
 
     // DELAY FOR SYSTEM TO START FURTHER (FIGURE OUT CURRENT TIME)
-    sleep(1);
+    sleep(0.5);
 
 
     // BETA SCRIPTS
@@ -6183,14 +6217,14 @@ int setup() {
 
 
     // CHECK FOR SYSTEM UPDATES
-    sleep(1);
+    sleep(0.5);
 
     loginfo("UPDATES - Checking for Server Updates...", false);
     bool serverupdate = checkserverupdateavailable();
     loginfo("UPDATES - Checking for HoneyPi Updates...", false);
     bool honeypiupdate = checkhoneypiupdateavailable();
 
-    sleep(2);
+    sleep(1);
 
 
 
@@ -6342,7 +6376,7 @@ int setup() {
                                     int res251 = system(rmchar);
                                     if (res251 == 0) {
                                         sendtolog("COMPLETED!");
-                                        sleep(2);
+                                        sleep(1);
                                     } else {
                                         sendtolog("ERROR");
                                         logcritical("AN ERROR OCCURRED IN " + filemessages[filerun] + " MIGRATION (5)!", true);
@@ -6441,19 +6475,18 @@ int setup() {
     // OPEN NETWORK SERVER PORTS (1/4)
     int PORT = 80;
     loginfo("P80 - Opening Server Ports (1/4)", false);
-    sleep(2);
+    sleep(0.5);
     std::thread acceptingClientsThread80(handleConnections80);
     acceptingClientsThread80.detach();
-    sleep(1);
     sendtolog("...Done");
-    sleep(3);
+    sleep(0.5);
 
     // OPEN NETWORK SERVER PORTS (2/4)
     PORT = 443;
     loginfo("P443 - Opening Server Ports (2/4)", false);
     port4 = createnetworkport443();
     sendtolog("...Done");
-    sleep(3);
+    sleep(0.5);
 
     // OPEN NETWORK SERVER PORTS (3/4)
     PORT = 11829;
@@ -6464,7 +6497,7 @@ int setup() {
     socklen_t addrlen2 = sizeof(address2);
     int opt2 = 1;
     
-    sleep(1);
+    sleep(0.5);
 
     if((server_fd2 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         logcritical("P11829 - FAILED TO START SOCKET", true);
@@ -6494,7 +6527,7 @@ int setup() {
     }
 
     sendtolog("Done");
-    sleep(2);
+    sleep(0.5);
 
 
 
@@ -6503,10 +6536,10 @@ int setup() {
     // SERVER PORT LISTEN THREAD (1/4) (11829)
     loginfo("P11829 - Creating server thread on listen...", false);
 
-    sleep(2);
+    sleep(1);
     std::thread thread11829(handle11829Connections, server_fd2, 0);
     thread11829.detach();
-    sleep(1);
+    sleep(0.5);
 
     sendtolog("Done");
 
@@ -6553,7 +6586,7 @@ int setup() {
     }
 
     sendtolog("Done");
-    sleep(2);
+    sleep(0.5);
 
 
 
@@ -6561,10 +6594,10 @@ int setup() {
     // SERVER PORT LISTEN THREAD (118.30)
     loginfo("P11830 - Creating server thread listen...", false);
 
-    sleep(2);
+    sleep(1);
     std::thread acceptingClientsThread3(handle11830Connections, server_fd3);
     acceptingClientsThread3.detach();
-    sleep(1);
+    sleep(0.5);
 
     sendtolog("Done");
 
@@ -6574,10 +6607,10 @@ int setup() {
     // SERVER PORT LISTEN THREAD (443)
     loginfo("P443 - Creating server thread on listen...", false);
 
-    sleep(2);
+    sleep(1);
     std::thread acceptingClientsThread443(handleConnections443, port4);
     acceptingClientsThread443.detach();
-    sleep(1);
+    sleep(0.5);
 
     sendtolog("Done");
 
