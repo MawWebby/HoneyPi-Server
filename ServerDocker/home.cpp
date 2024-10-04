@@ -1,26 +1,30 @@
 //////////////////
 // Dependencies //
 //////////////////
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <iostream>
-#include <fstream>
-#include <thread>
-#include <ctime>
-#include <random>
-#include <mariadb/conncpp.hpp>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <curl/curl.h>
-#include <curl/easy.h>
-#include <map>
+#include <arpa/inet.h>              // SOCKET NETWORK OPERATIONS
+#include <unistd.h>                 // STANDARD CHARSET!!!
+#include <sys/socket.h>             // SOCKET PORT OPERATIONS
+#include <string.h>                 // STD::STRINGS
+#include <iostream>                 // INPUTS/OUTPUTS OPERATIONS
+#include <fstream>                  // FILE STREAMS AND OPERATIONS
+#include <thread>                   // MULTI-THREADING SUPPORT
+#include <ctime>                    // TIME STRING
+#include <random>                   // "RANDOM" STRING GENERATOR
+#include <mariadb/conncpp.hpp>      // MARIADB C++ CONNECTOR TO DB
+#include <openssl/ssl.h>            // OPENSSL SSL STANDARD LIB
+#include <openssl/err.h>            // OPENSSL CATCH EXCEPTIONS AND DEBUGGING FOR MORE DETAIL
+#include <curl/curl.h>              // CURL STANDARD LIB FOR UPDATES
+#include <curl/easy.h>              // CURL EASY MODE FOR UPDATES
+#include <map>                      // STD::MAP VARIABLES AND TABLES
+#include <csignal>                  // DOCKER CATCH SIGNALS
 
 
+
+// RUNTIME OPTIONS
 const bool debug = false;
 const bool testing = false;
 const bool newserverupdate = true;
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,6 +41,13 @@ const bool newserverupdate = true;
 //// ANY ACCESS TO THIS CODE WITH THE PERMISSION OF MATTHEW WHITWORTH IS PROHIBITED!     ////
 /////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////
+/// DOCKER SIGNALS ///
+//////////////////////
+volatile sig_atomic_t stopSIGNAL = false;
 
 
 
@@ -1743,6 +1754,42 @@ void logerror(std::string headerdata2, std::string errormessage) {
 void debugout(std::string data2) {
     logdebug(data2, true);
 }
+
+
+
+
+//////////////////////////////
+//// CLOSE SERVER PROCESS ////
+//////////////////////////////
+void servershutdown() {
+    // SERVER SHUTDOWN SCRIPT HERE
+
+    logwarning("SERVER - CALLED TO SHUTDOWN SERVER!", true);
+
+    sleep(15);
+    return;
+    return;
+    return;
+    return;
+}
+
+
+
+
+///////////////////////////////
+//// HANDLE DOCKER SIGNALS ////
+///////////////////////////////
+void handleSignal(int signal) {
+    if (signal == SIGTERM || signal == SIGINT) {
+        std::cout << "Received termination signal, shutting down gracefully..." << std::endl;
+
+        // SAVE LOGIC HERE
+        servershutdown();
+
+        stopSIGNAL = true;
+    }
+}
+
 
 
 
@@ -6105,6 +6152,16 @@ int setup() {
 
 
 
+    // SET DOCKER CONTAINER OPTIONS
+    loginfo("DOCKER - Setting Container Options...", false);
+    signal(SIGTERM, handleSignal);
+    signal(SIGINT, handleSignal);
+    sendtolog("OK");
+    sleep(0.5);
+
+
+
+
     // DETERMINE NETWORK CONNECTIVITY
     loginfo("NETWORK - Checking Network Connectivity...", false);
     int learnt = system("ping -c 5 8.8.8.8 > nul:");
@@ -6352,11 +6409,9 @@ int setup() {
     }
 
 
-    // V2 OF THE FILE COMMANDS WAS DEPRECATED ON 9/28/24 IN REPLACEMENT OF STD::MAPS STYLE.
-
 
     // LOAD MAINHTML INTO RAM
-    loginfo("Loading MAINHTML Into RAM...", true);
+    loginfo("HTML - Loading MAINHTML Into RAM...", true);
     int ram1 = loadHTMLINTORAM();
     if (ram1 != 0) {
         sendtolog("ERROR");
@@ -6385,21 +6440,24 @@ int setup() {
     
     // OPEN NETWORK SERVER PORTS (1/4)
     int PORT = 80;
-    loginfo("Opening Server Ports (1/4)", false);
-    //port1 = createnetworkport80();
+    loginfo("P80 - Opening Server Ports (1/4)", false);
+    sleep(2);
+    std::thread acceptingClientsThread80(handleConnections80);
+    acceptingClientsThread80.detach();
+    sleep(1);
     sendtolog("...Done");
     sleep(3);
 
     // OPEN NETWORK SERVER PORTS (2/4)
     PORT = 443;
-    loginfo("Opening Server Ports (2/4)", false);
+    loginfo("P443 - Opening Server Ports (2/4)", false);
     port4 = createnetworkport443();
-    sendtolog("Done");
+    sendtolog("...Done");
     sleep(3);
 
     // OPEN NETWORK SERVER PORTS (3/4)
     PORT = 11829;
-    loginfo("Opening Server Ports (3/4)", false);
+    loginfo("P11829 - Opening Server Ports (3/4)", false);
     int server_fd2, new_socket2;
     ssize_t valread2;
     struct sockaddr_in address2;
@@ -6409,13 +6467,13 @@ int setup() {
     sleep(1);
 
     if((server_fd2 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket failed");
+        logcritical("P11829 - FAILED TO START SOCKET", true);
         exit(EXIT_FAILURE);
     }
 
     // Forcefully attaching socket to the port 11535
     if (setsockopt(server_fd2, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt2, sizeof(opt2))) {
-        perror("setsockopt");
+        logcritical("P11829 - FAILED TO SET SOCKET OPT", true);
         exit(EXIT_FAILURE);
     }
 
@@ -6427,11 +6485,11 @@ int setup() {
 
     // Binding the socket to the network address and port
     if (bind(server_fd2, (struct sockaddr*)&address2, sizeof(address2)) < 0) {
-        perror("bind failed");
+        logcritical("P11829 - FAILED TO SET BIND", true);
         exit(EXIT_FAILURE);
     }
     if (listen(server_fd2, 3) < 0) {
-        perror("listen");
+        logcritical("P11829 - FAILED TO START LISTEN", true);
         exit(EXIT_FAILURE);
     }
 
@@ -6443,7 +6501,7 @@ int setup() {
 
 
     // SERVER PORT LISTEN THREAD (1/4) (11829)
-    loginfo("Creating server thread on port 11829 listen...", false);
+    loginfo("P11829 - Creating server thread on listen...", false);
 
     sleep(2);
     std::thread thread11829(handle11829Connections, server_fd2, 0);
@@ -6457,7 +6515,7 @@ int setup() {
 
 
     // OPEN SERVER PORT 11830 FOR TELEMETRY
-    loginfo("Opening Server Ports (4/4)...", false);
+    loginfo("P11830 - Opening Server Ports (4/4)", false);
     PORT = 11830;
     int server_fd3, new_socket3;
     ssize_t valread3;
@@ -6468,13 +6526,13 @@ int setup() {
     sleep(1);
 
     if((server_fd3 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket failed");
+        logcritical("P11830 - FAILED TO START SOCKET OPERATION", true);
         exit(EXIT_FAILURE);
     }
 
     // Forcefully attaching socket to the port 11535
     if (setsockopt(server_fd3, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt3, sizeof(opt3))) {
-        perror("setsockopt");
+        logcritical("P11830 - FAILED TO SET SOCKET OPT", true);
         exit(EXIT_FAILURE);
     }
 
@@ -6486,11 +6544,11 @@ int setup() {
 
     // Binding the socket to the network address and port
     if (bind(server_fd3, (struct sockaddr*)&address3, sizeof(address3)) < 0) {
-        perror("bind failed");
+        logcritical("P11830 - FAILED TO BIND TO PORT", true);
         exit(EXIT_FAILURE);
     }
     if (listen(server_fd3, 3) < 0) {
-        perror("listen");
+        logcritical("P11830 - FAILED TO START LISTEN", true);
         exit(EXIT_FAILURE);
     }
 
@@ -6500,8 +6558,8 @@ int setup() {
 
 
 
-    // SERVER PORT LISTEN THREAD (3/3) (118.30)
-    loginfo("Creating server thread on port 11830 listen...", false);
+    // SERVER PORT LISTEN THREAD (118.30)
+    loginfo("P11830 - Creating server thread listen...", false);
 
     sleep(2);
     std::thread acceptingClientsThread3(handle11830Connections, server_fd3);
@@ -6513,10 +6571,24 @@ int setup() {
 
 
 
+    // SERVER PORT LISTEN THREAD (443)
+    loginfo("P443 - Creating server thread on listen...", false);
 
+    sleep(2);
+    std::thread acceptingClientsThread443(handleConnections443, port4);
+    acceptingClientsThread443.detach();
+    sleep(1);
+
+    sendtolog("Done");
+
+
+
+
+    // CHECK THE CHECK FOR THIS!
     if (serverdumpfilefound == true) {
         debugout("FUTURE THINGS!");
     }
+
 
     // SET TIMERS
     timers[0] = time(NULL);
@@ -6532,7 +6604,7 @@ int setup() {
     timers[10] = time(NULL);
 
     
-    return 0;
+    return startupchecks;
 }
 
 
@@ -6561,18 +6633,7 @@ int main() {
         return(1);
     } else {
 
-
-        // SERVER PORT LISTEN THREAD
-        loginfo("Creating server thread on port 443 listen...", false);
-
-        sleep(2);
-        std::thread acceptingClientsThread443(handleConnections443, port4);
-        acceptingClientsThread443.detach();
-        sleep(1);
-
-        sendtolog("Done");
-
-
+/*
         // SERVER PORT LISTEN THREAD
         loginfo("Creating server thread on port 80 listen...", false);
 
@@ -6582,7 +6643,7 @@ int main() {
         sleep(1);
 
         sendtolog("Done");
-
+*/
 
 
         loginfo("HoneyPi Server has started successfully", true);
@@ -6649,4 +6710,7 @@ int main() {
             return 1;
         }
     }
+
+    // SHOULD NEVER REACH HERE SO CLOSE 255
+    return 255;
 }
