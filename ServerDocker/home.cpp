@@ -17,13 +17,15 @@
 #include <curl/easy.h>              // CURL EASY MODE FOR UPDATES
 #include <map>                      // STD::MAP VARIABLES AND TABLES
 #include <csignal>                  // DOCKER CATCH SIGNALS
-
+#include <fcntl.h>                  // USED FOR NON-BLOCKING SIGNALS!
+#include <atomic>
 
 
 // RUNTIME OPTIONS
 const bool debug = false;
 const bool testing = false;
 const bool newserverupdate = true;
+const bool EXCEPTION = true;
 
 
 
@@ -47,8 +49,8 @@ const bool newserverupdate = true;
 //////////////////////
 /// DOCKER SIGNALS ///
 //////////////////////
-volatile sig_atomic_t stopSIGNAL = false;
-
+//volatile sig_atomic_t stopSIGNAL = false;
+std::atomic<bool> stopSIGNAL(false);
 
 
 /////////////////
@@ -1783,11 +1785,13 @@ void servershutdown() {
 void handleSignal(int signal) {
     if (signal == SIGTERM || signal == SIGINT) {
         std::cout << "Received termination signal, shutting down gracefully..." << std::endl;
+        
+        stopSIGNAL.store(true);
 
+        sleep(8);
+        
         // SAVE LOGIC HERE
-        servershutdown();
-
-        stopSIGNAL = true;
+        // servershutdown();       
     }
 }
 
@@ -3481,6 +3485,9 @@ int updatetoNewServer() {
 
 
     // CONTINUE SERVER UPDATES PROCESS HERE!
+
+
+    return 255;
 }
 
 
@@ -4834,12 +4841,11 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
         ERR_print_errors_fp(stderr);
         logwarning("SSL_ACCEPT NOT TRUE!", true);
     } else {
-        loginfo("TURe", true);
         // Buffer to read the incoming request
         char buffer[2048] = {0};
         int bytes_read = SSL_read(ssl, buffer, sizeof(buffer) - 1);
         int timer89 = 0;
-        logwarning(buffer, true);
+//        logwarning(buffer, true);
         int timer89max = 5;
         bool completed23 = false;
         if (buffer != "" && sizeof(buffer) >= 7) {
@@ -5273,16 +5279,18 @@ void handleConnections443(int server_fd) {
     }
     loginfo("Started!", true);
 
-
-
-    while (port443runningstatus == true) {
+    while (port443runningstatus == true && stopSIGNAL.load() == false) {
         
-
         int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_addr_len);
+       
         if (client_fd < 0) {
-            loginfo("UNABLE TO ACCEPT HTTPS CONNECTION", true);
-            SSL_CTX_free(ctx);
-            exit(EXIT_FAILURE);
+            if (client_fd == -1) {
+                sleep(0.5);
+            } else {
+                loginfo("UNABLE TO ACCEPT HTTPS CONNECTION", true);
+                SSL_CTX_free(ctx);
+                exit(EXIT_FAILURE);
+            }
         } else {
             ssl = SSL_new(ctx);
             if (!ssl) {
@@ -5292,6 +5300,8 @@ void handleConnections443(int server_fd) {
                 return;
             }
             SSL_set_fd(ssl, client_fd);
+
+            loginfo("heyheyhey", true);
 
             inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
             loginfo("Connection from: ", false);
@@ -5607,7 +5617,9 @@ void handleConnections443(int server_fd) {
     SSL_shutdown(ssl);
     SSL_free(ssl);
     SSL_CTX_free(ctx);
-    logcritical("Finished!", true);
+    logcritical("P443 - Finished P443!", true);
+    sleep(5);
+    return;
 }
 
 
@@ -6153,6 +6165,8 @@ int createnetworkport443() {
         exit(EXIT_FAILURE);
     }
 
+    fcntl(server_fd3, F_SETFL, O_NONBLOCK);
+
     return server_fd3;
 }
 
@@ -6498,7 +6512,7 @@ int setup() {
 
 
     // CHECK BEFORE REST OF SERVER STARTUP IF FILES WERE NOT CONFIGURED CORRECTLY
-    if (startupchecks != 0) {
+    if (startupchecks != 0 && EXCEPTION == false) {
         logcritical("STARTUP CHECKS DOES NOT EQUAL 0!", true);
         logcritical("STOPPING SERVER!", true);
         return 1;
@@ -6690,7 +6704,7 @@ int main() {
     // SETUP LOOP
     int startup = setup();
 
-    if (startup != 0) {
+    if (startup != 0 && EXCEPTION != true) {
         sendtolog("ERROR");
         logcritical("STARTUP CHECKS RETURNED EXIT CODE 1", true);
         logcritical("THE SYSTEM COULD NOT CONTINUE!", true);

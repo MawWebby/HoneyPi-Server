@@ -51,7 +51,7 @@ WORKDIR /usr/src/honeypi
 
 # This command compiles your app using GCC, adjust for your source code
 RUN g++ -o run home.cpp -lmariadbcpp -lssl -lcrypto -lcurl
-RUN g++ -o test servertest.cpp
+# RUN g++ -o test servertest.cpp
 
 # REMOVE UNNEEDED PACKAGES
 # SPEED BUILDING!!!
