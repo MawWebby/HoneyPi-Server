@@ -5309,8 +5309,8 @@ void handleConnections443(int server_fd) {
             std::string clientipstd = client_ip;
 
             if (clientipstd == "172.17.0.1") {
-                loginfo("P443 - RECEIVED LOCALHOST REQUEST, IGNORING...", false);
-                sendtolog(clientipstd);
+                //loginfo("P443 - RECEIVED LOCALHOST REQUEST, IGNORING...", false);
+                //sendtolog(clientipstd);
                 return;
             }
 
