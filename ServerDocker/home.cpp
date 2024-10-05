@@ -6706,17 +6706,6 @@ int main() {
         return(1);
     } else {
 
-/*
-        // SERVER PORT LISTEN THREAD
-        loginfo("Creating server thread on port 80 listen...", false);
-
-        sleep(2);
-        std::thread acceptingClientsThread80(handleConnections80);
-        acceptingClientsThread80.detach();
-        sleep(1);
-
-        sendtolog("Done");
-*/
 
 
         loginfo("HoneyPi Server has started successfully", true);
