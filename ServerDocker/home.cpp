@@ -5137,7 +5137,47 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                         sendtolog(sendpayloadtoclient);
                                                     }
                                                 } else {
-                                                    int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
+                                                    int contentlength = 0;
+                                                    char doublequote = '"';
+                                                    // SEND MODIFIED JSON WITH SUCCESS, CLIENT TOKEN, AND ADDRESS TO FORWARD TO...
+                                                    std::string sendpayloadforlength = std::string("{") + doublequote + std::string("state") + doublequote + ":" + doublequote + "wrongpass" + doublequote + "}";
+                                                    contentlength = sendpayloadforlength.length();
+                                                    std::string sendpayloadtoclient = "HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nContent-Length: " + std::to_string(contentlength) + "\r\n" + "\r\n" + sendpayloadforlength;
+                                                    sendtolog("SENDING TO CLIENT...");
+                                                    int send_res=SSL_write(ssl, sendpayloadtoclient.c_str(), sendpayloadtoclient.length());
+                                                    if (send_res <= 0) {
+                                                        // Log a critical error message
+                                                        logcritical("AN ERROR OCCURRED SENDING FAIL MESSAGE!", true);
+                                                        // Determine the specific SSL error using SSL_get_error
+                                                        int ssl_error_code = SSL_get_error(ssl, send_res);
+                                                        switch (ssl_error_code) {
+                                                            case SSL_ERROR_WANT_WRITE:
+                                                                logcritical("SSL_ERROR_WANT_WRITE: The operation did not complete, try again later.", true);
+                                                                break;
+                                                            case SSL_ERROR_WANT_READ:
+                                                                logcritical("SSL_ERROR_WANT_READ: The operation did not complete, try to read more data.", true);
+                                                                break;
+                                                            case SSL_ERROR_SYSCALL:
+                                                                logcritical("SSL_ERROR_SYSCALL: A system call error occurred.", true);
+                                                                break;
+                                                            case SSL_ERROR_SSL:
+                                                                logcritical("SSL_ERROR_SSL: A failure occurred in the SSL library.", true);
+                                                                break;
+                                                            default:
+                                                                logcritical("Unknown SSL error occurred.", true);
+                                                        }
+                                                        // Print additional detailed error messages from OpenSSL's error queue
+                                                        unsigned long err_code;
+                                                        while ((err_code = ERR_get_error()) != 0) {
+                                                            char err_buf[256];
+                                                            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+                                                            logcritical(std::string("SSL Error: ") + err_buf, true); // Log each SSL error
+                                                        }
+                                                    } else {
+                                                        // Log the successful send operation
+                                                        sendtologopen("Sent Payload: ");
+                                                        sendtolog(sendpayloadtoclient);
+                                                    }
                                                 }
                                             } else {
                                                 int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
