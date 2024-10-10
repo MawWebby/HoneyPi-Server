@@ -14,6 +14,11 @@ RUN apt-get install -y mariadb-server
 RUN apt-get install -y libcurl4
 RUN apt-get install -y libcurl4-openssl-dev
 
+# DEBUG UTILITIES
+#RUN apt-get install -y gdbserver
+#RUN apt-get install -y gdb g++
+#EXPOSE 3000
+
 # Expose Needed Ports
 EXPOSE 80       
 EXPOSE 443
@@ -49,11 +54,23 @@ RUN dpkg -i mariadb-connector-cpp_1.1.4-1+maria~bookworm_arm64.deb
 COPY . /usr/src/honeypi
 WORKDIR /usr/src/honeypi
 
-# This command compiles your app using GCC, adjust for your source code
+##################
+# STANDARD CODE: #
+##################
 RUN g++ -o run home.cpp -lmariadbcpp -lssl -lcrypto -lcurl
-# RUN g++ -o test servertest.cpp
+ENTRYPOINT ["./run"]
 
-# REMOVE UNNEEDED PACKAGES
+####################
+# DEBUG ENTRYPOINT #
+####################
+#RUN g++ -o test servertest.cpp -lmariadbcpp -lssl -lcrypto -lcurl
+#ENTRYPOINT ["./test"]
+#ENTRYPOINT ["gdbserver", "localhost:3000", "/usr/src/honeypi/run"]
+
+
+############################
+# REMOVE UNNEEDED PACKAGES #
+############################
 # SPEED BUILDING!!!
 #RUN apt-get remove -y openssh-server 
 #RUN apt-get remove -y g++ 
@@ -65,9 +82,5 @@ RUN g++ -o run home.cpp -lmariadbcpp -lssl -lcrypto -lcurl
 RUN rm home.cpp
 RUN rm servertest.cpp
 
-# This command runs your application, comment out this line to compile only
-ENTRYPOINT ["./run"]
-#CMD ["./usr/src/honeypi/run"]
-
 # Versions and Labels
-LABEL Name=honeypotpi-SERVER Versions=0.1
+LABEL Name=honeypiserver Versions=0.1

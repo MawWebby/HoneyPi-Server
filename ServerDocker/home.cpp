@@ -50,7 +50,11 @@ const bool EXCEPTION = true;
 /// DOCKER SIGNALS ///
 //////////////////////
 //volatile sig_atomic_t stopSIGNAL = false;
-std::atomic<bool> stopSIGNAL(false);
+std::atomic<int> stopSIGNAL(0);
+std::atomic<int> statusP80(0);
+std::atomic<int> statusP443(0);
+std::atomic<int> statusP11829(0);
+std::atomic<int> statusP11830(0);
 
 
 /////////////////
@@ -414,6 +418,7 @@ const std::string mariadbloadalluserswithsessiontokens = "SELECT user FROM crede
 const std::string mariadbloadalluserswithhoneypis = "SELECT user FROM credentials WHERE honeypilastcheckin != 0";
 const std::string mariadbremovesessionID24hours = "UPDATE credentials SET clientsession = '' WHERE user = '";
 
+/*
 const std::map <std::pair<int, int>, std::string> mariadbchangeportstatusheader = {
     {{0,0}, "UPDATE serverstatus SET port80running = '0'"},
     {{0,1}, "UPDATE serverstatus SET port80running = '1'"},
@@ -428,6 +433,7 @@ const std::map <std::pair<int, int>, std::string> mariadbchangeportstatusheader 
 const std::map <std::pair<std::string, int>, std::string> mariadbadderrorheader = {
     {{"port80error", 1}, "UPDATE serverstatus SET port80error = poert80error + 1"},
 };
+*/
 
 
 
@@ -1785,13 +1791,7 @@ void servershutdown() {
 void handleSignal(int signal) {
     if (signal == SIGTERM || signal == SIGINT) {
         std::cout << "Received termination signal, shutting down gracefully..." << std::endl;
-        
-        stopSIGNAL.store(true);
-
-        sleep(8);
-        
-        // SAVE LOGIC HERE
-        // servershutdown();       
+        stopSIGNAL.store(1);     
     }
 }
 
@@ -5279,13 +5279,17 @@ void handleConnections443(int server_fd) {
     }
     loginfo("Started!", true);
 
-    while (port443runningstatus == true && stopSIGNAL.load() == false) {
+    // && stopSIGNAL.load() == 0
+    while (port443runningstatus == true) {
         
         int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_addr_len);
        
         if (client_fd < 0) {
             if (client_fd == -1) {
                 sleep(0.5);
+                if (stopSIGNAL.load() == true) {
+                    port443runningstatus = false;
+                }
             } else {
                 loginfo("UNABLE TO ACCEPT HTTPS CONNECTION", true);
                 SSL_CTX_free(ctx);
@@ -5614,11 +5618,7 @@ void handleConnections443(int server_fd) {
         }   
     }
 
-    SSL_shutdown(ssl);
-    SSL_free(ssl);
-    SSL_CTX_free(ctx);
-    logcritical("P443 - Finished P443!", true);
-    sleep(5);
+    loginfo("P443 - Shutting Down...", true);
     return;
 }
 
@@ -6143,7 +6143,7 @@ int createnetworkport443() {
         exit(EXIT_FAILURE);
     }
 
-    // Forcefully attaching socket to the port 80
+    // Forcefully attaching socket to the port 443
     if (setsockopt(server_fd3, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
         logcritical("SETSOCKOPT FAILED (443)", true);
         exit(EXIT_FAILURE);
@@ -6558,7 +6558,7 @@ int setup() {
         exit(EXIT_FAILURE);
     }
 
-    // Forcefully attaching socket to the port 11535
+    // Forcefully attaching socket to the port 11829
     if (setsockopt(server_fd2, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt2, sizeof(opt2))) {
         logcritical("P11829 - FAILED TO SET SOCKET OPT", true);
         exit(EXIT_FAILURE);
@@ -6730,9 +6730,9 @@ int main() {
         socklen_t clientAddrLen = sizeof(clientAddr);
 
         // MAIN RUNNING LOOP
-        while(startupchecks == 0 && encounterederrors == 0) {
+        while(startupchecks == 0 && encounterederrors == 0 && stopSIGNAL.load() == 0) {
 
-            sleep(60);
+            sleep(2);
             loginfo("Running = TRUE...", true);
 
 
@@ -6784,6 +6784,15 @@ int main() {
             return 1;
             return 1;
             return 1;
+        }
+
+
+        if (stopSIGNAL.load() != 0) {
+            logcritical("Called to Exit!", true);
+            sleep(3);
+            return 0;
+            return 0;
+            return 0;
         }
     }
 

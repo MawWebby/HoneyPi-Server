@@ -2,10 +2,13 @@ version: '3.4'
 
 services:
   honeypotpi:
-    image: honeypotpi
+    image: alpha
     build:
       context: .
       dockerfile: ./Dockerfile
+
+volumes:
+  
 
 networks:
   my_network1:
@@ -16,5 +19,9 @@ networks:
   host:
     driver: host
     ports:
-      - 11535:11535
+      - 80:80
+      - 443:443
+      - 11829:11829
+      - 11830:11830
+      - 22221:2221
       - 8080:8080

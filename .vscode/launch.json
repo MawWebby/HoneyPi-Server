@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach to gdbserver in Docker",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/usr/src/honeypi/run",  // Path to the executable
+            "args": [],  // Arguments for the executable
+            "stopAtEntry": false,
+            "cwd": "/home",  // Working directory inside the container
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerServerAddress": "localhost:3000",  // Use localhost for the gdbserver
+            "miDebuggerPath": "/usr/bin/gdb",  // Path to gdb inside the container
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "sourceFileMap": {
+                "/app": "${workspaceFolder}"  // Maps the container's app folder to your workspace
+            }
+        }
+    ]
+}

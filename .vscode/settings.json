@@ -74,7 +74,8 @@
         "map": "cpp",
         "cinttypes": "cpp",
         "sstream": "cpp",
-        "csignal": "cpp"
+        "csignal": "cpp",
+        "chrono": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }
