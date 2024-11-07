@@ -5683,8 +5683,8 @@ void handleConnections80() {
 ////////////////////////////////////////////////////////////
 void apiconnectionthread(int clientID) {
     char buffer[2048] = {0};
-    read(new_socket2, buffer, 2048);
-    sendtologopen(buffer);
+    read(clientID, buffer, 2048);
+    sendtolog(buffer);
     std::string bufferstd = buffer;
 
     if (bufferstd.length() >= 8) {
@@ -5774,10 +5774,10 @@ void apiconnectionthread(int clientID) {
                         if (cogswaiting >= 20) {
                             while (cogswaiting >= 20) {
                                 sleep(3);
-                                int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                                int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
                             }
                         }
-                        int send_res=send(new_socket2,apisendcog.c_str(),apisendcog.length(),0);
+                        int send_res=send(clientID,apisendcog.c_str(),apisendcog.length(),0);
                     }
 
                     // CREATE NEW SERVER ACCOUNT
@@ -5807,7 +5807,7 @@ void apiconnectionthread(int clientID) {
                                         }
                                     } else {
                                         // SEND ERROR ON API PORT
-                                        int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                                        int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
                                     }
                                 }
                                 
@@ -5816,11 +5816,11 @@ void apiconnectionthread(int clientID) {
                                 }
                             } else {
                                 // SEND ERROR ON API PORT
-                                int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                                int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
                             }
                         } else {
                             // SEND ERROR ON API PORT
-                            int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                            int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
                         }
                     }
                 } else {
@@ -5832,24 +5832,26 @@ void apiconnectionthread(int clientID) {
                         }
                     } else {
                         // SEND ERROR ON API PORT
-                        int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                        int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
                     }
                 }
             } else {
                 // SEND ERROR ON API PORT
-                int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
             }
         } else {
             // SEND ERROR ON API PORT
-            int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+            int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
         }
     } else {
         // SEND ERROR ON API PORT
-        int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+        int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
     }
+
+    close(clientID);
 }
 
-void handle11829Connections(int server_fd2, int clientID) {
+void handle11829Connections(int server_fd4, int clientID) {
     api11829 = true;
     int apithreadnumber = 0;
     while(api11829 == true) {
@@ -5864,9 +5866,10 @@ void handle11829Connections(int server_fd2, int clientID) {
         struct sockaddr_in client_addr;
 
         socklen_t client_addr_len = sizeof(client_addr);
-        
 
-        if ((clientID = accept(server_fd, (struct sockaddr*)&client_addr, &client_addr_len)) < 0) {
+        int clientID = accept(server_fd4, (struct sockaddr*)&client_addr, &client_addr_len);
+
+        if (clientID < 0) {
             // NOTHING
         } else {
             char client_ip[INET_ADDRSTRLEN];
@@ -5878,168 +5881,165 @@ void handle11829Connections(int server_fd2, int clientID) {
             allowed = mariadb_CHECKIPADDR(client_ip);
 
             if (allowed == true) {
-                if ((new_socket2 = accept(server_fd2, (struct sockaddr*)&address, &addrlen)) < 0) {
-                    loginfo("ERROR ACCEPTING API CONNECTION", true);
-                } else {
-                    loginfo("11829 port initialized", true);
-                    switch (apithreadnumber) {
-                        case 0: {
-                            std::thread apithreadnumber00(apiconnectionthread, clientID);
-                            apithreadnumber00.detach();
-                            break;
-                        }
-                        case 1: {
-                            std::thread apithreadnumber01(apiconnectionthread, clientID);
-                            apithreadnumber01.detach();
-                            break;
-                        }
-                        case 2: {
-                            std::thread apithreadnumber02(apiconnectionthread, clientID);
-                            apithreadnumber02.detach();
-                            break;
-                        }
-                        case 3: {
-                            std::thread apithreadnumber03(apiconnectionthread, clientID);
-                            apithreadnumber03.detach();
-                            break;
-                        }
-                        case 4: {
-                            std::thread apithreadnumber04(apiconnectionthread, clientID);
-                            apithreadnumber04.detach();
-                            break;
-                        }
-                        case 5: {
-                            std::thread apithreadnumber05(apiconnectionthread, clientID);
-                            apithreadnumber05.detach();
-                            break;
-                        }
-                        case 6: {
-                            std::thread apithreadnumber06(apiconnectionthread, clientID);
-                            apithreadnumber06.detach();
-                            break;
-                        }
-                        case 7: {
-                            std::thread apithreadnumber07(apiconnectionthread, clientID);
-                            apithreadnumber07.detach();
-                            break;
-                        }
-                        case 8: {
-                            std::thread apithreadnumber08(apiconnectionthread, clientID);
-                            apithreadnumber08.detach();
-                            break;
-                        }
-                        case 9: {
-                            std::thread apithreadnumber09(apiconnectionthread, clientID);
-                            apithreadnumber09.detach();
-                            break;
-                        }
-                        case 10: {
-                            std::thread apithreadnumber10(apiconnectionthread, clientID);
-                            apithreadnumber10.detach();
-                            break;
-                        }
-                        case 11: {
-                            std::thread apithreadnumber11(apiconnectionthread, clientID);
-                            apithreadnumber11.detach();
-                            break;
-                        }
-                        case 12: {
-                            std::thread apithreadnumber12(apiconnectionthread, clientID);
-                            apithreadnumber12.detach();
-                            break;
-                        }
-                        case 13: {
-                            std::thread apithreadnumber13(apiconnectionthread, clientID);
-                            apithreadnumber13.detach();
-                            break;
-                        }
-                        case 14: {
-                            std::thread apithreadnumber14(apiconnectionthread, clientID);
-                            apithreadnumber14.detach();
-                            break;
-                        }
-                        case 15: {
-                            std::thread apithreadnumber15(apiconnectionthread, clientID);
-                            apithreadnumber15.detach();
-                            break;
-                        }
-                        case 16: {
-                            std::thread apithreadnumber16(apiconnectionthread, clientID);
-                            apithreadnumber16.detach();
-                            break;
-                        }
-                        case 17: {
-                            std::thread apithreadnumber17(apiconnectionthread, clientID);
-                            apithreadnumber17.detach();
-                            break;
-                        }
-                        case 18: {
-                            std::thread apithreadnumber18(apiconnectionthread, clientID);
-                            apithreadnumber18.detach();
-                            break;
-                        }
-                        case 19: {
-                            std::thread apithreadnumber19(apiconnectionthread, clientID);
-                            apithreadnumber19.detach();
-                            break;
-                        }
-                        case 20: {
-                            std::thread apithreadnumber20(apiconnectionthread, clientID);
-                            apithreadnumber20.detach();
-                            break;
-                        }
-                        case 21: {
-                            std::thread apithreadnumber21(apiconnectionthread, clientID);
-                            apithreadnumber21.detach();
-                            break;
-                        }
-                        case 22: {
-                            std::thread apithreadnumber22(apiconnectionthread, clientID);
-                            apithreadnumber22.detach();
-                            break;
-                        }
-                        case 23: {
-                            std::thread apithreadnumber23(apiconnectionthread, clientID);
-                            apithreadnumber23.detach();
-                            break;
-                        }
-                        case 24: {
-                            std::thread apithreadnumber24(apiconnectionthread, clientID);
-                            apithreadnumber24.detach();
-                            break;
-                        }
-                        case 25: {
-                            std::thread apithreadnumber25(apiconnectionthread, clientID);
-                            apithreadnumber25.detach();
-                            break;
-                        }
-                        case 26: {
-                            std::thread apithreadnumber26(apiconnectionthread, clientID);
-                            apithreadnumber26.detach();
-                            break;
-                        }
-                        case 27: {
-                            std::thread apithreadnumber27(apiconnectionthread, clientID);
-                            apithreadnumber27.detach();
-                            break;
-                        }
-                        case 28: {
-                            std::thread apithreadnumber28(apiconnectionthread, clientID);
-                            apithreadnumber28.detach();
-                            break;
-                        }
-                        case 29: {
-                            std::thread apithreadnumber29(apiconnectionthread, clientID);
-                            apithreadnumber29.detach();
-                            break;
-                        }
+                loginfo("11829 port initialized", true);
+                switch (apithreadnumber) {
+                    case 0: {
+                        std::thread apithreadnumber00(apiconnectionthread, clientID);
+                        apithreadnumber00.detach();
+                        break;
                     }
-                    if (apithreadnumber == 29) {
-                        apithreadnumber = 0;
-                    } else {
-                        apithreadnumber = apithreadnumber + 1;
+                    case 1: {
+                        std::thread apithreadnumber01(apiconnectionthread, clientID);
+                        apithreadnumber01.detach();
+                        break;
+                    }
+                    case 2: {
+                        std::thread apithreadnumber02(apiconnectionthread, clientID);
+                        apithreadnumber02.detach();
+                        break;
+                    }
+                    case 3: {
+                        std::thread apithreadnumber03(apiconnectionthread, clientID);
+                        apithreadnumber03.detach();
+                        break;
+                    }
+                    case 4: {
+                        std::thread apithreadnumber04(apiconnectionthread, clientID);
+                        apithreadnumber04.detach();
+                        break;
+                    }
+                    case 5: {
+                        std::thread apithreadnumber05(apiconnectionthread, clientID);
+                        apithreadnumber05.detach();
+                        break;
+                    }
+                    case 6: {
+                        std::thread apithreadnumber06(apiconnectionthread, clientID);
+                        apithreadnumber06.detach();
+                        break;
+                    }
+                    case 7: {
+                        std::thread apithreadnumber07(apiconnectionthread, clientID);
+                        apithreadnumber07.detach();
+                        break;
+                    }
+                    case 8: {
+                        std::thread apithreadnumber08(apiconnectionthread, clientID);
+                        apithreadnumber08.detach();
+                        break;
+                    }
+                    case 9: {
+                        std::thread apithreadnumber09(apiconnectionthread, clientID);
+                        apithreadnumber09.detach();
+                        break;
+                    }
+                    case 10: {
+                        std::thread apithreadnumber10(apiconnectionthread, clientID);
+                        apithreadnumber10.detach();
+                        break;
+                    }
+                    case 11: {
+                        std::thread apithreadnumber11(apiconnectionthread, clientID);
+                        apithreadnumber11.detach();
+                        break;
+                    }
+                    case 12: {
+                        std::thread apithreadnumber12(apiconnectionthread, clientID);
+                        apithreadnumber12.detach();
+                        break;
+                    }
+                    case 13: {
+                        std::thread apithreadnumber13(apiconnectionthread, clientID);
+                        apithreadnumber13.detach();
+                        break;
+                    }
+                    case 14: {
+                        std::thread apithreadnumber14(apiconnectionthread, clientID);
+                        apithreadnumber14.detach();
+                        break;
+                    }
+                    case 15: {
+                        std::thread apithreadnumber15(apiconnectionthread, clientID);
+                        apithreadnumber15.detach();
+                        break;
+                    }
+                    case 16: {
+                        std::thread apithreadnumber16(apiconnectionthread, clientID);
+                        apithreadnumber16.detach();
+                        break;
+                    }
+                    case 17: {
+                        std::thread apithreadnumber17(apiconnectionthread, clientID);
+                        apithreadnumber17.detach();
+                        break;
+                    }
+                    case 18: {
+                        std::thread apithreadnumber18(apiconnectionthread, clientID);
+                        apithreadnumber18.detach();
+                        break;
+                    }
+                    case 19: {
+                        std::thread apithreadnumber19(apiconnectionthread, clientID);
+                        apithreadnumber19.detach();
+                        break;
+                    }
+                    case 20: {
+                        std::thread apithreadnumber20(apiconnectionthread, clientID);
+                        apithreadnumber20.detach();
+                        break;
+                    }
+                    case 21: {
+                        std::thread apithreadnumber21(apiconnectionthread, clientID);
+                        apithreadnumber21.detach();
+                        break;
+                    }
+                    case 22: {
+                        std::thread apithreadnumber22(apiconnectionthread, clientID);
+                        apithreadnumber22.detach();
+                        break;
+                    }
+                    case 23: {
+                        std::thread apithreadnumber23(apiconnectionthread, clientID);
+                        apithreadnumber23.detach();
+                        break;
+                    }
+                    case 24: {
+                        std::thread apithreadnumber24(apiconnectionthread, clientID);
+                        apithreadnumber24.detach();
+                        break;
+                    }
+                    case 25: {
+                        std::thread apithreadnumber25(apiconnectionthread, clientID);
+                        apithreadnumber25.detach();
+                        break;
+                    }
+                    case 26: {
+                        std::thread apithreadnumber26(apiconnectionthread, clientID);
+                        apithreadnumber26.detach();
+                        break;
+                    }
+                    case 27: {
+                        std::thread apithreadnumber27(apiconnectionthread, clientID);
+                        apithreadnumber27.detach();
+                        break;
+                    }
+                    case 28: {
+                        std::thread apithreadnumber28(apiconnectionthread, clientID);
+                        apithreadnumber28.detach();
+                        break;
+                    }
+                    case 29: {
+                        std::thread apithreadnumber29(apiconnectionthread, clientID);
+                        apithreadnumber29.detach();
+                        break;
                     }
                 }
+                if (apithreadnumber == 29) {
+                    apithreadnumber = 0;
+                } else {
+                    apithreadnumber = apithreadnumber + 1;
+                }
+                
             } else {
                 // SEND ERROR ON API PORT
                 int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
