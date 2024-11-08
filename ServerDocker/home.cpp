@@ -5682,8 +5682,8 @@ void handleConnections80() {
 // HANDLE NETWORKED CONNECTIONS (11829) - MAIN API SERVER //
 ////////////////////////////////////////////////////////////
 void apiconnectionthread(int clientID) {
-    char buffer[2048] = {0};
-    read(clientID, buffer, 2048);
+    char buffer[4096] = {0};
+    read(clientID, buffer, 4096);
     sendtolog(buffer);
     std::string bufferstd = buffer;
 
@@ -5694,152 +5694,30 @@ void apiconnectionthread(int clientID) {
         std::string buffertests = bufferstd.substr(0,1);
         std::string realstring;
 
-        if (buffertests == "{") {
+        // REDO TO FIX HAPI SCRIPT
+        if (buffertests == "H") {
             // START READING STATEMENTS
-            buffertests = bufferstd.substr(1,5);
+            buffertests = bufferstd.substr(0,4);
+            std::string lineanalyze = "";
             bool shiftfound = false;
 
-            // CORRESPONDING TO ABCDE; ADD TEN CASES !SHIFTS!
-            if (buffertests == "ABCDE") {
-                // SHIFT 0
-                shiftfound = true;
-                realstring = bufferstd.substr(6, bufferstd.length() - 6);
-            }
-            if (buffertests == "BCDEF") {
-                // SHIFT +1
-                shiftfound = true;
-                realstring = bufferstd.substr(6, bufferstd.length() - 6);
-            }
-            if (buffertests == "CDEFG") {
-                // SHIFT +2
-                shiftfound = true;
-                realstring = bufferstd.substr(6, bufferstd.length() - 6);
-            }
-            if (buffertests == "DEFGH") {
-                // SHIFT +3
-                shiftfound = true;
-                realstring = bufferstd.substr(6, bufferstd.length() - 6);
-            }
-            if (buffertests == "EFGHI") {
-                // SHIFT +4
-                shiftfound = true;
-                realstring = bufferstd.substr(6, bufferstd.length() - 6);
-            }
-            if (buffertests == "FGHIJ") {
-                // SHIFT +5
-                shiftfound = true;
-                realstring = bufferstd.substr(6, bufferstd.length() - 6);
-            }
-            if (buffertests == "zABCD") {
-                // SHIFT -1
-                shiftfound = true;
-                realstring = bufferstd.substr(6, bufferstd.length() - 6);
-            }
-            if (buffertests == "yzABC") {
-                // SHIFT -2
-                shiftfound = true;
-                realstring = bufferstd.substr(6, bufferstd.length() - 6);
-            }
-            if (buffertests == "xyzAB") {
-                // SHIFT -3
-                shiftfound = true;
-                realstring = bufferstd.substr(6, bufferstd.length() - 6);
-            }
-            if (buffertests == "wxyzA") {
-                // SHIFT -4
-                shiftfound = true;
-                realstring = bufferstd.substr(6, bufferstd.length() - 6);
-            }
-            if (buffertests == "vwxyz") {
-                // SHIFT -5
-                shiftfound = true;
-                realstring = bufferstd.substr(6, bufferstd.length() - 6);
-            }
-
-
-
-
-
-            // SHIFT HAS BEEN FOUND, START ANALYZING THE ACTUAL STRING
-            if (shiftfound == true && realstring != "") {
-                // CONTINUE ANALYZING
-                if (realstring.length() >= 7) {
-                    // PING VERSION 0.1
-                    if (realstring.substr(0,6) == "status") {
-                        // PING FOR HONEYPI THINGS
-                    }
-                    
-                    // REPORT NEW COG
-                    if (realstring.substr(0,6) == "report") {
-                        if (cogswaiting >= 20) {
-                            while (cogswaiting >= 20) {
-                                sleep(3);
-                                int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
-                            }
-                        }
-                        int send_res=send(clientID,apisendcog.c_str(),apisendcog.length(),0);
-                    }
-
-                    // CREATE NEW SERVER ACCOUNT
-                    if (realstring.substr(0.6) == "create") {
-
-                    }
-
-                    // RESET PASSWORD
-                    if (realstring.substr(0,6) == "passwo") {
-                        
-                    }
-
-                    // LOAD/CREATE API KEY
-                    if (realstring.substr(0.6) == "apikey") {
-                        if (realstring.length() >= 12) {
-                            if (realstring.substr(6,1) == ",") {
-                                if (realstring.substr(7,5) == "show:") {
-                                    if (realstring.length() >= 15) {
-                                        if (realstring.substr(12,3) == "pi}") {
-                                            // SHOW THE HONEYPI API FOR PI
-
-                                        }
-
-                                        if (realstring.substr(12,3) == "rou") {
-                                            // SHOW THE HONEYPI API FOR PI
-
-                                        }
-                                    } else {
-                                        // SEND ERROR ON API PORT
-                                        int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
-                                    }
-                                }
-                                
-                                if (realstring == "creat") {
-                                    // CREATE NEW HONEYPI API TOKENS
-                                }
-                            } else {
-                                // SEND ERROR ON API PORT
-                                int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
-                            }
-                        } else {
-                            // SEND ERROR ON API PORT
-                            int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
-                        }
+            if (buffertests == "HAPI") {
+                lineanalyze = bufferstd.substr(4,4);
+                if (lineanalyze == "/1.1") {
+                    // ANALYZE HEADERS 2
+                    if (bufferstd.substr(10,22) == "Content-Type:text/json") {
+                        sendtolog("THIS WORKS");
                     }
                 } else {
-                    if (realstring.length() >= 4) {
-
-                        // PING FOR HONEYPI NEW
-                        if (realstring.substr(0,4) == "ping") {
-                            // NEW PING FOR HONEYPI
-                        }
-                    } else {
-                        // SEND ERROR ON API PORT
-                        int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
-                    }
+                    // UNSUPPORTED HAPI VERSION
+                    sendtolog("UNSUPPORTED VERSION");
                 }
             } else {
-                // SEND ERROR ON API PORT
-                int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
+                // FAIL
             }
+            
         } else {
+            
             // SEND ERROR ON API PORT
             int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
         }
