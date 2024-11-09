@@ -5681,13 +5681,267 @@ void handleConnections80() {
 ////////////////////////////////////////////////////////////
 // HANDLE NETWORKED CONNECTIONS (11829) - MAIN API SERVER //
 ////////////////////////////////////////////////////////////
+// PROCESS THE API REQUESTS
+int processAPI(int clientID, std::string header1, std::string data1, std::string header2, 
+               std::string data2, std::string header3, std::string data3, 
+               std::string header4, std::string data4, std::string header5, 
+               std::string data5, std::string header6, std::string data6, 
+               std::string header7, std::string data7, std::string header8, 
+               std::string data8, std::string header9, std::string data9) {
+    
+    // START PROCESSING HERE
+    bool completedprocessing = false;
+
+    // MAIN HEADER RELATING TO HONEYPOT/HONEYPI CONNECTIONS
+    if (header1 == "CONNECTION") {
+        // MAIN CONNECTION FOR NEW HONEYPIS
+        if (data1 == "NEW") {
+
+        }
+
+        // ESTABLISH CONNECTION AND VERIFY API KEYS; CREATE NEW TOKEN KEYS
+        if (data1 == "ESTABLISH") {
+
+        }
+
+        // CHECK FOR UPDATES SCRIPT
+        if (data1 == "CHECK_FOR_UPDATE") {
+
+        }
+
+        // UPDATE IP LIST AND SEND TO CLIENT
+        if (data1 == "UPDATE") {
+
+        }
+
+        // REPORT HONEYPOT CONNECTED CORRECTLY TO INTERNET
+        if (data1 == "REPORT") {
+
+        }
+
+        // HONEYPOT SENDING REPORT TO SERVER
+        if (data1 == "NEW_REPORT") {
+
+        }
+
+        // HONEYPOT IN MIDDLE OF SENDING LARGE HACKER REPORT
+        if (data1 == "REPORT_PART") {
+            
+        }
+    }
+
+
+    if (completedprocessing == false) {
+        return 1;
+    } else {
+        return 0;
+    }
+    return 255;
+}
+
+// ANALYZE THE API REQUESTS
+int analyzeAPIandexecute(int clientID, std::string messageA) {
+    sendtolog("ANALYZING");
+    sendtolog(messageA);
+    std::string message = messageA;
+    std::string charactertoanalyze = "";
+    std::string charactertoanalyze2 = "";
+    std::string doublequote = "\"";
+    std::string firstheader = "";
+    std::string firstdataheader = "";
+    std::string secondheader = "";
+    std::string seconddataheader = "";
+    std::string thirdheader = "";
+    std::string thirddataheader = "";
+    std::string fourthheader = "";
+    std::string fourthdataheader = "";
+    std::string fifthheader = "";
+    std::string fifthdataheader = "";
+    std::string currentvalue = "";
+
+    if (message.length() >= 15) {
+        charactertoanalyze = message.substr(0,1);
+        charactertoanalyze2 = message.substr(1,1);
+
+        // CHECK FOR JSON CONFIG
+        if (charactertoanalyze == "{" && charactertoanalyze2 == doublequote) {
+            int characteranalyzing = 2;
+            int charactertwoanalyzing = 3;
+            int charactertoanalyzemax = message.length();
+            int previousmarker = 2;
+
+            bool completedapiread = false;
+
+            // SORT ARGUMENTS INTO SUB-CATEGORIES
+            while (completedapiread == false && characteranalyzing <= message.length()) {
+                if (message.length() >= characteranalyzing + 1) {
+                    charactertoanalyze = message.substr(characteranalyzing, 1);
+                    charactertoanalyze2 = message.substr(characteranalyzing + 1, 1);
+
+                    // ANALYZE THE LETTERS TO A RESULT
+                    if (charactertoanalyze == "\"" && charactertoanalyze2 == ",") {
+                        std::string headerlength = message.substr(previousmarker, characteranalyzing - previousmarker);
+                        sendtolog("CURRENT STRING");
+                        sendtolog(headerlength);
+
+                        characteranalyzing = characteranalyzing + 1;
+                        previousmarker = characteranalyzing;
+
+                        if (firstheader == "") {
+                            firstheader = headerlength;
+                        } else {
+                            if (secondheader == "") {
+                                secondheader = headerlength;
+                            } else {
+                                if (thirdheader == "") {
+                                    thirdheader = headerlength;
+                                } else {
+                                    if (fourthheader == "") {
+                                        fourthheader = headerlength;
+                                    } else {
+                                        if (fifthheader == "") {
+                                            fifthheader = headerlength;
+                                        } else {
+                                            sendtolog("OVERFLOW ERROR IN HAPI PARSER!");
+                                            return 1;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        previousmarker = previousmarker + 2;
+                    }
+
+                    // ANALYZE DATA HANDLERS TO RESULT
+                    if (charactertoanalyze == "\"" && charactertoanalyze2 == ";") {
+                        std::string dataheaderlength = message.substr(previousmarker, characteranalyzing - previousmarker);
+                        sendtolog("CURRENT DATA_STRING");
+                        sendtolog(dataheaderlength);
+
+                        characteranalyzing = characteranalyzing + 1;
+                        previousmarker = characteranalyzing;
+
+                        if (firstdataheader == "") {
+                            firstdataheader = dataheaderlength;
+                        } else {
+                            if (seconddataheader == "") {
+                                seconddataheader = dataheaderlength;
+                            } else {
+                                if (thirddataheader == "") {
+                                    thirddataheader = dataheaderlength;
+                                } else {
+                                    if (fourthdataheader == "") {
+                                        fourthdataheader = dataheaderlength;
+                                    } else {
+                                        if (fifthdataheader == "") {
+                                            fifthdataheader = dataheaderlength;
+                                        } else {
+                                            sendtolog("OVERFLOW ERROR IN HAPI PARSER!");
+                                            return 1;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        previousmarker = previousmarker + 2;
+                    }
+
+                    if (charactertoanalyze == "\"" && charactertoanalyze2 == "}") {
+                        std::string dataheaderlength = message.substr(previousmarker, characteranalyzing - previousmarker);
+                        sendtolog("CURRENT DATA_STRING");
+                        sendtolog(dataheaderlength);
+
+                        characteranalyzing = characteranalyzing + 1;
+                        previousmarker = characteranalyzing;
+
+                        if (firstdataheader == "") {
+                            firstdataheader = dataheaderlength;
+                        } else {
+                            if (seconddataheader == "") {
+                                seconddataheader = dataheaderlength;
+                            } else {
+                                if (thirddataheader == "") {
+                                    thirddataheader = dataheaderlength;
+                                } else {
+                                    if (fourthdataheader == "") {
+                                        fourthdataheader = dataheaderlength;
+                                    } else {
+                                        if (fifthdataheader == "") {
+                                            fifthdataheader = dataheaderlength;
+                                        } else {
+                                            sendtolog("OVERFLOW ERROR IN HAPI PARSER!");
+                                            return 1;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        previousmarker = previousmarker + 2;
+                        completedapiread = true;
+                    }
+                } else {
+                    sendtolog("A PARSER ERROR OCCURRED IN HAPI!");
+                }
+
+                characteranalyzing = characteranalyzing + 1;
+            }
+
+
+            // MAKE SURE DATA IS APPLICABLE AND CORRECT
+            int errors = 0;
+
+            // CHECK FOR NULL CASE
+            if (firstheader == "" || firstdataheader == "") {
+                sendtolog("EMPTY HAPI REQUEST RECEIVED (0)");
+                errors = errors + 1;
+            }
+
+            // CHECK FOR VALID SETS OF DATA
+            if ((firstheader != "" && firstdataheader == "") || (firstheader == "" && firstdataheader != "")) {
+                sendtolog("INVALID HAPI REQUEST (1)");
+                errors = errors + 1;
+            }
+            if ((secondheader != "" && seconddataheader == "") || (secondheader == "" && seconddataheader != "")) {
+                sendtolog("INVALID HAPI REQUEST (2)");
+                errors = errors + 1;
+            }
+            if ((thirdheader != "" && thirddataheader == "") || (thirdheader == "" && thirddataheader != "")) {
+                sendtolog("INVALID HAPI REQUEST (3)");
+                errors = errors + 1;
+            }
+            if ((fourthheader != "" && fourthdataheader == "") || (fourthheader == "" && fourthdataheader != "")) {
+                sendtolog("INVALID HAPI REQUEST (4)");
+                errors = errors + 1;
+            }
+            if ((fifthheader != "" && fifthheader == "") || (fifthheader == "" && fifthheader != "")) {
+                sendtolog("INVALID HAPI REQUEST (5)");
+                errors = errors + 1;
+            }
+
+            if (errors == 0) {
+                // START PROCESSING HERE
+                int runtime = processAPI(clientID, firstheader, firstdataheader, secondheader, seconddataheader, thirdheader, thirddataheader, fourthheader, fourthdataheader, fifthheader, fifthdataheader, "", "", "", "", "", "", "", "");
+                return runtime;
+            } else {
+                // INVALID REQUEST RECEIVED
+                return 1;
+            }
+            sendtolog("FINISHED!");
+        }
+    } else {
+        sendtolog("NULL STRING RECEIVED!");
+        return 1;
+    }
+  return 255;  
+}
+
 void apiconnectionthread(int clientID) {
-    char buffer[4096] = {0};
-    read(clientID, buffer, 4096);
+    char buffer[16384] = {0};
+    read(clientID, buffer, 16384);
     sendtolog(buffer);
     std::string bufferstd = buffer;
 
-    if (bufferstd.length() >= 8) {
+    if (bufferstd.length() >= 50) {
         // READ BUFFER LENGTH HERE
         
         // MAKE SURE THAT IT IS A VALID STRING
@@ -5701,12 +5955,19 @@ void apiconnectionthread(int clientID) {
             std::string lineanalyze = "";
             bool shiftfound = false;
 
+            // HAPI PROTOCOL
             if (buffertests == "HAPI") {
                 lineanalyze = bufferstd.substr(4,4);
                 if (lineanalyze == "/1.1") {
-                    // ANALYZE HEADERS 2
                     if (bufferstd.substr(10,22) == "Content-Type:text/json") {
                         sendtolog("THIS WORKS");
+                        std::string messagetoread = bufferstd.substr(34, bufferstd.length() - 34);
+                        int result = analyzeAPIandexecute(clientID, messagetoread);
+                        if (result != 0) {
+                            sendtolog("AN ERROR OCCURRED");
+                        }
+                    } else {
+                        sendtolog("RECEIVED INCOMPATIBLE STRING FROM HAPI");
                     }
                 } else {
                     // UNSUPPORTED HAPI VERSION
@@ -6523,7 +6784,7 @@ int setup() {
 
 
 
-    // SERVER PORT LISTEN THREAD (118.30)
+    // SERVER PORT LISTEN THREAD (11830)
     loginfo("P11830 - Creating server thread listen...", false);
 
     sleep(1);
@@ -6549,7 +6810,7 @@ int setup() {
 
 
 
-    // CHECK THE CHECK FOR THIS!
+    // CHECK FOR THIS!
     if (serverdumpfilefound == true) {
         debugout("FUTURE THINGS!");
     }
