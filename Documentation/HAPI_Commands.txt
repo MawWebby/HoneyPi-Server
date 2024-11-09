@@ -1,0 +1,52 @@
+HAPI (HTTP 2 API) Commands 1.1
+
+HAPI\1.1
+
+GENERAL FORM
+{"HEADER","DATA_HANDLER";"HEADER_2","DATA_HANDLER_2";etc.}
+|----------------------------------------------------------------------------------------------------------------------------------------|
+|                        CLIENT TO SERVER CONNECTIONS
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|     HEADER      |         DATA HANDLER                |           USAGE                                                                |
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|  "CONNECTION"   | "NEW"                               | HoneyPi Honeypots/Routers - Establish a New Connection to Server to Ping
+|                 | "ESTABLISH"                         | 
+|                 | "CHECK_FOR_UPDATE"                  | HoneyPi Honeypots/Routers - Check for Updates Available
+|                 | "UPDATE"                            | 
+|                 | "NEW_REPORT"                        | INDICATE HONEYPI HAS A NEW 
+|                 | "REPORT_PART"                       | REPORTNUM = USED WHEN SENDING A LARGE REPORT
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|   "REPORTNUM"   | "##"                                | REPORT_PATH = USED WHEN SENDING A LARGE REPORT (PACKET NUMBER)
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+| "TOTALPACKETS"  | "##"                                | REPORT_PATH = TOTAL PACKETS TO BE SENT IN LARGE REPORT
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|  "REPORTFINISH" | "TRUE"/"FALSE"                      | REPORT_PATH = MUST BE IN SAME HEADER FOR LARGE REPORTS
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|    "VERSION"    | "#.#.#"                             | INSTALLED CLIENT VERSION
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|     "METHOD"    | "XXXXX"; "#x##"                     | ENCRYPTION METHOD, IF USED (HACKSWEEP ENCRYPTION)
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|     "LOGIN"     | *"API_TOKEN"                        | API TOKEN TO AUTHENTICATE
+|                 | *"USER"                             | USERNAME TO AUTHENTICATE
+|                 | *"PASS"                             | PASSWORD TO AUTHENTICATE
+|                 | * = Login Does not Have Data Handlers, But Must Be Followed Up By Some of These Headers to be True
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+
+
+
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|                        SERVER TO CLIENT RELATIONS                                                                                      |
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|     HEADER      |         DATA HANDLER                |           USAGE                                                                |
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|    "STATE"      | "REJECTED"                          | SERVER DID NOT APPROVE EITHER THE CREDENTIALS OR COMMAND BEING SENT
+|                 | "ACCEPTED"                          | SERVER APPROVED CREDENTIALS
+|                 | "SENT"
+|
+|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|   "MACLIST"     | "STANDARD"/"STRICT"                 | IP LIST TYPE
+|    "IPDAC"      | "XX/XX/XXXX_XX:XX:XX"               | TIME OF LAST IP LIST COMPILE
+|    "IPPAC"      | "XX"                                | PACKET NUMBER OF IP ADDRESSES TO SEND
+|   "IPPACMAX"    | "XX"                                | MAX PACKETS THAT WILL BE SENT
+
+|   "METHOD"      | "#x##"                              | ENCRYPTION TO SEND IP ADDRESS LIST (HACKSWEEP ENCRYPTION)
