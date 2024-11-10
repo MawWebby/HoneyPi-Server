@@ -10,11 +10,13 @@ GENERAL FORM
 |     HEADER      |         DATA HANDLER                |           USAGE                                                                |
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
 |  "CONNECTION"   | "NEW"                               | HoneyPi Honeypots/Routers - Establish a New Connection to Server to Ping
-|                 | "ESTABLISH"                         | 
+|                 | "ESTABLISH"                         | HoneyPi Routers - Establish New Token Keys
 |                 | "CHECK_FOR_UPDATE"                  | HoneyPi Honeypots/Routers - Check for Updates Available
-|                 | "UPDATE"                            | 
-|                 | "NEW_REPORT"                        | INDICATE HONEYPI HAS A NEW 
+|                 | "UPDATE"                            | HoneyPi Routers - IP List Update
+|                 | "REPORT"                            | HoneyPi Honeypots - Verify Honeypot is still connected to internet (30 min)
+|                 | "NEW_REPORT"                        | INDICATE HONEYPI HAS A NEW REPORT
 |                 | "REPORT_PART"                       | REPORTNUM = USED WHEN SENDING A LARGE REPORT
+|                 | "CONTINUE"                          | HoneyPi Routers - Continue With Sending Next Packet for List
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
 |   "REPORTNUM"   | "##"                                | REPORT_PATH = USED WHEN SENDING A LARGE REPORT (PACKET NUMBER)
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
@@ -22,27 +24,37 @@ GENERAL FORM
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
 |  "REPORTFINISH" | "TRUE"/"FALSE"                      | REPORT_PATH = MUST BE IN SAME HEADER FOR LARGE REPORTS
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
-|    "VERSION"    | "#.#.#"                             | INSTALLED CLIENT VERSION
+|    "VERSION"    | "ID=#.#.#"                          | INSTALLED CLIENT VERSION
+|                 | "DD=(HPI/RPI)"                      | TYPE OF DEVICE FOR CHECKING SOFTWARE VERSION
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
 |     "METHOD"    | "XXXXX"; "#x##"                     | ENCRYPTION METHOD, IF USED (HACKSWEEP ENCRYPTION)
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
-|     "LOGIN"     | *"API_TOKEN"                        | API TOKEN TO AUTHENTICATE
-|                 | *"USER"                             | USERNAME TO AUTHENTICATE
-|                 | *"PASS"                             | PASSWORD TO AUTHENTICATE
+|     "LOGIN"     | *"API_TOKEN="                       | API TOKEN TO AUTHENTICATE
+|                 | *"USER="                            | USERNAME TO AUTHENTICATE
+|                 | *"PASS="                            | PASSWORD TO AUTHENTICATE
 |                 | * = Login Does not Have Data Handlers, But Must Be Followed Up By Some of These Headers to be True
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
 
 
 
-|-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|----------------------------------------------------------------------------------------------------------------------------------------|
 |                        SERVER TO CLIENT RELATIONS                                                                                      |
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
 |     HEADER      |         DATA HANDLER                |           USAGE                                                                |
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
 |    "STATE"      | "REJECTED"                          | SERVER DID NOT APPROVE EITHER THE CREDENTIALS OR COMMAND BEING SENT
 |                 | "ACCEPTED"                          | SERVER APPROVED CREDENTIALS
-|                 | "SENT"
-|
+|                 | "SENT"                              | Packet Has Already Been Sent to Client
+|                 | "NEED_TO_UPDATE"                    | Client Needs to Update Before Continuing
+|                 | "SENDING"                           | Packet is Being Sent with This Header
+|                 | "UNSUPPORTED"                       | ACCOUNT/CLIENT DEVICE COMBINATION NOT OK
+|                 | "SUPPORTED"                         | ACCOUNT/CLIENT DEVICE COMBINATION OK
+|                 | "STOP"                              | PACKET SPAM, DO NOT ATTEMPT TO CONNECT FURTHER (30 MIN)
+|                 | "UPDATING"                          | SERVER IS CURRENTLY UPDATING, DO NOT ATTEMPT TO CONNECT FURTHER (30 MIN)
+|                 | "BAN"                               | ACCOUNT ASSOCIATED WITH TOKEN ID HAS BEEN BANNED!
+|                 | "AVAILABLE"                         | SERVER IS AVAILABLE AND RUNNING (RESPONSE TO NEW)
+
+
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
 |   "MACLIST"     | "STANDARD"/"STRICT"                 | IP LIST TYPE
 |    "IPDAC"      | "XX/XX/XXXX_XX:XX:XX"               | TIME OF LAST IP LIST COMPILE
@@ -50,3 +62,4 @@ GENERAL FORM
 |   "IPPACMAX"    | "XX"                                | MAX PACKETS THAT WILL BE SENT
 
 |   "METHOD"      | "#x##"                              | ENCRYPTION TO SEND IP ADDRESS LIST (HACKSWEEP ENCRYPTION)
+
