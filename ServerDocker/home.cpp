@@ -51,10 +51,12 @@ const bool EXCEPTION = true;
 //////////////////////
 //volatile sig_atomic_t stopSIGNAL = false;
 std::atomic<int> stopSIGNAL(0);
+std::atomic<int> updateSIGNAL(0);
 std::atomic<int> statusP80(0);
 std::atomic<int> statusP443(0);
 std::atomic<int> statusP11829(0);
 std::atomic<int> statusP11830(0);
+std::atomic<int> serverErrors(0);
 
 
 /////////////////
@@ -177,6 +179,7 @@ const std::string apisendcog = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent
 const std::string apiwaittosend = "HAPI/1.1 222 OK\nContent-Type:text/json\nContent-Length: 13\n\n{state: wait}";
 const std::string apideny = "HAPI/1.1 400 OK\nContent-Type:test/json\nContent-Length: 15\n\n{state: denied}";
 const std::string apiunavailable = "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 20\n\n{state: unavailable}";
+const std::string apiavailable = "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 18\n\n{state: available}";
 const std::string apinotfound = "HAPI/1.1 404 OK\nContent-Type:text/json\n\nContent-Length: 17\n\n{state: notfound}";
 const std::string apitrigger = "HAPI/1.1 200 OK\nContent-Type:text/json\n\nContent-Length:18\n\n{state: triggered}";
 const std::string apisuccess = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent-Length: 17\n\n{state: success}";
@@ -3884,6 +3887,24 @@ int writetoUSERStream(std::string username, bool forcelock) {
 
 
 
+////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////// HACKSWEEP ENCRYPTION ///////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+// UNENCRYPT STRING
+std::string ucryptHackSweep(std::string encryptedstring, std::string ekey) {
+
+}
+
+// ENCRYPT STRING
+std::string encryotHackSweep(std::string ucryptstring) {
+    
+}
+
+
+
+
 
 /////////////////////////////
 //// COG FILE OPERATIONS ////
@@ -5696,7 +5717,17 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
     if (header1 == "CONNECTION") {
         // MAIN CONNECTION FOR NEW HONEYPIS
         if (data1 == "NEW") {
+            // ADD CONDITIONS BASED ON SERVER STATUS AND OTHER THINGS
+            // int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
+            int updatesig = updateSIGNAL.load();
+            int stopsig = stopSIGNAL.load();
+            int statusPort = statusP11829.load();
 
+            if (updatesig == 0 && stopsig == 0 && statusPort == 0) {
+                int send_res=send(clientID,apiavailable.c_str(),apiavailable.length(),0);
+            } else {
+                int send_res=send(clientID,apiunavailable.c_str(),apiunavailable.length(),0);
+            }
         }
 
         // ESTABLISH CONNECTION AND VERIFY API KEYS; CREATE NEW TOKEN KEYS
