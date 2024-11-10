@@ -1756,9 +1756,6 @@ void logerror(std::string headerdata2, std::string errormessage) {
     sendtolog(data2);
 }
 
-void debugout(std::string data2) {
-    logdebug(data2, true);
-}
 
 
 
@@ -5046,11 +5043,11 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
                                     // GO AHEAD TO ANALYZE JSON AND SEND IT TO MARIADB TO VERIFY
                                     std::string userstringverify = jsonlogin.substr(2,8);
-                                    debugout(userstringverify);
+                                    logdebug(userstringverify, true);
                                     if (userstringverify == "username"){
                                         std::string verifyjson = jsonlogin.substr(11,1);
                                         int analyzenumber = 12;
-                                        debugout(verifyjson);
+                                        logdebug(verifyjson, true);
                                         if (verifyjson == ":") {
                                             int timering80 = 0;
                                             int timering80max = 80;
@@ -5060,7 +5057,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                             std::string hellostring = "";
                                             std::string username = "";
                                             while (timering80 <= timering80max && timering80set != true && quotations < 2) {
-                                                debugout(hellostring);
+                                                logdebug(hellostring, true);
                                                 hellostring = jsonlogin.substr(analyzenumber, 1);
                                                 if (hellostring.find('"') != std::string::npos) {
                                                     quotations = quotations + 1;
@@ -5078,7 +5075,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
                                             hellostring = jsonlogin.substr(analyzenumber, 1);
                                             analyzenumber = analyzenumber + 1;
-                                            debugout(hellostring);
+                                            logdebug(hellostring, true);
 
                                             if (hellostring == ",") {
                                                 // WORK ON VERIFYING PASSWORD
@@ -5091,7 +5088,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                 std::string password = "";
                                                 while (timering90 <= timering90max && timering90set != true && quotations2 < 2) {
                                                     hellostring = jsonlogin.substr(analyzenumber, 1);
-                                                    debugout(hellostring);
+                                                    logdebug(hellostring, true);
                                                     if (hellostring.find('"') != std::string::npos) {
                                                         quotations2 = quotations2 + 1;
                                                         if (quotations2 > 1) {
@@ -6873,7 +6870,7 @@ int setup() {
 
     // CHECK FOR THIS!
     if (serverdumpfilefound == true) {
-        debugout("FUTURE THINGS!");
+        logdebug("FUTURE THINGS!", true);
     }
 
 
