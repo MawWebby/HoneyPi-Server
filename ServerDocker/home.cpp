@@ -26,6 +26,8 @@ const bool debug = false;
 const bool testing = false;
 const bool newserverupdate = true;
 const bool EXCEPTION = true;
+const std::string honeyversion = "0.1.0";
+const int heartbeattime = 10;
 
 
 
@@ -38,7 +40,7 @@ const bool EXCEPTION = true;
 //// ANY FAILURE TO DO SO WILL RESULT IN LEGAL ACTION                                    ////
 ////                                                                                     ////
 //// ANY MONETIZATION THAT IS PRODUCED FROM CODE COPIED FROM MATTHEW                     ////
-//// WHITWORTH'S WORK MUST BE GIVEN TO THE DEVELOPER OR LEGAL ACTION WILL BE USED        ////
+//// WHITWORTH'S WORK MUST BE COMPENSATED TO THE DEVELOPER                               ////
 ////                                                                                     ////
 //// ANY ACCESS TO THIS CODE WITH THE PERMISSION OF MATTHEW WHITWORTH IS PROHIBITED!     ////
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,10 +48,11 @@ const bool EXCEPTION = true;
 
 
 
-//////////////////////
-/// DOCKER SIGNALS ///
-//////////////////////
-//volatile sig_atomic_t stopSIGNAL = false;
+////////////////////////
+/// ATOMIC VARIABLES ///
+////////////////////////
+
+// STATUS SIGNALS
 std::atomic<int> stopSIGNAL(0);
 std::atomic<int> updateSIGNAL(0);
 std::atomic<int> statusP80(0);
@@ -58,16 +61,70 @@ std::atomic<int> statusP11829(0);
 std::atomic<int> statusP11830(0);
 std::atomic<int> serverErrors(0);
 
+// PACKET VARIABLES
+std::atomic<int> p80packetslastmin(0);
+std::atomic<int> p443packetslastmin(0);
+std::atomic<int> p11829packetslastmin(0);
+std::atomic<int> p11830packetslastmin(0);
+std::atomic<int> p80packetslasthour(0);
+std::atomic<int> p443packetslasthour(0);
+std::atomic<int> p11829packetslasthour(0);
+std::atomic<int> p11830packetslasthour(0);
+
+// LOCK VARIABLES
+std::atomic<int> lockP80(0);
+std::atomic<int> lockP443(0);
+std::atomic<int> lockP11829(0);
+std::atomic<int> lockP11830(0);
+
+// TIMING VARIABLES
+std::atomic<long long int> timer0(0);
+std::atomic<long long int> timer1(0);
+std::atomic<long long int> timer2(0);
+std::atomic<long long int> timer3(0);
+std::atomic<long long int> timer4(0);
+std::atomic<long long int> timer5(0);
+std::atomic<long long int> timer6(0);
+std::atomic<long long int> timer7(0);
+std::atomic<long long int> timer8(0);
+std::atomic<long long int> timer9(0);
+std::atomic<long long int> timer10(0);
+std::atomic<long long int> startuptime(0);
+std::atomic<long long int> currenttime(0);
+std::atomic<long long int> timesincestartup(0);
+std::atomic<int> currenthour(0);
+std::atomic<int> currentminute(0);
+std::atomic<int> currentsecond(0);
+std::atomic<int> currentdayofyear(0);
+std::atomic<int> currentdays(0);
+std::atomic<int> currentyear(0);
+std::atomic<int> currentmonth(0);
+std::atomic<int> calculatingtime(0);
+
+// SERVER ERRORS
+std::atomic<int> generalservererrors(0);
+
+
 
 /////////////////
 /// VARIABLES ///
 /////////////////
 
-// VERSION VARIABLES
-const std::string honeyversion = "0.1.0";
+// CONSTANTS
+const int secondsperyear = 31536000;
+const int daysperyear = 365.25;
+const int secondsperday = 86400;
+const int secondsperhour = 3600;
+const int secondsperminute = 60;
+const int minutesperhour = 60;
+const int hoursperday = 24;
 const std::string honeymainversion = honeyversion.substr(0,1);
 const std::string honeyminorversion = honeyversion.substr(2,1);
 const std::string honeyhotfixversion = honeyversion.substr(4,1);
+
+
+
+// VERSION VARIABLES
 std::string latesthoneymainMversion;
 std::string latesthoneyminorMversion;
 std::string latesthoneyhotfixMversion;
@@ -81,7 +138,6 @@ std::string latesthoneyPITmainversion;
 std::string latesthoneyPITminorversion;
 std::string latesthoneyPIThotfixversion;
 
-const int heartbeattime = 10;
 
 
 
@@ -108,12 +164,6 @@ long int lastcheckinSSH = 0;
 
 
 // NETWORK VARIABLES
-const int serverport1 = 80;
-const int serverport2 = 11829;
-const int BUFFER_SIZE = 1024;
-int serverSocket1 = 0;
-int serverSocket2 = 0;
-int server_fd, new_socket;
 int port1, port4;
 int server_fd2, new_socket2;
 bool packetactive = false;
@@ -125,15 +175,12 @@ std::string port11829clientsIP[1];
 int port11829clientsIPdata[1];
 std::string port11830clientsIP[1];
 int port11830clientsIPdata[1];
-bool runningport80 = true;
-bool port80runningstatus = false;
-bool port11829runningstatus = false;
-bool port443runningstatus = false;
-bool port11830runningstatus = false;
 int packetspam = 0;
-bool waiting230 = false;
-bool api11829 = false;
-bool api11830 = false;
+
+
+
+
+// SSL INFORMATION
 SSL_CTX *ctx = SSL_CTX_new(TLS_server_method());
 SSL_CTX *create_context() {
     const SSL_METHOD *method;
@@ -208,21 +255,9 @@ const char* dockerpscommand = "docker ps > nul:";
 
 
 // FILES 
-//std::fstream ipliststrict;         // IP BLOCKLIST TABLE (STRICT 90 DAY REMOVAL W/O EXCEPTIONS)
-//std::fstream ipliststandard;       // IP BLOCKLIST TABLE (STANDARD 45 DAY REMOVAL W/ EXCEPTIONS)
-//std::fstream iplistsmoreinfo;      // INFO ABOUT IP REPORTED/REPORTS/LATEST REPORT/EXPIRATION DATE
-//std::fstream maclist;              // MAC ADDRESSES FOR HONEYPIS
-//std::fstream severitylist;         // SEVERITY LIST OF OP ATTACKS
-//std::fstream acpmac;               // JSON LIST OF ACCOUNTS/MAC/API/ETC.
-//std::fstream blockedipstream;      // SERVER IP BLOCKLIST
-//std::fstream config1;              // serverconfig1
 std::fstream cogfile[256];           // Crashlogs
 std::string filenameforcogs[256];    // FILES NAMES FOR COGS (Crashlogs)
-int cogswaiting = 0;
-//std::fstream userstream;           // USERNAME JSON STREAM
-//std::fstream passstream;           // PASSWORD JSON STREAM
-//std::fstream serverdump;           // SERVER DUMP FILE
-//std::fstream serverlogfile;        // SERVER LOG FILE
+std::atomic<int> cogswaiting(0);
 
 
 
@@ -230,6 +265,8 @@ int cogswaiting = 0;
 const std::string updateserverlocation = "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/server.txt";
 const std::string updatehoneypilocation = "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/mainversion.txt";
 const char* updatehtmlmainweb = "cd /home/pi/honeynvme/current/htmlmain/ && git pull https://github.com/MawWebby/HoneyPi-Website.git current-main > nul:";
+
+
 
 
 // SYSTEM COMMANDS
@@ -421,22 +458,6 @@ const std::string mariadbloadalluserswithsessiontokens = "SELECT user FROM crede
 const std::string mariadbloadalluserswithhoneypis = "SELECT user FROM credentials WHERE honeypilastcheckin != 0";
 const std::string mariadbremovesessionID24hours = "UPDATE credentials SET clientsession = '' WHERE user = '";
 
-/*
-const std::map <std::pair<int, int>, std::string> mariadbchangeportstatusheader = {
-    {{0,0}, "UPDATE serverstatus SET port80running = '0'"},
-    {{0,1}, "UPDATE serverstatus SET port80running = '1'"},
-    {{1,0}, "UPDATE serverstatus SET port443running = '0'"},
-    {{1,1}, "UPDATE serverstatus SET port443running = '1'"},
-    {{2,0}, "UPDATE serverstatus SET port11829running = '0'"},
-    {{2,1}, "UPDATE serverstatus SET port11829running = '1'"},
-    {{3,0}, "UPDATE serverstatus SET port11830running = '0'"},
-    {{3,1}, "UPDATE serverstatus SET port11830running = '1'"},
-};
-
-const std::map <std::pair<std::string, int>, std::string> mariadbadderrorheader = {
-    {{"port80error", 1}, "UPDATE serverstatus SET port80error = poert80error + 1"},
-};
-*/
 
 
 
@@ -446,34 +467,6 @@ bool ipliststandardlock = false;
 bool ipsafetylock = false;
 bool userstreamlock = false;
 
-
-
-// TIME VARIABLES
-long long int startuptime = 0;
-long long int currenttime = 0;
-long long int timesincestartup = 0;
-int currenthour = 0;
-int currentminute = 0;
-int currentsecond = 0;
-int currentdayofyear = 0;
-int currentdays = 0;
-int currentyear = 0;
-int currentmonth = 0;
-int secondsperyear = 31536000;
-int daysperyear = 365.25;
-int secondsperday = 86400;
-int secondsperhour = 3600;
-int secondsperminute = 60;
-int minutesperhour = 60;
-int hoursperday = 24;
-long long int timers[10] = {};
-bool calculatingtime = false;
-// 0 - 
-// 1 - PACKET OVERFLOW DETECTION PORT 80
-// 2 - 15-MINUTE TIMER FOR PORT 80
-// 3 - 1-Hour Maintenance Timer
-// 4 - 6-Hour Maintenance Timer
-// 5 - 30-Minute Wait for COGs
 
 
 
@@ -5256,7 +5249,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
 void handleConnections443(int server_fd) {
 
-    port443runningstatus = true;
+    bool port443runningstatus = true;
     int threadnumber = 0;    
     static bool initialized = false;
     char buffer[2048] = {0};
@@ -5298,9 +5291,14 @@ void handleConnections443(int server_fd) {
         SSL_CTX_free(ctx);
         return;
     }
-    loginfo("Started!", true);
 
-    // && stopSIGNAL.load() == 0
+    // TEMP-REMOVE LATER
+    bool waiting230 = 0;
+
+    // LOG SERVER STAT INTO MEM
+    loginfo("Started!", true);
+    statusP443.store(1);
+
     while (port443runningstatus == true) {
         
         int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_addr_len);
@@ -5309,6 +5307,9 @@ void handleConnections443(int server_fd) {
             if (client_fd == -1) {
                 sleep(0.5);
                 if (stopSIGNAL.load() == true) {
+                    port443runningstatus = false;
+                }
+                if (updateSIGNAL.load() == true) {
                     port443runningstatus = false;
                 }
             } else {
@@ -5349,16 +5350,16 @@ void handleConnections443(int server_fd) {
 
             if (allowed == 0 || allowed == 255) {
                 // ANTI-CRASH PACKET FLOW CHECK
-                if (timers[1] == time(NULL)) {
+                if (timer1 == time(NULL)) {
                     packetspam = packetspam + 1;
                     if (packetspam >= 10) {
                         // STOP CONNECTIONS/ENTER BLOCKING STATE
                         waiting230 = true;
                         logwarning("LOCKING HTTPS PORT FOR NOW (PACKET SPAM)", true);
-                        timers[2] = time(NULL);
+                        timer1 = time(NULL);
                     }
                 } else {
-                    timers[1] = time(NULL);
+                    timer1 = time(NULL);
                     if (packetspam >= 5) {
                         packetspam = packetspam -5;
                         waiting230 = false;
@@ -5368,7 +5369,7 @@ void handleConnections443(int server_fd) {
                     }
                 }
 
-                int differenceintime = time(NULL) - timers[2];
+                int differenceintime = time(NULL) - timer1;
 
                 if (differenceintime >= 900) {
                     waiting230 = false;
@@ -5639,7 +5640,11 @@ void handleConnections443(int server_fd) {
         }   
     }
 
-    loginfo("P443 - Shutting Down...", true);
+    // SEND TO SERVER MEM
+    loginfo("P443 - Stopped...", true);
+    statusP443.store(0);
+    close(server_fd);
+    sleep(1);
     return;
 }
 
@@ -5677,12 +5682,29 @@ void handleConnections80() {
         exit(EXIT_FAILURE);
     }
 
+    fcntl(server_fd23, F_SETFL, O_NONBLOCK);
+    sleep(2);
+
+    loginfo("P80 - Started!", true);
+    statusP80.store(1);
+    bool http80 = true;
+
     // WHILE RUNNING LOOP FOR HTTP, WAITING FOR CLIENTS TO CONNECT
-    while (true) {
+    while (http80 == true) {
         int client_fd = accept(server_fd23, (struct sockaddr*)&address, &addrlen);
 
         if (client_fd < 0) {
-            logcritical("UNABLE TO ACCEPT CONNECTION (80)", true);
+            if (client_fd == -1) {
+                sleep(0.5);
+                if (stopSIGNAL.load() == true) {
+                    http80 = false;
+                }
+                if (updateSIGNAL.load() == true) {
+                    http80 = false;
+                }
+            } else {
+                loginfo("UNABLE TO ACCEPT API CONNECTION", true);
+            }
         } else {
             // Simple HTTP response for redirection
             const std::string response = "HTTP/1.1 301 Moved Permanently\r\nLocation: https://" + serveraddress + "/ \r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
@@ -5692,7 +5714,13 @@ void handleConnections80() {
             close(client_fd);
         }
     }
+
+    // SEND TO SERVER MEM
+    loginfo("P80 - Stopped...", true);
+    statusP80.store(0);
     close(server_fd23);
+    sleep(1);
+    return;
 }
 
 
@@ -6022,25 +6050,34 @@ void apiconnectionthread(int clientID) {
 }
 
 void handle11829Connections(int server_fd4, int clientID) {
-    api11829 = true;
+    bool api11829 = true;
     int apithreadnumber = 0;
+
+    // MARK PORT AS RUNNING ON MEM
+    statusP11829.store(1);
+
     while(api11829 == true) {
-        char buffer[2048] = {0};
         struct sockaddr_in address;
         socklen_t addrlen = sizeof(address);
         int new_socket2;
         ssize_t valread;
-        std::string hello = "Hello from server";
-
-        port11829runningstatus = true;
         struct sockaddr_in client_addr;
-
         socklen_t client_addr_len = sizeof(client_addr);
 
-        int clientID = accept(server_fd4, (struct sockaddr*)&client_addr, &client_addr_len);
 
+        int clientID = accept(server_fd4, (struct sockaddr*)&client_addr, &client_addr_len);
         if (clientID < 0) {
-            // NOTHING
+            if (clientID == -1) {
+                sleep(0.5);
+                if (stopSIGNAL.load() == true) {
+                    api11829 = false;
+                }
+                if (updateSIGNAL.load() == true) {
+                    api11829 = false;
+                }
+            } else {
+                loginfo("UNABLE TO ACCEPT API CONNECTION", true);
+            }
         } else {
             char client_ip[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
@@ -6214,12 +6251,15 @@ void handle11829Connections(int server_fd4, int clientID) {
                 // SEND ERROR ON API PORT
                 int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
             }
-
- //        Send a hello message to the client
-         send(new_socket2, hello.c_str(), hello.size(), 0);
-         std::cout << "Hello message sent" << std::endl;
         }
     }
+
+    // SERVER IS SHUTTING DOWN OR CHANGING
+    loginfo("P11829 - Stopped...", true);
+    statusP11829.store(0);
+    close(server_fd4);
+    sleep(1);
+    return;
 }
 
 
@@ -6229,66 +6269,52 @@ void handle11829Connections(int server_fd4, int clientID) {
 // HANDLE NETWORKED CONNECTIONS (11830) //
 //////////////////////////////////////////
 void handle11830Connections(int server_fd11830) {
-    api11830 = true;
+    bool api11830 = true;
+
+    // LOG STATUS INTO MEM
+    loginfo("P11830 - Started!", true);
+    statusP11830.store(1);
+
+    // MAIN RUNNING LOOP
     while(api11830 == true) {
         char buffer[2048] = {0};
-        struct sockaddr_in address11830;
-        socklen_t addrlen11830 = sizeof(address11830);
         int new_socket11830;
         ssize_t valread11830;
-        std::string hello11830 = "Hello from server";
-    //   socklen_t client_addr_len = sizeof(client_addr);
+        struct sockaddr_in client_addr;
+        socklen_t client_addr_len = sizeof(client_addr);
+        std::string hello11830 = "HELLO FROM SERVER!";
 
-        if ((new_socket11830 = accept(server_fd11830, (struct sockaddr*)&address11830, &addrlen11830)) < 0) {
-            logcritical("UNABLE TO ACCEPT CONNECTION (11830)", true);
-            exit(EXIT_FAILURE);
-        } else {
-            loginfo("11830 port initialized", true);
-        }
-
-    
- //       std::fill_n(buffer, 2048, "");
-//        char client_ip[INET_ADDRSTRLEN];
- //       inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
-        read(new_socket11830, buffer, 2048);
-        sendtologopen(buffer);
-        std::string bufferstd = buffer;
-
-        if (bufferstd.length() >= 5) {
-            std::string keysubstring = "";
-            std::string bufferedkeystring = "";
-            std::string unencryptedstring = "";
-            keysubstring = bufferstd.substr(0,5);
-        } else {
-
-        }
-
-        // ANTI-CRASH PACKET FLOW CHECK
-
-
-        // NEED EXPANDED FOR SERVER APPLICATION!!!
-
-
-        /*
-        if (timers[2] == time(NULL)) {
-            packetsreceivedAPI = packetsreceivedAPI + 1;
-            if (packetsreceivedAPI >= 10) {
-                // KILL CONTAINER
-                logcritical("PACKET OVERFLOW DETECTED ON ROUTER API!");
-                close(server_fd2);
+        int clientID = accept(server_fd11830, (struct sockaddr*)&client_addr, &client_addr_len);
+        
+        if (clientID < 0) {
+            if (clientID == -1) {
+                sleep(0.5);
+                if (stopSIGNAL.load() == true) {
+                    api11830 = false;
+                }
+                if (updateSIGNAL.load() == true) {
+                    api11830 = false;
+                }
+            } else {
+                loginfo("UNABLE TO ACCEPT TELE CONNECTION", true);
             }
         } else {
-            timers[2] = time(NULL);
-            packetsreceivedAPI = 0;
+                
+            read(new_socket11830, buffer, 2048);
+            sendtologopen(buffer);
+            std::string bufferstd = buffer;
+
+            // Send a hello message to the client
+            send(new_socket2, hello11830.c_str(), hello11830.size(), 0);
+            std::cout << "Hello message sent" << std::endl;
         }
-        */
-
-
-
- //        Send a hello message to the client
-         send(new_socket2, hello11830.c_str(), hello11830.size(), 0);
-         std::cout << "Hello message sent" << std::endl;
     }
+
+    loginfo("P11830 - Stopped...", true);
+    statusP11830.store(0);
+    close(server_fd11830);
+    sleep(1);
+    return;
 }
 
 
@@ -6750,6 +6776,8 @@ int setup() {
         exit(EXIT_FAILURE);
     }
 
+    fcntl(server_fd2, F_SETFL, O_NONBLOCK);
+
     sendtolog("Done");
     sleep(0.5);
 
@@ -6809,6 +6837,8 @@ int setup() {
         exit(EXIT_FAILURE);
     }
 
+    fcntl(server_fd3, F_SETFL, O_NONBLOCK);
+
     sendtolog("Done");
     sleep(0.5);
 
@@ -6848,19 +6878,19 @@ int setup() {
 
 
     // SET TIMERS
-    timers[0] = time(NULL);
-    timers[1] = time(NULL);
-    timers[2] = time(NULL);
-    timers[3] = time(NULL);
-    timers[4] = time(NULL);
-    timers[5] = time(NULL);
-    timers[6] = time(NULL);
-    timers[7] = time(NULL);
-    timers[8] = time(NULL);
-    timers[9] = time(NULL);
-    timers[10] = time(NULL);
+    timer0.store(time(NULL));
+    timer1.store(time(NULL));
+    timer2.store(time(NULL));
+    timer3.store(time(NULL));
+    timer4.store(time(NULL));
+    timer5.store(time(NULL));
+    timer6.store(time(NULL));
+    timer7.store(time(NULL));
+    timer8.store(time(NULL));
+    timer9.store(time(NULL));
+    timer10.store(time(NULL));
 
-    
+    // RETURN CHECKS    
     return startupchecks;
 }
 
@@ -6880,24 +6910,19 @@ int main() {
         logcritical("THE SYSTEM COULD NOT CONTINUE!", true);
         logcritical("ALL DOCKER CONTAINERS WILL BE STOPPED", true);
 
-        close(serverport1);
-        close(serverport2);
-        sleep(5);
+        stopSIGNAL.store(1);
+
+        sleep(10);
 
         // EXIT AND STOP PROCESSES
-        return(1);
-        return(1);
-        return(1);
+        return(10);
+        return(10);
+        return(10);
     } else {
 
 
 
         loginfo("HoneyPi Server has started successfully", true);
-
-        // NETWORK INFORMATION
-        char buffer[BUFFER_SIZE];
-        sockaddr_in clientAddr;
-        socklen_t clientAddrLen = sizeof(clientAddr);
 
         // MAIN RUNNING LOOP
         while(startupchecks == 0 && encounterederrors == 0 && stopSIGNAL.load() == 0) {
@@ -6907,23 +6932,23 @@ int main() {
 
 
             // TIMERS [3] CHECK
-            long int differenceintime3 = time(NULL) - timers[3];
+            long int differenceintime3 = time(NULL) - timer3.load();
             if (differenceintime3 >= 3600) {
-                timers[3] = time(NULL);
+                timer3.store(time(NULL));
                 maintenancescriptONEHOUR();
             }
 
             // TIMERS [4] CHECK
-            long int differenceintime4 = time(NULL) - timers[4];
+            long int differenceintime4 = time(NULL) - timer4.load();
             if (differenceintime4 >= 21600) {
-                timers[4] = time(NULL);
+                timer4.store(time(NULL));
                 maintenancescriptSIXHOUR();
             }
 
             // TIMERS [5] CHECK
-            long int differenceintime5 = time(NULL) - timers[5];
+            long int differenceintime5 = time(NULL) - timer5.load();
             if (differenceintime5 >= 1800 || cogswaiting >= 100) {
-                timers[5] = time(NULL);
+                timer5.store(time(NULL));
                 analyzeALLcogfiles();
             }
 
@@ -6940,21 +6965,25 @@ int main() {
             // ENCOUNTERED ERRORS LOG DUMP
 
 
-            logcritical("HONEYPI-SERVER WILL NOW ATTEMPT A SAVEFILE DUMP!", true);
-
-
-            // ENCOUNTERED ERRORS SAVE FILE DUMP
+            
 
 
             logcritical("ATTEMPTING TO KILL SERVER!!!", true);
-            close(serverport1);
-            close(serverport2);
+            
+            stopSIGNAL.store(1);
+            
+            sleep(7);
             return 1;
             return 1;
             return 1;
             return 1;
             return 1;
         }
+
+        loginfo("HONEYPI-SERVER WILL NOW ATTEMPT A SAVEFILE DUMP!", true);
+
+
+        // ENCOUNTERED ERRORS SAVE FILE DUMP
 
 
         if (stopSIGNAL.load() != 0) {
