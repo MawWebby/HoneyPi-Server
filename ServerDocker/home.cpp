@@ -26,7 +26,7 @@ const bool debug = false;
 const bool testing = false;
 const bool newserverupdate = true;
 const bool EXCEPTION = true;
-const std::string honeyversion = "0.1.0";
+const std::string honeyversion = "0.1.1";
 const int heartbeattime = 10;
 
 
@@ -5738,6 +5738,9 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
     // START PROCESSING HERE
     bool completedprocessing = false;
 
+    sendtolog(header1 + "|");
+    sendtolog(data1 + "|");
+
     // MAIN HEADER RELATING TO HONEYPOT/HONEYPI CONNECTIONS
     if (header1 == "CONNECTION") {
         // MAIN CONNECTION FOR NEW HONEYPIS
@@ -5748,11 +5751,12 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
             int stopsig = stopSIGNAL.load();
             int statusPort = statusP11829.load();
 
-            if (updatesig == 0 && stopsig == 0 && statusPort == 0) {
+            if (updatesig == 0 && stopsig == 0 && statusPort == 1) {
                 int send_res=send(clientID,apiavailable.c_str(),apiavailable.length(),0);
             } else {
                 int send_res=send(clientID,apiunavailable.c_str(),apiunavailable.length(),0);
             }
+            return 0;
         }
 
         // ESTABLISH CONNECTION AND VERIFY API KEYS; CREATE NEW TOKEN KEYS
@@ -5865,7 +5869,7 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
                                 }
                             }
                         }
-                        previousmarker = previousmarker + 2;
+                        previousmarker = previousmarker + 3;
                     }
 
                     // ANALYZE DATA HANDLERS TO RESULT
@@ -5899,7 +5903,7 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
                                 }
                             }
                         }
-                        previousmarker = previousmarker + 2;
+                        previousmarker = previousmarker + 3;
                     }
 
                     if (charactertoanalyze == "\"" && charactertoanalyze2 == "}") {
@@ -5992,8 +5996,9 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
 }
 
 void apiconnectionthread(int clientID) {
-    char buffer[16384] = {0};
-    read(clientID, buffer, 16384);
+    char buffer[2048] = {0};
+    read(clientID, buffer, 2048);
+    sendtolog("STRING:");
     sendtolog(buffer);
     std::string bufferstd = buffer;
 
@@ -6015,9 +6020,8 @@ void apiconnectionthread(int clientID) {
             if (buffertests == "HAPI") {
                 lineanalyze = bufferstd.substr(4,4);
                 if (lineanalyze == "/1.1") {
-                    if (bufferstd.substr(10,22) == "Content-Type:text/json") {
-                        sendtolog("THIS WORKS");
-                        std::string messagetoread = bufferstd.substr(34, bufferstd.length() - 34);
+                    if (bufferstd.substr(9,22) == "Content-Type:text/json") {
+                        std::string messagetoread = bufferstd.substr(33, bufferstd.length() - 33);
                         int result = analyzeAPIandexecute(clientID, messagetoread);
                         if (result != 0) {
                             sendtolog("AN ERROR OCCURRED");

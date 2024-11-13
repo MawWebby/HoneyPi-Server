@@ -1,0 +1,33 @@
+HACKSWEEP ENCRYPTION
+- The Hacksweep Encryption is a NEW Encryption Method ONLY Used on HoneyPi Devices
+- It Uses Multiple Different Layers of Data Scrambling to Offer the Best Security
+- If a Encryption Does not give a valid result, the result is IGNORED
+
+
+HACKSWEEP ENCRYPTION KEY
+ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
+0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+Encryption Meaning: 4x15
+    4 - Last Four Lines Become First Four
+    15 - Last 15 Characters Become First 15 Characters (Reversed)
+
+HACKSWEEP ENCRYPTION EXAMPLE 1
+    Encryption: 0x00
+    To Encrypt: This is a test message that will be sent in encryption of 0x00.
+    Final: This is a test message that will be sent in encryption of 0x00. <- Transferred on BASIS of Letter Change as listed above
+
+
+HACKSWEEP ENCRYPTION EXAMPLE 2
+    Encryption: 3x15
+    To Encrypt:
+        This is the message that will be encrypted.
+        This encryption works best with longer messages,
+        though it can work with shorter ones as well.
+        This encryption is meant as a secure solution
+        to the internet problems right now
+    FINAL: (WITHOUT BASIS on SWEEP)
+        .llew sa seno rthough it can work with shorte
+        noitulos erucesThis encryption is meant as a |
+        won thgir smelbto the internet pro
+        .detpyrcne eb lThis is the message that wil
+        ,segassem regnoThis encryption works best with l
