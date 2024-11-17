@@ -104,6 +104,9 @@ std::atomic<int> calculatingtime(0);
 // SERVER ERRORS
 std::atomic<int> generalservererrors(0);
 
+// 11829 SERVER PROTECTION LAYER 1
+std::map<std::string, int> ip11829;
+
 
 
 /////////////////
@@ -155,6 +158,8 @@ bool searchforupdates = true;
 std::string updatefileinformationserver;
 std::string updatefileinformationhoneypi;
 bool updateavailable = false;
+
+
 
 
 // DOCKER VARIABLES
@@ -6085,9 +6090,37 @@ void handle11829Connections(int server_fd4, int clientID) {
             std::cout << "Connection from: " << client_ip << '\n';
             std::string clientipstd = client_ip;
             int checks = 0;
-            int allowed = 0;
-            allowed = mariadb_CHECKIPADDR(client_ip);
+            bool allowed = false;
 
+            // 11829 SERVER PROTECTION LAYER 1!
+            auto searchforip = ip11829.find(clientipstd);
+            if (searchforip != ip11829.end()) {
+                int logs = searchforip->second;
+                std::cout << "RECEIVED VALUE OF " << logs << std::endl;
+                if (logs >= 6) {
+                    sendtolog("DENIED!");
+                    ip11829.erase(clientipstd);
+                    logs = logs + 1;
+                    ip11829[clientipstd] = logs;
+                } else {
+                    allowed = true;
+                    ip11829.erase(clientipstd);
+                    logs = logs + 1;
+                    ip11829[clientipstd] = logs;
+                    loginfo("ALLOWED", true);
+                }
+            } else {
+                allowed = true;
+                ip11829[clientipstd] = 1;
+                loginfo("ALLOWED", true);
+            }
+
+            // DEBUG - READ SERVER LAYER 1 (FIX THIS)
+            for (const auto& pair : ip11829) {
+                std::cout << "Key: " << pair.first << ", Value: " << pair.second << std::endl;
+            }
+
+            // CHECK IF ALLOWED BEFORE ASSIGNING MORE RESOURCES TO IT
             if (allowed == true) {
                 loginfo("11829 port initialized", true);
                 switch (apithreadnumber) {
@@ -6250,8 +6283,9 @@ void handle11829Connections(int server_fd4, int clientID) {
                 
             } else {
                 // SEND ERROR ON API PORT
-                int send_res=send(new_socket2,apireject.c_str(),apireject.length(),0);
+                int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
             }
+            close(clientID);
         }
     }
 
