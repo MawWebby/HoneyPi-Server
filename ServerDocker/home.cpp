@@ -6960,9 +6960,9 @@ int main() {
         loginfo("HoneyPi Server has started successfully", true);
 
         // MAIN RUNNING LOOP
-        while(startupchecks == 0 && encounterederrors == 0 && stopSIGNAL.load() == 0) {
+        while(startupchecks == 0 && encounterederrors == 0 && stopSIGNAL.load() == 0 && updateSIGNAL.load() == 0) {
 
-            sleep(2);
+            sleep(60);
             loginfo("Running = TRUE...", true);
 
 
