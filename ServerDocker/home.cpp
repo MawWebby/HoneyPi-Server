@@ -5307,7 +5307,7 @@ void handleConnections443(int server_fd) {
        
         if (client_fd < 0) {
             if (client_fd == -1) {
-                sleep(0.5);
+                sleep(1);
                 if (stopSIGNAL.load() == true) {
                     port443runningstatus = false;
                 }
@@ -5697,7 +5697,7 @@ void handleConnections80() {
 
         if (client_fd < 0) {
             if (client_fd == -1) {
-                sleep(0.5);
+                sleep(1);
                 if (stopSIGNAL.load() == true) {
                     http80 = false;
                 }
@@ -6002,7 +6002,12 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
 
 void apiconnectionthread(int clientID) {
     char buffer[2048] = {0};
-    read(clientID, buffer, 2048);
+    std::cout << "CLIENTID: " << clientID << std::endl;
+    int readrun = read(clientID, buffer, 2048);
+    std::cout << "READ RETURNED: " << readrun << std::endl;
+    if (readrun == -1) {
+        perror("read failed:");
+    }
     sendtolog("STRING:");
     sendtolog(buffer);
     std::string bufferstd = buffer;
@@ -6055,7 +6060,7 @@ void apiconnectionthread(int clientID) {
     close(clientID);
 }
 
-void handle11829Connections(int server_fd4, int clientID) {
+void handle11829Connections(int server_fd4) {
     bool api11829 = true;
     int apithreadnumber = 0;
 
@@ -6074,7 +6079,7 @@ void handle11829Connections(int server_fd4, int clientID) {
         int clientID = accept(server_fd4, (struct sockaddr*)&client_addr, &client_addr_len);
         if (clientID < 0) {
             if (clientID == -1) {
-                sleep(0.5);
+                sleep(1);
                 if (stopSIGNAL.load() == true) {
                     api11829 = false;
                 }
@@ -6284,8 +6289,8 @@ void handle11829Connections(int server_fd4, int clientID) {
             } else {
                 // SEND ERROR ON API PORT
                 int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
+                close(clientID);
             }
-            close(clientID);
         }
     }
 
@@ -6303,6 +6308,7 @@ void handle11829Connections(int server_fd4, int clientID) {
 //////////////////////////////////////////
 // HANDLE NETWORKED CONNECTIONS (11830) //
 //////////////////////////////////////////
+/*
 void handle11830Connections(int server_fd11830) {
     bool api11830 = true;
 
@@ -6351,6 +6357,7 @@ void handle11830Connections(int server_fd11830) {
     sleep(1);
     return;
 }
+*/
 
 
 
@@ -6824,7 +6831,7 @@ int setup() {
     loginfo("P11829 - Creating server thread on listen...", false);
 
     sleep(1);
-    std::thread thread11829(handle11829Connections, server_fd2, 0);
+    std::thread thread11829(handle11829Connections, server_fd2);
     thread11829.detach();
     sleep(0.5);
 
@@ -6833,7 +6840,7 @@ int setup() {
 
 
 
-
+/*
     // OPEN SERVER PORT 11830 FOR TELEMETRY
     loginfo("P11830 - Opening Server Ports (4/4)", false);
     PORT = 11830;
@@ -6890,7 +6897,7 @@ int setup() {
 
     sendtolog("Done");
 
-
+*/
 
 
     // SERVER PORT LISTEN THREAD (443)
