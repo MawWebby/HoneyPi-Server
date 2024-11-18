@@ -107,6 +107,28 @@ std::atomic<int> generalservererrors(0);
 // 11829 SERVER PROTECTION LAYER 1
 std::map<std::string, int> ip11829;
 
+// 443 SERVER PROTECTION LAYER 1
+std::map<std::string, int> ip443;
+
+// VERSION VARIABLES
+std::atomic<std::string> latesthoneyPISmainMversion;
+std::atomic<std::string> latesthoneyPISminorMversion;
+std::atomic<std::string> latesthoneyPIShotfixMversion;
+std::atomic<std::string> latesthoneyPIBEMmainversion;
+std::atomic<std::string> latesthoneyPIBEMminorversion;
+std::atomic<std::string> latesthoneyPIBEMhotfixversion;
+std::atomic<std::string> latesthoneyPINIBmainversion;
+std::atomic<std::string> latesthoneyPINIBminorversion;
+std::atomic<std::string> latesthoneyPINIBhotfixversion;
+std::atomic<std::string> latesthoneyROSTmainversion;
+std::atomic<std::string> latesthoneyROSTminorversion;
+std::atomic<std::string> latesthoneyROSThotfixversion;
+std::atomic<std::string> latesthoneyROBEmainversion;
+std::atomic<std::string> latesthoneyROBEminorversion;
+std::atomic<std::string> latesthoneyROBEhotfixversion;
+std::atomic<std::string> latesthoneyRONImainversion;
+std::atomic<std::string> latesthoneyRONIminorversion;
+std::atomic<std::string> latesthoneyRONIhotfixversion;
 
 
 /////////////////
@@ -124,22 +146,6 @@ const int hoursperday = 24;
 const std::string honeymainversion = honeyversion.substr(0,1);
 const std::string honeyminorversion = honeyversion.substr(2,1);
 const std::string honeyhotfixversion = honeyversion.substr(4,1);
-
-
-
-// VERSION VARIABLES
-std::string latesthoneymainMversion;
-std::string latesthoneyminorMversion;
-std::string latesthoneyhotfixMversion;
-std::string latesthoneyPIMmainversion;
-std::string latesthoneyPIMminorversion;
-std::string latesthoneyPIMhotfixversion;
-std::string latesthoneyPIBmainversion;
-std::string latesthoneyPIBminorversion;
-std::string latesthoneyPIBhotfixversion;
-std::string latesthoneyPITmainversion;
-std::string latesthoneyPITminorversion;
-std::string latesthoneyPIThotfixversion;
 
 
 
@@ -165,6 +171,7 @@ bool updateavailable = false;
 // DOCKER VARIABLES
 int timesincelastcheckinSSH = 0;
 long int lastcheckinSSH = 0;
+
 
 
 
@@ -220,8 +227,8 @@ const std::string httpfail = "HTTP/1.0 504 OK\nContent-Type:text/html\nContent-L
 const std::string httpforbidden = "HTTP/1.0 403 OK\nContent-Type:text/html\nContent-Length: 23\n\n<h1>403: Forbidden</h1>";
 const std::string httpservererror = "HTTP/1.0 505 OK\nContent-Type:text/html\nContent-Length: 72\n\n<h1>505: An Internal Server Error Occurred, Please Try Again Later.</h1>";
 const std::string httpnotfound = "HTTP/1.0 404 OK\nContent-Type:text/html\nContent-Length: 28\n\n<h1>404: Page Not Found</h1>";
-const std::string serveraddress = "10.72.91.159";
-
+const std::string serveraddress = "honeypi.baselinux.net";
+const std::string movedresponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: https://" + serveraddress + "/ \r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
 
 
 // API VARIABLES
@@ -5336,21 +5343,37 @@ void handleConnections443(int server_fd) {
             sendtolog(client_ip);
             std::string clientipstd = client_ip;
 
+            // 443 SERVER PROTECTION LAYER 1!
+            bool allowed = false;
+            auto searchforip = ip443.find(clientipstd);
+            if (searchforip != ip443.end()) {
+                int logs = searchforip->second;
+                std::cout << "RECEIVED VALUE OF " << logs << std::endl;
+                if (logs >= 6) {
+                    sendtolog("DENIED!");
+                    ip443.erase(clientipstd);
+                    logs = logs + 1;
+                    ip443[clientipstd] = logs;
+                } else {
+                    allowed = true;
+                    ip443.erase(clientipstd);
+                    logs = logs + 1;
+                    ip443[clientipstd] = logs;
+                    loginfo("ALLOWED", true);
+                }
+            } else {
+                allowed = true;
+                ip443[clientipstd] = 1;
+                loginfo("ALLOWED", true);
+            }
+
             if (clientipstd == "172.17.0.1") {
                 //loginfo("P443 - RECEIVED LOCALHOST REQUEST, IGNORING...", false);
                 //sendtolog(clientipstd);
                 return;
             }
 
-            // FIX THIS
-            //int allowed = mariadb_CHECKIPADDR(client_ip);
-            int allowed = 0;
-
-            if (allowed == 255) {
-                mariadb_ADDIPADDR(client_ip);
-            }
-
-            if (allowed == 0 || allowed == 255) {
+            if (allowed == true) {
                 // ANTI-CRASH PACKET FLOW CHECK
                 if (timer1 == time(NULL)) {
                     packetspam = packetspam + 1;
@@ -5708,11 +5731,8 @@ void handleConnections80() {
                 loginfo("UNABLE TO ACCEPT API CONNECTION", true);
             }
         } else {
-            // Simple HTTP response for redirection
-            const std::string response = "HTTP/1.1 301 Moved Permanently\r\nLocation: https://" + serveraddress + "/ \r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-
-            // Send the redirect response
-            send(client_fd, response.c_str(), response.length(), 0);
+            // SEND REDIRECT
+            send(client_fd, movedresponse.c_str(), movedresponse.length(), 0);
             close(client_fd);
         }
     }
@@ -5726,6 +5746,80 @@ void handleConnections80() {
 }
 
 
+
+
+/////////////////////////////////////////////////////////
+//// FUNCTIONS TO DECODE ALL OF THE ENCRYPTION KEYS! ////
+/////////////////////////////////////////////////////////
+// STANDARD ENCRYPTION
+std::string decodestandardshift(std::string datatodecode, int keyshift) {
+
+    return "ERROR";
+}
+
+// ECRYPT ENCRYPTION
+std::string decodeecryptshift(std::string datatodecode, int keyshift) {
+
+    return "ERROR";
+}
+
+// HACKSWEEP ENCRYPTION
+std::string decodehacksweepkey(std::string datatodecode, std::string key) {
+
+    return "ERROR";
+}
+
+
+
+
+/////////////////////////////////////////////////////////////
+//// DETERMINE KEY SHIFT (STANDARD KEY SHIFT ENCRYPTION) ////
+/////////////////////////////////////////////////////////////
+int determinekeyshift(std::string key) {
+    // STANDARD, RETURN POSITIVE INTEGERS
+    // ECRYPTCOG, RETURN NEGATIVE INTEGERS
+    if (key == "AAAAA") {
+        return 4;
+    } else if (key == "BBBBB") {
+        return 3;
+    } else if (key == "CCCCC") {
+        return 2;
+    } else if (key == "DDDDD") {
+        return 1;
+    } else if (key == "EEEEE") {
+        return 0;
+    } else if (key == "zzzzz") {
+        return 5;
+    } else if (key == "yyyyy") {
+        return 6;
+    } else if (key == "xxxxx") {
+        return 7;
+    } else if (key == "wwwww") {
+        return 8;
+    } else if (key == "vvvvv") {
+        return 9;
+    } else if (key == "ABCDE") {
+        return -5;
+    } else if (key == "BCDEF") {
+        return -4;
+    } else if (key == "CDEFG") {
+        return -3;
+    } else if (key == "DEFGH") {
+        return -2;
+    } else if (key == "EFGHI") {
+        return -1;
+    } else if (key == "zABCD") {
+        return -6;
+    } else if (key == "yzABC") {
+        return -7;
+    } else if (key == "xyzAB") {
+        return -8;
+    } else if (key == "wxyzA") {
+        return -9;
+    } else if (key == "vwxyz") {
+        return -10;
+    }
+}
 
 
 
@@ -5758,8 +5852,10 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
 
             if (updatesig == 0 && stopsig == 0 && statusPort == 1) {
                 int send_res=send(clientID,apiavailable.c_str(),apiavailable.length(),0);
+                completedprocessing = true;
             } else {
                 int send_res=send(clientID,apiunavailable.c_str(),apiunavailable.length(),0);
+                completedprocessing = true;
             }
             return 0;
         }
@@ -5781,18 +5877,65 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
 
         // REPORT HONEYPOT CONNECTED CORRECTLY TO INTERNET
         if (data1 == "REPORT") {
+            // ADD CONDITIONS BASED ON SERVER STATUS AND OTHER THINGS
+            // int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
+            int updatesig = updateSIGNAL.load();
+            int stopsig = stopSIGNAL.load();
+            int statusPort = statusP11829.load();
 
+            if (updatesig == 0 && stopsig == 0 && statusPort == 1) {
+                int send_res=send(clientID,apiavailable.c_str(),apiavailable.length(),0);
+                completedprocessing = true;
+            } else {
+                int send_res=send(clientID,apiunavailable.c_str(),apiunavailable.length(),0);
+                completedprocessing = true;
+            }
+            return 0;
         }
 
         // HONEYPOT SENDING REPORT TO SERVER
         if (data1 == "NEW_REPORT") {
+            // VERIFY IT IS ENCRYPTED
+            if (header2 == "METHOD" && header3 == "DATA") {
+                // DETERMINE THE METHOD OF ENCRYPTION
+                std::string decoded;
 
+                // DETERMINE ENCRYPTION KEY
+                if (data2.length() == 5) {
+                    // FIVE KEY SHIFT METHOD
+                    // NOW DETERMINE THE SHIFT
+                    int keyshift = determinekeyshift(data2);
+                    // POSITIVE NUMBER = STANDARD CHARACTER MAP SHIFT
+                    // NEGATIVE NUMBER = ECRYPTCOG
+                    if (keyshift >= 0) {
+                        decoded = decodestandardshift(data3, keyshift);
+                    } else {
+                        decoded = decodeecryptshift(data3, 10 + keyshift);
+                    }
+
+                } else if (data2.length() == 4) {
+                    // HACKSWEEP ENCRYPTION METHOD
+                    decoded = decodehacksweepkey(data3, data2);
+                } else {
+                    // FAIL CONDITION/BAD METHOD RECEIVED
+                    logwarning("RECEIVED INVALID ENCRYPTION METHOD!", true);
+                    completedprocessing = false;
+                    return 1;
+                }
+
+                if (decoded == "ERROR") {
+                    logwarning("ERROR OCCURRED IN DECODING!", true);
+                }
+            }
         }
 
         // HONEYPOT IN MIDDLE OF SENDING LARGE HACKER REPORT
         if (data1 == "REPORT_PART") {
             
         }
+    } else if (header1 == "LOGIN") {
+        // DIFFERENT LOGIN METHODS ASSOCIATED HERE
+        
     }
 
 
