@@ -26,6 +26,7 @@ GENERAL FORM
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
 |    "VERSION"    | "ID=#.#.#"                          | INSTALLED CLIENT VERSION
 |                 | "DD=(HPI/RPI)"                      | TYPE OF DEVICE FOR CHECKING SOFTWARE VERSION
+|                 | "UP=(ST/BE/NI)"                     | UPGRADE CHANNEL
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
 |     "METHOD"    | "XXXXX"; "#x##"                     | ENCRYPTION METHOD, IF USED (HACKSWEEP ENCRYPTION)
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
@@ -34,6 +35,7 @@ GENERAL FORM
 |                 | *"PASS="                            | PASSWORD TO AUTHENTICATE
 |                 | * = Login Does not Have Data Handlers, But Must Be Followed Up By Some of These Headers to be True
 |-----------------|-------------------------------------|--------------------------------------------------------------------------------|
+|     "DATA"      | "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" | DATA FROM REPORT
 
 
 
