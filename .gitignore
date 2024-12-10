@@ -2,3 +2,4 @@
 MainDocker/.vscode/settings.json
 ServerDocker/home
 ServerDocker/nul:
+.DS_Store
