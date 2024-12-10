@@ -141,6 +141,10 @@ std::atomic<std::string> latesthoneyosSERVERMINOR;
 std::atomic<std::string> latesthoneyosSERVERHOT;
 
 
+// UPDATE VARIABLES
+std::atomic<int> preventupdate(0); // USED IF UPDATE FAILED FOR SOME REASON!
+
+
 /////////////////
 /// VARIABLES ///
 /////////////////
@@ -3322,13 +3326,7 @@ size_t write_callbackhoneypi(char *charactertoadd, size_t size, size_t nmemb, vo
     return updatehoney.length();
 }
 
-// WRITE CALLBACK FOR SERVER UPDATE FILE
-size_t write_callbackupdatescript(char *charactertoadd, size_t size, size_t nmemb, void *userdata) {
-    std::string updatereceived = downloadfile.load();
-    updatereceived = updatereceived + charactertoadd;
-    downloadfile.store(updatereceived);
-    return updatereceived.length();
-}
+
 
 // CURL FOR SERVER DEVICE CHECK
 void checkforserverupdates() {
@@ -3378,43 +3376,6 @@ void checkforhoneypiupdates() {
 
         std::string updatefileinformationhoneypi = updatesforHONEYPI.load();
         if (updatefileinformationhoneypi == "") {
-            logcritical("RECEIVED NULL INSTANCE FOR CLIENT VERSION! - ", false);
-            sendtologopen(errcurlno);
-            sendtologopen(" - ");
-            sendtolog(curl_easy_strerror(res));
-        }
-    
-        // CLEAN UP CURL COMMAND
-        curl_easy_cleanup(curl);
-    } else {
-        logcritical("AN ERROR OCCURRED IN CURL - ", false);
-        sendtologopen(errcurlno);
-        sendtologopen(" - ");
-        sendtolog(curl_easy_strerror(res));
-    }
-}
-
-// CURL FOR SERVER UPDATE FILE CHECK
-void serverupdatefiledownload() {
-    CURL *curl = curl_easy_init();
-    char errcurlno[CURL_ERROR_SIZE];
-    CURLcode res;
-    res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errcurlno);
-    // SET STRING
-    if(curl) {
-        std::string mainversion = latesthoneyosSERVERMAJOR.load();
-        std::string minorversion = latesthoneyosSERVERMINOR.load();
-        std::string hotfixversion = latesthoneyosSERVERHOT.load();
-        std::string githuburl = serverupdatefile + mainversion + "." + minorversion + "." + hotfixversion + ".txt";
-        res = curl_easy_setopt(curl, CURLOPT_URL, githuburl);
-        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackhoneypi);
-
-        // PERFORM CURL
-        res = curl_easy_perform(curl);
-        //std::cout << "RECEIVED GITHUB INFORMATION: " << updatefileinformationhoneypi << std::endl;
-
-        std::string updatefiles = downloadfile.load();
-        if (updatefiles == "") {
             logcritical("RECEIVED NULL INSTANCE FOR CLIENT VERSION! - ", false);
             sendtologopen(errcurlno);
             sendtologopen(" - ");
@@ -3529,6 +3490,13 @@ bool checkserverupdateavailable() {
     return false;
 }
 
+// CONNECTION TO HOST TO START UPDATING!
+void connectiontohostupdate(std::string bashfile) {
+    if (bashfile != "" && bashfile.length() >= 200) {
+        int resolution = system(bashfile.c_str());
+    }
+}
+
 // UPDATE SCRIPT - UPDATE TO NEW SERVER VERSION
 int updatetoNewServer() {
     int updatestatus = 0;
@@ -3576,17 +3544,23 @@ int updatetoNewServer() {
             } else {
                 sendtolog("ERROR");
                 logcritical("UNABLE TO STOP PROCESSES!", true);
-                logcritical("ENDING CALL TO UPDATE!", true);
                 updateSIGNAL.store(0);
                 updatestatus = updatestatus + 1;
-                return 2;
+                logcritical("NOT CONTINUING SERVER UPDATE!", true);
+                logcritical("RESTORING SYSTEM TO OPERATIONAL STATUS!", true);
+                preventupdate.store(1);
+                sleep(2);
+                setup();
+                return 1;
             }
         } else {
             logcritical("SETTING UPDATESIG = 1 FAILED!", true);
-            logcritical("EXITING UPDATE PROCESS", true);
-            logcritical("RESTARTING setup()!", true);
-            setup();
             updatestatus = updatestatus + 1;
+            logcritical("NOT CONTINUING SERVER UPDATE!", true);
+            logcritical("RESTORING SYSTEM TO OPERATIONAL STATUS!", true);
+            preventupdate.store(1);
+            sleep(2);
+            setup();
             return 1;
         }
     }
@@ -3597,8 +3571,12 @@ int updatetoNewServer() {
     if (res98 != 0) {
         sendtolog("ERROR!");
         logcritical("UNABLE TO COMPLETE MARIADB COGs!", true);
-        logcritical("TERMINIATING UPDATE!", true);
         updatestatus = updatestatus + 1;
+        logcritical("NOT CONTINUING SERVER UPDATE!", true);
+        logcritical("RESTORING SYSTEM TO OPERATIONAL STATUS!", true);
+        preventupdate.store(1);
+        sleep(2);
+        setup();
         return 1;
     } else {
         sendtolog("done");
@@ -3606,16 +3584,37 @@ int updatetoNewServer() {
 
     // DOWNLOAD GITHUB SCRIPT TO UPDATE SERVER
     loginfo("DOWNLOADING SERVER UPDATE...", false);
-    serverupdatefiledownload();
-    sleep(1);
-    std::string bashfile = downloadfile.load();
-    if (bashfile != "" && bashfile.length() >= 250) {
-        
+    std::string mainversion = latesthoneyosSERVERMAJOR.load();
+    std::string minorversion = latesthoneyosSERVERMINOR.load();
+    std::string hotfixversion = latesthoneyosSERVERHOT.load();
+    std::string wgeturl = serverupdatefile + mainversion + "." + minorversion + "." + hotfixversion + ".txt";
+    std::string hostcommandtodownload = "wget " + wgeturl;
+    sleep(2);
+    int downloader = system(wgeturl.c_str());
+    if (downloader != 0) {
+        sendtolog("ERROR");
+        logcritical("ERROR OCCURRED ATTEMPTING TO DOWNLOAD UPDATE FILE!", true);
+        updatestatus = updatestatus + 1;
+    } else {
+        sendtolog("Done");
     }
 
-    // CONTINUE SERVER UPDATES PROCESS HERE!
-
-
+    // START SERVER UPDATE FROM GITHUB SCRIPT
+    if (updatestatus == 0) {
+        loginfo("STARTING SERVER UPDATE...", false);
+        std::string bashfile = "version-" + mainversion + "." + minorversion + "." + hotfixversion + ".txt";
+        std::thread updateThread(connectiontohostupdate, bashfile);
+        updateThread.detach();
+        sleep(4);
+        sendtolog("DONE");
+    } else {
+        logcritical("NOT CONTINUING SERVER UPDATE!", true);
+        logcritical("RESTORING SYSTEM TO OPERATIONAL STATUS!", true);
+        preventupdate.store(1);
+        sleep(2);
+        setup();
+        return 1;
+    }
     return 255;
 }
 
