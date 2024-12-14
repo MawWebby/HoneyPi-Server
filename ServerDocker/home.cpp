@@ -1680,7 +1680,105 @@ std::map<std::pair<int, std::string>, std::string> uecryptcog = {
 // DECLARATION OF FUNCTIONS //
 //////////////////////////////
 int setup();
+void loginfo(std::string, bool);
+void logwarning(std::string, bool);
+void logcritical(std::string, bool);
+void sendtolog(std::string);
 
+
+
+
+
+//////////////////////////////////
+//// STRING TO INT CONVERSION //// 
+//////////////////////////////////
+int stringtoint(std::string values) {
+    long int valuesdetermine = 0;
+    bool completedwhile = false;
+    int timing9760 = 0;
+    int timing9760max = values.length();
+    bool validcase = false;
+    bool periodcheck = false;
+    
+    // CHECK FOR NULL
+    if (values.length() == 0) {
+        loginfo("RECEIVED NULL STRING TO ANALYZE! (STD->INT)", true);
+        return 0;
+    }
+
+    // CHECK FOR LONG INT
+    if (values.length() > 9) {
+        loginfo("RECEIVED A SUPER LONG STRING TO ANALYZE! (STD->INT)", true);
+        return 0;
+    }
+
+    // MAIN CHECK LOOP
+    std::string substringvalue = "";
+    while (completedwhile == false && timing9760 <= timing9760max) {
+        if (timing9760 + 1 <= timing9760max) {
+            validcase = false;
+            if (periodcheck == false) {
+                valuesdetermine = valuesdetermine * 10;
+                periodcheck = false;
+            } else {
+                periodcheck = false;;
+            }
+            substringvalue = values.substr(timing9760, 1);
+            if (substringvalue == "0") {
+                validcase = true;
+            } else if (substringvalue == "1") {
+                validcase = true;
+                valuesdetermine = valuesdetermine + 1;
+            } else if (substringvalue == "2") {
+                validcase = true;
+                valuesdetermine = valuesdetermine + 2;
+            } else if (substringvalue == "3") {
+                validcase = true;
+                valuesdetermine = valuesdetermine + 3;
+            } else if (substringvalue == "4") {
+                validcase = true;
+                valuesdetermine = valuesdetermine + 4;
+            } else if (substringvalue == "5") {
+                validcase = true;
+                valuesdetermine = valuesdetermine + 5;
+            } else if (substringvalue == "6") {
+                validcase = true;
+                valuesdetermine = valuesdetermine + 6;
+            } else if (substringvalue == "7") {
+                validcase = true;
+                valuesdetermine = valuesdetermine + 7;
+            } else if (substringvalue == "8") {
+                validcase = true;
+                valuesdetermine = valuesdetermine + 8;
+            } else if (substringvalue == "9") {
+                validcase = true;
+                valuesdetermine = valuesdetermine + 9;
+            }
+
+
+            // DECIMALS (IGNORE THIS CASE)
+            // FIX THIS
+            else if (substringvalue == ".") {
+                validcase = true;
+                periodcheck = true;
+            }
+
+
+            // INVALID STRING
+            if (validcase != true) {
+                loginfo("AN INVALID CHARACTER WAS RECEIVED (STD->INT); THE CHARACTER WAS: ", false);
+                sendtolog(substringvalue);
+                completedwhile = true;
+                return 0;
+            }   
+        } else {
+            completedwhile == true;
+        }
+        timing9760 = timing9760 + 1;
+    }
+
+    return valuesdetermine;
+}
 
 
 
@@ -1688,52 +1786,14 @@ int setup();
 //////////////////////
 //// TIMER SCRIPT ////
 //////////////////////
-int timedetector() {
-    if (calculatingtime == true) {
-        std::cout << "[WARNING] - Call to Time Calculation Called While Already Processing!" << std::endl;
-        return 1;
-
-    }  else {
-        calculatingtime = true;
-
-        // TIME
-        currenttime = time(NULL);
-
-        // CURRENT SECONDS
-        timesincestartup = currenttime - startuptime;
-        currentsecond = currenttime % secondsperminute;
-
-        // CURRENT MINUTES
-        currentminute = currenttime - currentsecond;
-        currentminute = currentminute % 3600;
-        currentminute = currentminute / 60;
-
-        // CURRENT HOURS
-        currenthour = currenttime - ((currentminute * 60) + currentsecond);
-        currenthour = currenthour % hoursperday;
-        
-        // CURRENT DAYS
-        currentdays = currenttime - ((currenthour * 3600) + (currentminute * 60) + currentsecond);
-        currentdays = currentdays / 86400;
-
-        // CURRENT YEARS
-        currentyear = 1970 + (currentdays / 365.25);
-
-        // DEBUG PRINT VALUES TO CONSOLE
-        if (debug == true) {
-            std::cout << currentsecond << std::endl;
-            std::cout << currentminute << std::endl;
-            std::cout << currenthour << std::endl;
-            std::cout << currentdays << std::endl;
-            std::cout << currentyear << std::endl;
-        }
-
-        calculatingtime = false;
-        return 0;
-    }
-
-    calculatingtime = false;
-    return 1;
+std::string timedetector() {
+    time_t time10 = time(0); 
+    std::string dateandtime = ctime(&time10);
+    std::string datestd = dateandtime.substr(0,10);
+    std::string clockstd = dateandtime.substr(10, 9);
+    std::string yearstd = dateandtime.substr(20,4);
+    std::string newformat = datestd + ", " + yearstd + " " + clockstd;
+    return newformat;
 }
 
 
