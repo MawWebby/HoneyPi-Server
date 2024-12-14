@@ -1812,7 +1812,8 @@ void sendtologopen(std::string data2) {
 }
 
 void logdebug(std::string data2, bool complete) {
-    data2 = "[DEBUG] - " + data2;
+    std::string timedet = timedetector();
+    data2 = "[DEBUG] - " + timedet + " - " + data2;
     if (complete == false) {
         sendtologopen(data2);
     } else {
@@ -1821,7 +1822,8 @@ void logdebug(std::string data2, bool complete) {
 }
 
 void loginfo(std::string data2, bool complete) {
-    data2 = "[INFO] - " + data2;
+    std::string timedet = timedetector();
+    data2 = "[INFO ] - " + timedet + " - " + data2;
     if (complete == false) {
         sendtologopen(data2);
     } else {
@@ -1830,7 +1832,8 @@ void loginfo(std::string data2, bool complete) {
 }
 
 void logwarning(std::string data2, bool complete) {
-    data2 = "[WARNING] - " + data2;
+    std::string timedet = timedetector();
+    data2 = "[WARN*] - " + timedet + " - " + data2;
     if (complete == false) {
         sendtologopen(data2);
     } else {
@@ -1839,7 +1842,8 @@ void logwarning(std::string data2, bool complete) {
 }
 
 void logcritical(std::string data2, bool complete) {
-    data2 = "[CRITICAL] - " + data2;
+    std::string timedet = timedetector();
+    data2 = "[ERRNO] - " + timedet + " - " + data2;
     if (complete == false) {
         sendtologopen(data2);
     } else {
@@ -1848,7 +1852,8 @@ void logcritical(std::string data2, bool complete) {
 }
 
 void logerror(std::string headerdata2, std::string errormessage) {
-    std::string data2 = "[ERROR] - " + headerdata2 + " - " + errormessage;
+    std::string timedet = timedetector();
+    std::string data2 = "[ERROR] - " + timedet + " - " + headerdata2 + " - " + errormessage;
     sendtolog(data2);
 }
 
@@ -5895,7 +5900,6 @@ void handleConnections80() {
     fcntl(server_fd23, F_SETFL, O_NONBLOCK);
     sleep(2);
 
-    loginfo("P80 - Started!", true);
     statusP80.store(1);
     bool http80 = true;
 
@@ -6794,16 +6798,6 @@ int setup() {
  //   mariadbINSERT_PIKEY(generateRandomStringHoneyPI(), "test123");
 
 
-    // DETERMINE TIME
-    startuptime = time(NULL);
-    startupchecks = startupchecks + timedetector();
-
-    time_t now = time(0); // Get the current time
-    char* dt = ctime(&now); // Convert to a string representation
-
-    std::cout << "Current date and time: " << dt << std::endl;
-
-
 
 
     // PING MARIADB SERVER TO VERIFY CONNECTION
@@ -7073,13 +7067,7 @@ int setup() {
     // LOAD MAINHTML INTO RAM
     loginfo("HTML - Loading MAINHTML Into RAM...", true);
     int ram1 = loadHTMLINTORAM();
-    if (ram1 != 0) {
-        sendtolog("ERROR");
-        logcritical("AN ERROR OCCURRED LOADING MAINHTML INTO RAM...", false);
-        sendtolog("IGNORING!");
-    } else {
-        sendtolog("Done");
-    }
+    
 
 
 
