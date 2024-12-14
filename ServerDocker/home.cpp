@@ -4810,7 +4810,7 @@ int loadHTMLINTORAM() {
     } else {
         sendtolog("DONE");
     }
-    return 0;
+    return returnvalue;
 }
 
 
