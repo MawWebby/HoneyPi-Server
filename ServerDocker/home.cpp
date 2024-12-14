@@ -58,24 +58,20 @@ std::atomic<int> updateSIGNAL(0);
 std::atomic<int> statusP80(0);
 std::atomic<int> statusP443(0);
 std::atomic<int> statusP11829(0);
-std::atomic<int> statusP11830(0);
 std::atomic<int> serverErrors(0);
 
 // PACKET VARIABLES
 std::atomic<int> p80packetslastmin(0);
 std::atomic<int> p443packetslastmin(0);
 std::atomic<int> p11829packetslastmin(0);
-std::atomic<int> p11830packetslastmin(0);
 std::atomic<int> p80packetslasthour(0);
 std::atomic<int> p443packetslasthour(0);
 std::atomic<int> p11829packetslasthour(0);
-std::atomic<int> p11830packetslasthour(0);
 
 // LOCK VARIABLES
 std::atomic<int> lockP80(0);
 std::atomic<int> lockP443(0);
 std::atomic<int> lockP11829(0);
-std::atomic<int> lockP11830(0);
 
 // TIMING VARIABLES
 std::atomic<long long int> timer0(0);
@@ -201,8 +197,6 @@ std::string port80clientsIP[1];
 int port80clientsIPdata[1];
 std::string port11829clientsIP[1];
 int port11829clientsIPdata[1];
-std::string port11830clientsIP[1];
-int port11830clientsIPdata[1];
 int packetspam = 0;
 
 
@@ -501,7 +495,7 @@ bool userstreamlock = false;
 
 
 // ERROR MESSAGES
-// SECTOR - SECTOR THAT IS AFFECTED (0-P80; 1-P443; 2-P11829; 3-P11830; 
+// SECTOR - SECTOR THAT IS AFFECTED (0-P80; 1-P443; 2-P11829; 
 //                                   4-MARIADB; 5-MARIADBHANDLER; 6-STATUSMARIADB; 7-READ/WRITEERROR(IO/ERROR);
 //                                   8-ENCRYPTION_ERROR; 9-COG_STORE_ERROR; 10-API_HANDLER; 11-INTEGRATION; 
 //                                   12-PACKET_FILTERING; 13-DNS; 14-BACKUP/STORE; 15-ATTEMPTED_EXPLOIT
@@ -512,7 +506,7 @@ bool userstreamlock = false;
 //          NUMBER = ADD NUMBER
 //          LOG = LOG INTO ERROR LOG / ADD NUMBER
 //          RESTART = ATTEMPT TO RESTART THE MODULE THAT IS NOT WORKING (MARIADB, STATUSMARIADB, INTEGRATION, DNS)
-//          LOCK = LOCK MODULE FROM RUNNING (P80, P443, P11829, P11830)
+//          LOCK = LOCK MODULE FROM RUNNING (P80, P443, P11829)
 //          SOFT = SOFTCRASH MODULE OR OTHER
 //          SOFTALL = SOFTCRASH ALL MODULES/THREADS
 //          HARD = HARDCRASH ALL MODULES
@@ -1896,7 +1890,7 @@ void handleSignal(int signal) {
 // THE MAIN CRASH LOOP //
 /////////////////////////
 // HARDCRASH - PERMANENT LOCKOUT
-// SECTOR - SECTOR THAT IS AFFECTED (0-P80; 1-P443; 2-P11829; 3-P11830; 4-MARIADB; 5-MARIADBHANDLER; 6-STATUSMARIADB; 7-READ/WRITEERROR; 8-ENCRYPTION_ERROR; 9-COG_STORE_ERROR; 10-ERROR_MODULE)
+// SECTOR - SECTOR THAT IS AFFECTED (0-P80; 1-P443; 2-P11829; 4-MARIADB; 5-MARIADBHANDLER; 6-STATUSMARIADB; 7-READ/WRITEERROR; 8-ENCRYPTION_ERROR; 9-COG_STORE_ERROR; 10-ERROR_MODULE)
 // SEVERITY - SEVERITY OF INCIDENT
 // MODULE - NAME OF MODULE TO BE DISPLAYED
 // HEADERMESSAGE - MESSAGE TO BE DISPLAYED IN RUNNING LOG FILE!
@@ -3152,7 +3146,7 @@ int mariadbREMOVE_USER(std::string user, std::string pass) {
 }
 
 // CHANGE RUNNING PORT STATUS IN SERVER DB
-// 0 - 80; 1 - 443; 2 - 11829; 3 - 11830
+// 0 - 80; 1 - 443; 2 - 11829
 int mariadbCHANGEPORTSTATUS(int port,bool status) {
     std::string dbpayload = "";
 //    dbpayload = mariadbchangeportstatusheader[{port, status}];
@@ -6638,63 +6632,6 @@ void handle11829Connections(int server_fd4) {
 
 
 
-//////////////////////////////////////////
-// HANDLE NETWORKED CONNECTIONS (11830) //
-//////////////////////////////////////////
-/*
-void handle11830Connections(int server_fd11830) {
-    bool api11830 = true;
-
-    // LOG STATUS INTO MEM
-    loginfo("P11830 - Started!", true);
-    statusP11830.store(1);
-
-    // MAIN RUNNING LOOP
-    while(api11830 == true) {
-        char buffer[2048] = {0};
-        int new_socket11830;
-        ssize_t valread11830;
-        struct sockaddr_in client_addr;
-        socklen_t client_addr_len = sizeof(client_addr);
-        std::string hello11830 = "HELLO FROM SERVER!";
-
-        int clientID = accept(server_fd11830, (struct sockaddr*)&client_addr, &client_addr_len);
-        
-        if (clientID < 0) {
-            if (clientID == -1) {
-                sleep(0.5);
-                if (stopSIGNAL.load() == true) {
-                    api11830 = false;
-                }
-                if (updateSIGNAL.load() == true) {
-                    api11830 = false;
-                }
-            } else {
-                loginfo("UNABLE TO ACCEPT TELE CONNECTION", true);
-            }
-        } else {
-                
-            read(new_socket11830, buffer, 2048);
-            sendtologopen(buffer);
-            std::string bufferstd = buffer;
-
-            // Send a hello message to the client
-            send(new_socket2, hello11830.c_str(), hello11830.size(), 0);
-            std::cout << "Hello message sent" << std::endl;
-        }
-    }
-
-    loginfo("P11830 - Stopped...", true);
-    statusP11830.store(0);
-    close(server_fd11830);
-    sleep(1);
-    return;
-}
-*/
-
-
-
-
 
 ////////////////////////////////////////
 // CREATE NETWORKED CONNECTIONS (443) //
@@ -7162,66 +7099,6 @@ int setup() {
 
 
 
-/*
-    // OPEN SERVER PORT 11830 FOR TELEMETRY
-    loginfo("P11830 - Opening Server Ports (4/4)", false);
-    PORT = 11830;
-    int server_fd3, new_socket3;
-    ssize_t valread3;
-    struct sockaddr_in address3;
-    socklen_t addrlen3 = sizeof(address3);
-    int opt3 = 1;
-    
-    sleep(1);
-
-    if((server_fd3 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        logcritical("P11830 - FAILED TO START SOCKET OPERATION", true);
-        exit(EXIT_FAILURE);
-    }
-
-    // Forcefully attaching socket to the port 11535
-    if (setsockopt(server_fd3, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt3, sizeof(opt3))) {
-        logcritical("P11830 - FAILED TO SET SOCKET OPT", true);
-        exit(EXIT_FAILURE);
-    }
-
-    // REACHED HERE
-    sendtologopen("...");
-    address3.sin_family = AF_INET;
-    address3.sin_addr.s_addr = INADDR_ANY;
-    address3.sin_port = htons(PORT);
-
-    // Binding the socket to the network address and port
-    if (bind(server_fd3, (struct sockaddr*)&address3, sizeof(address3)) < 0) {
-        logcritical("P11830 - FAILED TO BIND TO PORT", true);
-        exit(EXIT_FAILURE);
-    }
-    if (listen(server_fd3, 3) < 0) {
-        logcritical("P11830 - FAILED TO START LISTEN", true);
-        exit(EXIT_FAILURE);
-    }
-
-    fcntl(server_fd3, F_SETFL, O_NONBLOCK);
-
-    sendtolog("Done");
-    sleep(0.5);
-
-
-
-
-    // SERVER PORT LISTEN THREAD (11830)
-    loginfo("P11830 - Creating server thread listen...", false);
-
-    sleep(1);
-    std::thread acceptingClientsThread3(handle11830Connections, server_fd3);
-    acceptingClientsThread3.detach();
-    sleep(0.5);
-
-    sendtolog("Done");
-
-*/
-
-
     // SERVER PORT LISTEN THREAD (443)
     loginfo("P443 - Creating server thread on listen...", false);
 
@@ -7287,6 +7164,10 @@ int main() {
 
 
         loginfo("HoneyPi Server has started successfully", true);
+
+        
+        int delaysignalmax = 1800;
+        int delaysignal = delaysignalmax - 15;
 
         // MAIN RUNNING LOOP
         while(startupchecks == 0 && encounterederrors == 0 && stopSIGNAL.load() == 0 && updateSIGNAL.load() == 0) {
