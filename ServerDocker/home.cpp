@@ -7291,9 +7291,49 @@ int main() {
         // MAIN RUNNING LOOP
         while(startupchecks == 0 && encounterederrors == 0 && stopSIGNAL.load() == 0 && updateSIGNAL.load() == 0) {
 
-            sleep(60);
-            loginfo("Running = TRUE...", true);
+            sleep(1);
 
+            // HEARTBEAT TO LOG
+            if (delaysignal >= delaysignalmax) {
+                int p80s = statusP80.load();
+                int p443s = statusP443.load();
+                int p11829s = statusP11829.load();
+
+                // GENERAL STATUS MESSAGE
+                if (p80s == true && p443s == true && p11829s == true) {
+                    loginfo("running = True", true);
+                }
+
+                // CHECK FOR SOMETHING WEIRD
+                if (p80s == false) {
+                    logwarning("PORT 80 Not Running!", true);
+                }
+                if (p443s == false) {
+                    logwarning("PORT 443 Not Running!", true);
+                }
+                if (p11829s == false) {
+                    logwarning("PORT 11829 Not Running!", true);
+                }
+
+                // CHECK FOR LOCKS
+                int lockP80s = lockP80.load();
+                int lockP443s = lockP443.load();
+                int lockP11829s = lockP11829.load();
+                if (lockP80s == true) {
+                    logwarning("PORT 80 Locked!", true);
+                }
+                if (lockP443s == true) {
+                    logwarning("PORT 443 Locked!", true);
+                }
+                if (lockP11829s == true) {
+                    logwarning("PORT 11829 Locked!", true);
+                }
+                
+                delaysignal = 0;
+            } else {
+                delaysignal = delaysignal + 1;
+            }
+            
 
             // TIMERS [3] CHECK
             long int differenceintime3 = time(NULL) - timer3.load();
