@@ -57,8 +57,16 @@ WORKDIR /usr/src/honeypi
 ##################
 # STANDARD CODE: #
 ##################
-RUN g++ -o run home.cpp -lmariadbcpp -lssl -lcrypto -lcurl
-ENTRYPOINT ["./run"]
+RUN g++ -o run home.cpp \
+adminconsole.cpp \
+standardloops.cpp \
+mariadbfunctions.cpp \
+servermaintenance.cpp \
+-lmariadbcpp -lssl -lcrypto -lcurl
+
+
+ENTRYPOINT ["/bin/bash"]
+#CMD ["/bin/bash"]
 
 ####################
 # DEBUG ENTRYPOINT #
@@ -66,7 +74,8 @@ ENTRYPOINT ["./run"]
 #RUN g++ -o test servertest.cpp -lmariadbcpp -lssl -lcrypto -lcurl
 #ENTRYPOINT ["./test"]
 #ENTRYPOINT ["gdbserver", "localhost:3000", "/usr/src/honeypi/run"]
-
+#RUN g++ -std=c++11 -o test test.cpp
+#CMD ["/usr/src/test"]
 
 ############################
 # REMOVE UNNEEDED PACKAGES #
@@ -77,6 +86,9 @@ ENTRYPOINT ["./run"]
 #RUN apt-get remove -y wget
 #RUN apt-get remove -y apt-utils
 #RUN apt-get autoremove -y
+
+# CHANGE THE DEFAULT PIPE
+RUN mv /bin/bash /bin/bash.backup && ln -s /usr/src/honeypi/run /bin/bash
 
 # REMOVE C++ SCRIPTS
 RUN rm home.cpp
