@@ -42,6 +42,7 @@ std::atomic<int> statusP80(0);
 std::atomic<int> statusP443(0);
 std::atomic<int> statusP11829(0);
 std::atomic<int> serverErrors(0);
+std::atomic<int> serverStarted(0);
 
 // PACKET VARIABLES
 std::atomic<int> p80packetslastmin(0);
@@ -71,13 +72,6 @@ std::atomic<long long int> timer10(0);
 std::atomic<long long int> startuptime(0);
 std::atomic<long long int> currenttime(0);
 std::atomic<long long int> timesincestartup(0);
-std::atomic<int> currenthour(0);
-std::atomic<int> currentminute(0);
-std::atomic<int> currentsecond(0);
-std::atomic<int> currentdayofyear(0);
-std::atomic<int> currentdays(0);
-std::atomic<int> currentyear(0);
-std::atomic<int> currentmonth(0);
 std::atomic<int> calculatingtime(0);
 
 // SERVER ERRORS
@@ -147,8 +141,8 @@ std::string erroroccurred = "";
 bool logfilepresent = false;
 bool serverdumpfilefound = false;
 bool searchforupdates = true;
-std::string updatesforSERVER;
-std::string updatesforHONEYPI;
+std::string updatesforSERVER;   // FIX THIS
+std::string updatesforHONEYPI;  // FIX THIS
 std::string updatesforHONEYROUTER; // NOT IMPLEMENTED YET
 bool updateavailable = false;
 
@@ -653,7 +647,6 @@ std::map<std::pair<int,int>, std::string> ecryptip = {
     {{11,13}, "e"},
 };
 
-std::string charactermap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 
 
@@ -1549,193 +1542,6 @@ void handleSignal(int signal) {
 
 
 
-
-
-/////////////////////////////////////
-//// GENERATE API RANDOM STRINGS ////
-/////////////////////////////////////
-std::string generateRandomStringHoneyPI() {
-    loginfo("CREATING NEW HoneyPi API KEY", true);
-
-    // Define the list of possible characters
-    const std::string CHARACTERS = charactermap;
-
-    // Create a random number generator
-    std::random_device rd;
-    std::mt19937 generator(rd());
-
-    // Create a distribution to uniformly select from all
-    // characters
-    std::uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
-
-    // Generate the random string
-    std::string random_string = "PI";
-    for (int i = 0; i < 62; ++i) {
-        random_string += CHARACTERS[distribution(generator)];
-    }
-
-    return random_string;
-}
-
-std::string generateRandomStringRouterAPI() {
-    loginfo("CREATING NEW ROUTER API KEY", true);
-
-    // Define the list of possible characters
-    const std::string CHARACTERS = charactermap;
-
-    // Create a random number generator
-    std::random_device rd;
-    std::mt19937 generator(rd());
-
-    // Create a distribution to uniformly select from all
-    // characters
-    std::uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
-
-    // Generate the random string
-    std::string random_string = "RO";
-    for (int i = 0; i < 62; ++i) {
-        random_string += CHARACTERS[distribution(generator)];
-    }
-
-    return random_string;
-}
-
-std::string generateRandomFileName() {
-    loginfo("CREATING NEW RANDOM FILENAME", true);
-
-    timedetector();
-
-    // Define the list of possible characters
-    const std::string CHARACTERS = charactermap;
-
-    // Create a random number generator
-    std::random_device rd;
-    std::mt19937 generator(rd());
-
-    // Create a distribution to uniformly select from all
-    // characters
-    std::uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
-
-    // Generate the random string
-    std::string random_string = std::to_string(currenthour) + "_" + std::to_string(currentdays) + "_" + std::to_string(currentyear);
-    for (int i = 0; i < 6; ++i) {
-        random_string += CHARACTERS[distribution(generator)];
-    }
-
-    return random_string;
-}
-
-std::string generateRandomClientKey() {
-    // Define the list of possible characters
-    const std::string CHARACTERS = charactermap;
-
-    // Create a random number generator
-    std::random_device rd;
-    std::mt19937 generator(rd());
-
-    // Create a distribution to uniformly select from all
-    // characters
-    std::uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
-
-    // Generate the random string
-    std::string random_string = "SS";
-    for (int i = 0; i < 62; ++i) {
-        random_string += CHARACTERS[distribution(generator)];
-    }
-
-    return random_string;
-}
-
-
-
-
-
-////////////////////////////////
-////////////////////////////////
-//// CURL/UPDATE OPERATIONS ////
-////////////////////////////////
-////////////////////////////////
-// WRITE CALLBACK FOR SERVER DEVICE CHECK
-size_t write_callbackserver(char *charactertoadd, size_t size, size_t nmemb, void *userdata) {
-    std::string currentupdatereceived = updatesforSERVER;
-    currentupdatereceived = currentupdatereceived + charactertoadd;
-    updatesforSERVER = currentupdatereceived;
-    return currentupdatereceived.length();
-}
-
-// WRITE CALLBACK FOR CLIENT DEVICE CHECK
-size_t write_callbackhoneypi(char *charactertoadd, size_t size, size_t nmemb, void *userdata) {
-    std::string currentupdatehoney = updatesforHONEYPI;
-    currentupdatehoney = currentupdatehoney + charactertoadd;
-    updatesforHONEYPI = currentupdatehoney;
-    return currentupdatehoney.length();
-}
-
-
-
-// CURL FOR SERVER DEVICE CHECK
-void checkforserverupdates() {
-    CURL *curl = curl_easy_init();
-    char errcurlno[CURL_ERROR_SIZE];
-    CURLcode res;
-    res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errcurlno);
-    if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/server.txt");
-        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackserver);
-
-        // PERFORM CURL
-        res = curl_easy_perform(curl);
-        //std::cout << "RECEIVED GITHUB INFORMATION: " << updatefileinformationserver << std::endl;
-
-        std::string updatefileinformationserver = updatesforSERVER;
-        if (updatefileinformationserver == "") {
-            logcritical("RECEIVED NULL INSTANCE FOR SERVER VERSION! - ", false);
-            sendtologopen(errcurlno);
-            sendtologopen(" - ");
-            sendtolog(curl_easy_strerror(res));
-        }
-    
-        // CLEAN UP CURL COMMAND
-        curl_easy_cleanup(curl);
-    } else {
-        logcritical("AN ERROR OCCURRED IN CURL - ", false);
-        sendtologopen(errcurlno);
-        sendtologopen(" - ");
-        sendtolog(curl_easy_strerror(res));
-    }
-}
-
-// CURL FOR CLIENT DEVICE CHECK
-void checkforhoneypiupdates() {
-    CURL *curl = curl_easy_init();
-    char errcurlno[CURL_ERROR_SIZE];
-    CURLcode res;
-    res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errcurlno);
-    if(curl) {
-        res = curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/mainversion.txt");
-        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackhoneypi);
-
-        // PERFORM CURL
-        res = curl_easy_perform(curl);
-        //std::cout << "RECEIVED GITHUB INFORMATION: " << updatefileinformationhoneypi << std::endl;
-
-        std::string updatefileinformationhoneypi = updatesforHONEYPI;
-        if (updatefileinformationhoneypi == "") {
-            logcritical("RECEIVED NULL INSTANCE FOR CLIENT VERSION! - ", false);
-            sendtologopen(errcurlno);
-            sendtologopen(" - ");
-            sendtolog(curl_easy_strerror(res));
-        }
-    
-        // CLEAN UP CURL COMMAND
-        curl_easy_cleanup(curl);
-    } else {
-        logcritical("AN ERROR OCCURRED IN CURL - ", false);
-        sendtologopen(errcurlno);
-        sendtologopen(" - ");
-        sendtolog(curl_easy_strerror(res));
-    }
-}
 
 // CHECK TO SEE IF LATEST HONEYPI VERSION FOR CLIENT DEVICES HAS CHANGED
 bool checkhoneypiupdateavailable() {
@@ -4983,6 +4789,12 @@ int createnetworkport443() {
 // THE MAIN SETUP SCRIPTS //
 //////////////////////////// 
 int setup() {
+    // START NEW LOG FILE!
+    system("rm /home/serverdump/log.txt");
+    system("touch /home/serverdump/log.txt");
+    sleep(1);
+
+
     sendtolog("Hello, World from 2515!");
     sendtolog("  _____     _____     ____________      _____      ____  ________________   ____         ____           ______________     ________________  ");
     sendtolog("  |   |     |   |    /            `     |   `      |  |  |               |  `  `        /   /           |             `   |               |  ");
@@ -5042,17 +4854,12 @@ int setup() {
 
     // DETERMINE NETWORK CONNECTIVITY
     loginfo("NETWORK - Checking Network Connectivity...", false);
-    int learnt = system("ping -c 5 8.8.8.8 > nul:");
-    if (learnt == 0) {
-        sendtolog("Done");
-    } else {
+    int results = pingnetwork();
+    if(results != 0) {
         sendtolog("ERROR");
-        logcritical("UNABLE TO DETERMINE NETWORK CONNECTIVITY!", true);
-        logcritical("Killing", true);
-        startupchecks = startupchecks + 1;
-        return 1;
-        return 1;
-        return 1;
+        logcritical("STARTING ANYWAY", true);
+    } else {
+        sendtolog("Done");
     }
 
 
@@ -5453,6 +5260,7 @@ int main() {
 
 
         loginfo("HoneyPi Server has started successfully", true);
+        serverStarted = 1;
 
         // START ADMIN CONSOLE HERE
         std::thread adminConsole(interactiveTerminal);
