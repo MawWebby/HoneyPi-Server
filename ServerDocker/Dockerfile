@@ -62,6 +62,8 @@ adminconsole.cpp \
 standardloops.cpp \
 mariadbfunctions.cpp \
 servermaintenance.cpp \
+network.cpp \ 
+backup.cpp \
 -lmariadbcpp -lssl -lcrypto -lcurl
 
 
@@ -92,7 +94,7 @@ RUN mv /bin/bash /bin/bash.backup && ln -s /usr/src/honeypi/run /bin/bash
 
 # REMOVE C++ SCRIPTS
 RUN rm home.cpp
-RUN rm servertest.cpp
+#RUN rm servertest.cpp
 
 # Versions and Labels
 LABEL Name=honeypiserver Versions=0.1
