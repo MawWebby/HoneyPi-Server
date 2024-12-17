@@ -2,6 +2,10 @@
 #include <string>
 
 
+extern int currentminute;
+extern int currenthour;
+extern int currentdays;
+extern int currentyear;
 
 
 #ifndef STANDARDLOOPS_H
@@ -19,7 +23,20 @@ void logwarning(std::string, bool);
 void logcritical(std::string, bool);
 void logerror(std::string, std::string);
 
+// LOG INPUT COMMANDS
+void readfromlogger();
+
 // CONVERSIONS
 int stringtoint(std::string);
 
+// GENERATORS
+std::string generateRandomStringHoneyPI();
+std::string generateRandomStringRouterAPI();
+std::string generateRandomFileName();
+std::string generateRandomClientKey();
+
 #endif
+
+
+// FIXTHIS
+// ADD CURRENT TIME HOUR/DAY/ETC.
