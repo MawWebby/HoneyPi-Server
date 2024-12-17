@@ -27,3 +27,21 @@
 #include "standardloops.h"
 #include "mariadbfunctions.h"
 #include "servermaintenance.h"
+#include "backup.h"
+#include "network.h"
+
+// SERVER SIGNALS
+extern std::atomic<int> stopSIGNAL;
+extern std::atomic<int> updateSIGNAL;
+extern std::atomic<int> serverStarted;
+extern std::atomic<int> lockP80;
+extern std::atomic<int> lockP443;
+extern std::atomic<int> lockP11829;
+extern std::atomic<int> statusP80;
+extern std::atomic<int> statusP443;
+extern std::atomic<int> statusP11829;
+extern std::atomic<int> serverErrors;
+
+// UPDATE VARIABLES
+extern std::string updatesforSERVER;
+extern std::string updatesforHONEYPI;
