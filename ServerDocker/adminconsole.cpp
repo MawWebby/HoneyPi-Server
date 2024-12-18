@@ -21,13 +21,24 @@ int currentdays;
 int currentyear;
 
 
+/////////////////////////////////
+//// WAIT FOR TERMINAL INPUT ////
+/////////////////////////////////
+std::string terminalinput() {
+    std::string command;
+    std::getline(std::cin, command);
+    return command;
+}
+
+
+
 ////////////////////////////////////
 //// USER ACCESS LEVEL COMMANDS ////
 ////////////////////////////////////
 void level3access() {
     std::cout << std::endl;
     std::cout << "Level 3 Access:" << std::endl;
-
+    std::cout << "system      | (NO ARGS) | Enter System Level" << std::endl;
 }
 
 void level2access() {
@@ -36,12 +47,23 @@ void level2access() {
     std::cout << "backup      | (NO ARGS) | Backup the Server" << std::endl;
     std::cout << "update      | (NO ARGS) | Update the Server" << std::endl;
     std::cout << "logs        | (NO ARGS) | View All Logs on the Machine" << std::endl;
+    std::cout << "menc        | (STRING)  | Determine Encryption Method of String" << std::endl;
+    std::cout << "ecrypt      | (MESSAGE) | Message to Encrypt Using UCRYPT Key" << std::endl;
+    std::cout << "unencrypt   | (MESSAGE) | Message to Decrypt Using UCRYPT Key" << std::endl;
 }
 
 void level1access() {
     std::cout << std::endl;
     std::cout << "Level 1 Access:" << std::endl;
     std::cout << "shutdown    | (NO ARGS) | Shutdown the Server" << std::endl;
+    std::cout << "IP CHECK    | (IPADDR)  | Check for IP in Server DB [Not IPLIST]" << std::endl;
+    std::cout << "IP ADD      | (IPADDR)  | Add IP into Server DB [NOT IPLIST]" << std::endl;
+    std::cout << "IP REMOVE   | (IPADDR)  | Remove IP Address from Server DB [Not IPLIST]" << std::endl;
+    std::cout << "IP BLOCK    | (IPADDR)  | Block IP Address in Server DB [Not IPLIST]" << std::endl;
+    std::cout << "IP UBLOCK   | (IPADDR)  | Unblock IP Address in Server DB [Not IPLIST]" << std::endl;
+    std::cout << "IP READDEV  | (IPADDR)  | Read the Developer Banned Block of IP Address" << std::endl;
+    std::cout << "IP PACKET   | (-#/+#);(IPADDR) | Add/Subtract Packets from IPADDR" << std::endl;
+
 }
 
 void level0access() {
@@ -50,6 +72,7 @@ void level0access() {
     std::cout << "commands    | (NO ARGS) | Displays this list of commands" << std::endl;
     std::cout << "generate    | (PI/ROUTER/FILENAME/CLIENTKEY) | Generate a Random Key (Not Assigned)" << std::endl;
     std::cout << "ping        | (NO ARGS) | Ping Internet for Connectivity" << std::endl;
+    std::cout << "pingdb      | (NO ARGS) | Ping MariaDB to Make Sure it is Working" << std::endl;
     std::cout << "lock        | (80/443/11829) | Lock Port" << std::endl;
     std::cout << "unlock      | (80/443/11829) | Unlock Port" << std::endl;
 }
@@ -117,12 +140,30 @@ void processCommand(const std::string& command) {
             std::cout << "Pinging Internet..." << std::endl;
             int pinger = pingnetwork();
             if (pinger == 0) {
-                std::cout << "OK";
+                std::cout << "OK" << std::endl;
             } else {
-                std::cout << "ERROR";
+                std::cout << "ERROR" << std::endl;
             }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }
         foundcommand = true;
+    }
+
+    // PING MARIADB
+    if (command == "pingdb") {
+        foundcommand = true;
+        if (useraccesslevel >= 0) {
+            std::cout << "Pinging DB..." << std::endl;
+            int resultant = mariadb_ping();
+            if (resultant == 0) {
+                std::cout << "OK" << std::endl;
+            } else {
+                std::cout << "ERROR" << std::endl;
+            }
+        } else {
+             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
     }
 
     // UPDATE COMMAND
@@ -140,6 +181,8 @@ void processCommand(const std::string& command) {
         if (useraccesslevel >= 2) {
             std::cout << "Starting Full System Backup" << std::endl;
             startbackup(1);
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }
         foundcommand = true;
     }
@@ -176,12 +219,25 @@ void processCommand(const std::string& command) {
         foundcommand = true;
     }
 
+    // ENTER BASH OF SYSTEM
+    if (command == "system") {
+        if (useraccesslevel >= 3) {
+            std::cout << "TRANSFERRING TO SYSTEM!" << std::endl;
+            std::cout << "Type 'exit' to return" << std::endl;
+            sleep(2);
+            system("bash2");
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
 
 
     // START ANALYZING FIRST WORD IF NOT FOUND
     std::string firstseveral = "";
     std::string firstfour = "";
-    if (command.length() >= 8) {
+    if (command.length() >= 8 && foundcommand == false) {
         firstseveral = command.substr(0,8);
         firstfour = command.substr(0,4);
     } else if (command.length() >= 4) {
@@ -239,58 +295,237 @@ void processCommand(const std::string& command) {
 
     // LOCK PORTS
     if (firstfour == "lock") {
-        std::string port = "";
-        if (command.length() == 7) {
-            std::string portlock = command.substr(5,2);
-            if (portlock == "80") {
-                std::cout << "Locked Port 80 (HTTP)" << std::endl;
-                lockP80.store(1);
-            }
-        } else if (command.length() == 8) {
-            std::string portlock = command.substr(5,3);
-            if (portlock == "443") {
-                std::cout << "Locked Port 443 (HTTPS)" << std::endl;
-                lockP443.store(1);
-            }
-        } else if (command.length() == 10) {
-            std::string portlock = command.substr(5,5);
-            if (portlock == "11829") {
-                std::cout << "Locked Port 11829 (API)" << std::endl;
-                lockP11829.store(1);
+        if (useraccesslevel >= 2) {
+            std::string port = "";
+            if (command.length() == 7) {
+                std::string portlock = command.substr(5,2);
+                if (portlock == "80") {
+                    std::cout << "Locked Port 80 (HTTP)" << std::endl;
+                    lockP80.store(1);
+                }
+            } else if (command.length() == 8) {
+                std::string portlock = command.substr(5,3);
+                if (portlock == "443") {
+                    std::cout << "Locked Port 443 (HTTPS)" << std::endl;
+                    lockP443.store(1);
+                }
+            } else if (command.length() == 10) {
+                std::string portlock = command.substr(5,5);
+                if (portlock == "11829") {
+                    std::cout << "Locked Port 11829 (API)" << std::endl;
+                    lockP11829.store(1);
+                }
+            } else {
+                std::cout << "No Valid Option Received" << std::endl;
             }
         } else {
-            std::cout << "No Valid Option Received" << std::endl;
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }
         foundcommand = true;
     }
 
     // UNLOCK PORTS
     if (firstfour == "unlo") {
-        std::string port = "";
-        if (command.length() == 9) {
-            std::string portlock = command.substr(7,2);
-            if (portlock == "80") {
-                std::cout << "Locked Port 80 (HTTP)" << std::endl;
-                lockP80.store(0);
+        if (useraccesslevel >= 2) {
+            std::string port = "";
+            if (command.length() == 9) {
+                std::string portlock = command.substr(7,2);
+                if (portlock == "80") {
+                    std::cout << "Locked Port 80 (HTTP)" << std::endl;
+                    lockP80.store(0);
+                }
+            } else if (command.length() == 10) {
+                std::string portlock = command.substr(7,3);
+                if (portlock == "443") {
+                    std::cout << "Locked Port 443 (HTTPS)" << std::endl;
+                    lockP443.store(0);
+                }
+            } else if (command.length() == 12) {
+                std::string portlock = command.substr(7,5);
+                if (portlock == "11829") {
+                    std::cout << "Locked Port 11829 (API)" << std::endl;
+                    lockP11829.store(0);
+                }
+            }else {
+                std::cout << "No Valid Option Received" << std::endl;
             }
-        } else if (command.length() == 10) {
-            std::string portlock = command.substr(7,3);
-            if (portlock == "443") {
-                std::cout << "Locked Port 443 (HTTPS)" << std::endl;
-                lockP443.store(0);
-            }
-        } else if (command.length() == 12) {
-            std::string portlock = command.substr(7,5);
-            if (portlock == "11829") {
-                std::cout << "Locked Port 11829 (API)" << std::endl;
-                lockP11829.store(0);
-            }
-        }else {
-            std::cout << "No Valid Option Received" << std::endl;
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }
         foundcommand = true;
     }
 
+    // WHICH ENCRYPTION METHOD
+    if (firstfour == "menc") {
+        if (useraccesslevel >= 2) {
+            std::cout << "Analyzing Encrypted String" << std::endl;
+            std::string datatoload = command.substr(5, command.length() - 5);
+            int results = encryptionmethod(datatoload, 1);
+            if (results == 1) {
+                std::cout << "HACKSWEEP ENCRYPTION" << std::endl;
+            } else if (results == 2) {
+                std::cout << "UCRYPT ENCRYPTION" << std::endl;
+            } else {
+                std::cout << "AN ERROR OCCURRED ANALYZING!" << std::endl;
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    // ENCRYPTION USING UCRYPT
+    if (firstfour == "ecry") {
+        if (useraccesslevel >= 2) {
+            if (command.length() > 7) {
+                std::cout << "Encrypting String Using UCRYPT..." << std::endl;
+                std::string messagetoencrypt = command.substr(7, command.length() - 7);
+                std::string result = ucrypt_Ecrypt(messagetoencrypt);
+                std::cout << "Generated Message (UCRYPT): " << result << std::endl;
+            } else {
+                std::cout << "No Arguments Passed" << std::endl;
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    // DECRYPTION USING UCRYPT
+    if (firstfour == "uncr") {
+        if (useraccesslevel >= 2) {
+            if (command.length() > 8) {
+                std::cout << "Decrypting String Using UCRYPT..." << std::endl;
+                std::string messagetodecrypt = command.substr(8, command.length() - 8);
+                std::string result = ucrypt_decrypt(messagetodecrypt);
+                std::cout << "Generated Message (UCRYPT): " << result << std::endl;
+            } else {
+                std::cout << "No Arguments Passed" << std::endl;
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    // MARIADB COMMANDS
+    std::string firstthree = "";
+    if (command.length() >= 3 && foundcommand == false) {
+        firstthree = command.substr(0,3);
+    }
+
+    if (firstthree == "IP ") {
+        if (useraccesslevel >= 1) {
+            if (command.length() >= 10) {
+                std::string subco = command.substr(3,4);
+                
+                // IP CHECK FOR CHECK
+                if (subco == "CHEC") {
+                    std::cout << "Checking for IP" << std::endl;
+                    std::string iptocheck = command.substr(9, command.length() - 9);
+                    int resultant = mariadb_CHECKIPADDR(iptocheck);
+                    if (resultant == 1) {
+                        std::cout << "IP Address is in Range" << std::endl;
+                    } else {
+                        std::cout << "IP Address Not Found" << std::endl;
+                    }
+                
+                // IP CHECK FOR ADD
+                } else if (subco == "ADD ") {
+                    std::cout << "Adding IP" << std::endl;
+                    std::string iptocheck = command.substr(7, command.length() - 7);
+                    int resultant = mariadb_ADDIPADDR(iptocheck);
+                    if (resultant == 0) {
+                        std::cout << "OK" << std::endl;
+                    } else {
+                        std::cout << "ERROR" << std::endl;
+                    } 
+                // IP CHECK FOR REMOVE
+                } else if (subco == "REMO") {
+                    std::cout << "Removing IP" << std::endl;
+                    std::string iptocheck = command.substr(10, command.length() - 10);
+                    int resultant = mariadb_REMOVEOLDIPADDR(iptocheck);
+                    if (resultant == 0) {
+                        std::cout << "IP Address Removed" << std::endl;
+                    } else {
+                        std::cout << "ERROR Removing IP Address" << std::endl;
+                    }
+                // IP CHECK FOR BLOCK
+                    // FIX THIS BY ADDING NUMBEROFPACKETSCHANGEDANDMORE  ip block 1
+                } else if (subco == "BLOC") {
+                    std::cout << "Blocking IP" << std::endl;
+                    std::string iptocheck = command.substr(9, command.length() - 9);
+                    int resultant = mariadb_BLOCKIPADDR(iptocheck);
+                    if (resultant == 0) {
+                        std::cout << "OK" << std::endl;
+                    } else {
+                        std::cout << "ERROR" << std::endl;
+                    } 
+                // IP CHECK FOR UNBLOCK
+                } else if (subco == "UBLO") {
+                    std::cout << "Unblocking IP" << std::endl;
+                    std::string iptocheck = command.substr(11, command.length() - 11);
+                    int resultant = mariadb_UNBLOCKIPADDR(iptocheck);
+                    if (resultant == 0) {
+                        std::cout << "OK" << std::endl;
+                    } else {
+                        std::cout << "ERROR" << std::endl;
+                    } 
+                } else if (subco == "READ") {
+                    std::cout << "Reading DEV Block of IP" << std::endl;
+                    std::string iptocheck = command.substr(12, command.length() - 12);
+                    bool resultant = mariadb_READDEVBLOCK(iptocheck);
+                    if (resultant == true) {
+                        std::cout << "DEV Block = Banned!" << std::endl;
+                    } else {
+                        std::cout << "DEV Block not found or false" << std::endl;
+                    } 
+                } else if (subco == "PACK") {
+                    std::cout << "Adjusting Packets of IP" << std::endl;
+                    std::string symbol = command.substr(10, 1);
+                    int symbolmath = 0;
+                    if (symbol == "-") {
+                        symbolmath = 1;
+                    } else if (symbol == "+") {
+                        symbolmath = 2;
+                    } else {
+                        std::cout << "No Valid Option Received" << std::endl;
+                    }
+
+                    int resultant = 3;
+
+                    if (symbolmath != 0) {
+                        std::string numberofpackets = command.substr(11, 1);
+                        int numberoftimes = stringtoint(numberofpackets);
+                        std::string iptocheck = command.substr(12, command.length() - 12);
+                        int numberofcalls = 0;
+                        if (symbolmath == 1) {
+                            while (numberofcalls < numberoftimes) {
+                                resultant = mariadb_REMOVEPACKETFROMIPADDR(iptocheck);
+                                numberofcalls = numberofcalls + 1;
+                            }
+                        } else if (symbolmath == 2) {
+                            while (numberofcalls < numberoftimes) {
+                                resultant = mariadb_ADDPACKETTOIPADDR(iptocheck);
+                                numberofcalls = numberofcalls + 1;
+                            }
+                        }
+                    }
+
+                    if (resultant == 0) {
+                        std::cout << "OK" << std::endl;
+                    } else {
+                        std::cout << "ERROR" << std::endl;
+                    }
+                }
+            } else {
+                std::cout << "No Valid Options Received" << std::endl;
+            }
+        } else {
+             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
 
 
 
@@ -301,8 +536,21 @@ void processCommand(const std::string& command) {
     }
 }
 
+
+
+// MAIN INTERACTIVE TERMINAL COMMAND
 void interactiveTerminal() {
     sleep(3);
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
     std::cout << "HoneyPi Terminal" << std::endl;
     std::cout << "HoneyPi Server Version: 0.2.0" << std::endl;
     std::cout << std::endl;
@@ -327,7 +575,8 @@ void interactiveTerminal() {
                 std::cout << "sudo >> ";
                 break;
         }
-        std::getline(std::cin, command);
+        command = terminalinput();
+        sendtolog("[CONSOLE] - Received Command: " + command);
 
         if (!command.empty()) {
             processCommand(command);
