@@ -64,6 +64,7 @@ mariadbfunctions.cpp \
 servermaintenance.cpp \
 network.cpp \ 
 backup.cpp \
+encryption.cpp \
 -lmariadbcpp -lssl -lcrypto -lcurl
 
 
@@ -90,11 +91,11 @@ ENTRYPOINT ["/bin/bash"]
 #RUN apt-get autoremove -y
 
 # CHANGE THE DEFAULT PIPE
-RUN mv /bin/bash /bin/bash.backup && ln -s /usr/src/honeypi/run /bin/bash
+RUN mv /bin/bash /bin/bash2 && ln -s /usr/src/honeypi/run /bin/bash
 
 # REMOVE C++ SCRIPTS
 RUN rm home.cpp
 #RUN rm servertest.cpp
 
 # Versions and Labels
-LABEL Name=honeypiserver Versions=0.1
+LABEL Name=honeypiserver Versions=0.2

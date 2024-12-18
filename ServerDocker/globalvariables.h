@@ -29,6 +29,7 @@
 #include "servermaintenance.h"
 #include "backup.h"
 #include "network.h"
+#include "encryption.h"
 
 // SERVER SIGNALS
 extern std::atomic<int> stopSIGNAL;
