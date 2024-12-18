@@ -24,7 +24,7 @@ const std::string valuetoinsertSETPIAPI = " SET honeypiapi = ";
 const std::string valuetoinsertWHERE = " WHERE user = ";
 const std::string mariadbcheckaddrheader = "SELECT blockedip FROM serversecurity WHERE ipaddr = '";
 const std::string mariadbaddaddrheader = "INSERT INTO serversecurity (ipaddr, packetsreceived, blockedip, resetattime) VALUES('";
-const std::string mariadbblockipaddrheader = "UPDATE serversecurity SET blockedip = 'true' WHERE ipaddr = '";
+const std::string mariadbblockipaddrheader = "UPDATE serversecurity SET blockedip = '1' WHERE ipaddr = '";
 const std::string mariadbubblockipaddrheader = "UPDATE serversecurity SET blockedip = 'false' WHERE ipaddr = '";
 const std::string mariadbreadpacketcountipaddr = "SELECT packetsreceived FROM serversecurity WHERE ipaddr  = '";
 const std::string mariadbwritepacketcountipaddr = "UPDATE serversecurity SET packetsreceived = ";

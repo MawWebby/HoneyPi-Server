@@ -7,15 +7,15 @@
 
 
 //  FUNCTION                            
-int mariadb_ping();
-int mariadb_ADDIPADDR(std::string);
-int mariadb_CHECKIPADDR(std::string);
-int mariadb_BLOCKIPADDR(std::string);
-int mariadb_UNBLOCKIPADDR(std::string);
-int mariaDB_ADDPACKETTOIPADDR(std::string);
-int mariadb_REMOVEPACKETFROMIPADDR(std::string);
-bool mariadb_READDEVBLOCK(std::string);
-int mariadb_REMOVEOLDIPAADR(std::string);
+int mariadb_ping();                                               // MARIADB STATUS PING
+int mariadb_ADDIPADDR(std::string);                               // ADD IP ADDRESS IN SERVERSECURITY
+int mariadb_CHECKIPADDR(std::string);                             // CHECK IP ADDRESS IN SERVERSECURITY
+int mariadb_BLOCKIPADDR(std::string);                             // BLOCK IP ADDRESS IN SERVERSECURITY
+int mariadb_UNBLOCKIPADDR(std::string);                           // UNBLOCK IP ADDRESS IN SERVERSECURITY
+int mariadb_ADDPACKETTOIPADDR(std::string);                       // ADD PACKET TO IP IN SERVERSECURITY
+int mariadb_REMOVEPACKETFROMIPADDR(std::string);                  // REMOVE PACKET FROM IP IN SERVER SECURITY
+bool mariadb_READDEVBLOCK(std::string);                           // READ THE DEV BLOCK BAN
+int mariadb_REMOVEOLDIPADDR(std::string);                         // REMOVE IP ADDRESS IN SERVERSECURITY
 int mariadb_MAINTENANCE();
 int mariadb_LASTTIMETOPACKET(std::string);
 std::string mariadbREAD_VALUEPIAPI(std::string);
@@ -46,5 +46,13 @@ std::string mariadbTOPCOG();
 int mariadbCLEARCOGS_START();
 int mariadbCLEARCOGS_READ();
 int mariadbSETCOGLOCKINDB();
+
+// FUTURE LOOPS
+// IPADDR
+// LOOP TO SHOW ALL IPADDRESSES STORED IN SERVER SECURITY
+// SET/REMOVE DEV BLOCK OF IPADDR
+// READ # OF PACKETS
+
+// CREDENTIALS
 
 #endif
