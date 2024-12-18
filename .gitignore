@@ -5,3 +5,4 @@ ServerDocker/nul:
 .DS_Store
 Documentation/HacksweepEncryptionV2.txt
 Documentation/HackSweepEncryptionV3.txt
+ServerDocker/encryption.cpp

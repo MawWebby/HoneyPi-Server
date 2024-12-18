@@ -49,7 +49,8 @@ void level2access() {
     std::cout << "logs        | (NO ARGS) | View All Logs on the Machine" << std::endl;
     std::cout << "menc        | (STRING)  | Determine Encryption Method of String" << std::endl;
     std::cout << "ecrypt      | (MESSAGE) | Message to Encrypt Using UCRYPT Key" << std::endl;
-    std::cout << "unencrypt   | (MESSAGE) | Message to Decrypt Using UCRYPT Key" << std::endl;
+    std::cout << "uncrypt     | (MESSAGE) | Message to Decrypt Using UCRYPT Key" << std::endl;
+    std::cout << "hacksweep   | (decrypt/encrypt) | Open Command for Hacksweep Decryption/Encryption" << std::endl;
 }
 
 void level1access() {
@@ -63,7 +64,6 @@ void level1access() {
     std::cout << "IP UBLOCK   | (IPADDR)  | Unblock IP Address in Server DB [Not IPLIST]" << std::endl;
     std::cout << "IP READDEV  | (IPADDR)  | Read the Developer Banned Block of IP Address" << std::endl;
     std::cout << "IP PACKET   | (-#/+#);(IPADDR) | Add/Subtract Packets from IPADDR" << std::endl;
-
 }
 
 void level0access() {
@@ -286,6 +286,60 @@ void processCommand(const std::string& command) {
 
             if (finishcommand == false) {
                 std::cout << "No Valid Option Received for Generate" << std::endl;
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    // HACKSWEEP ENCRYPTION/DECRYPTION
+    if (firstseveral == "hackswee") {
+        if (useraccesslevel >= 2) {
+            if (command.length() == 17) {
+                std::string method = command.substr(10,7);
+                if (method == "encrypt") {
+                    bool completioncrypt = false;
+                    std::string datatosend = "";
+                    while (completioncrypt == false) {
+                        std::string newdata = terminalinput();
+                        if (newdata == "end") {
+                            completioncrypt = true;
+                        } else {
+                            datatosend = datatosend + "/n" + newdata;
+                        }
+                    }
+                    std::string term = hacksweep_Ecrypt(datatosend);
+                    std::cout << "Received Encrypted String (Hacksweep) of: " << term << std::endl;
+                } else if (method == "decrypt") {
+                    bool completioncrypt = false;
+                    std::string datatosend = "";
+                    while (completioncrypt == false) {
+                        std::string newdata = terminalinput();
+                        if (newdata == "end") {
+                            completioncrypt = true;
+                        } else {
+                            datatosend = datatosend + "/n" + newdata;
+                        }
+                    }
+                    std::string term = hacksweep_decrypt(datatosend);
+                    std::cout << "Received Decrypted String (Hacksweep) of: " << term << std::endl;                    
+                } else {
+                    std::cout << "Not Valid" << std::endl;
+                }
+            } else if (command.length() > 17) {
+                std::string method = command.substr(10,7);
+                if (method == "decrypt") {
+                    std::string datatocrypt = command.substr(18, command.length() - 18);
+                    std::string reult = hacksweep_decrypt(datatocrypt);
+                    std::cout << "Received Decrypted String (Hacksweep) of: " << std::endl;
+                } else if (method == "encrypt") {
+                    std::string datatocrypt = command.substr(18, command.length() - 18);
+                    std::string result = hacksweep_Ecrypt(datatocrypt);
+                    std::cout << "Received Encrypted String (Hacksweep) of: " << result << std::endl;
+                }
+            } else {
+                std::cout << "No Args Passed!" << std::endl;
             }
         } else {
             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
