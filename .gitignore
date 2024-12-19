@@ -6,3 +6,5 @@ ServerDocker/nul:
 Documentation/HacksweepEncryptionV2.txt
 Documentation/HackSweepEncryptionV3.txt
 ServerDocker/encryption.cpp
+ServerDocker/encryption.cpp
+ServerDocker/encryption2.cpp
