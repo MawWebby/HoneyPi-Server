@@ -5,6 +5,10 @@
 #define ENCRYPTION_H
 
 
+// LOGIN CREDENTIALS
+int logincredentials(std::string, std::string);
+
+
 // DETERMINE ENCRYPTION METHOD
 int encryptionmethod(std::string, int);
 

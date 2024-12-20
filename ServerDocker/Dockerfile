@@ -14,17 +14,10 @@ RUN apt-get install -y mariadb-server
 RUN apt-get install -y libcurl4
 RUN apt-get install -y libcurl4-openssl-dev
 
-# DEBUG UTILITIES
-#RUN apt-get install -y gdbserver
-#RUN apt-get install -y gdb g++
-#EXPOSE 3000
-
 # Expose Needed Ports
 EXPOSE 80       
 EXPOSE 443
 EXPOSE 11829
-EXPOSE 11830
-EXPOSE 22221
 
 # GENERATE OPENSSL KEYS
 RUN mkdir /certs
@@ -69,16 +62,7 @@ encryption.cpp \
 
 
 ENTRYPOINT ["/bin/bash"]
-#CMD ["/bin/bash"]
 
-####################
-# DEBUG ENTRYPOINT #
-####################
-#RUN g++ -o test servertest.cpp -lmariadbcpp -lssl -lcrypto -lcurl
-#ENTRYPOINT ["./test"]
-#ENTRYPOINT ["gdbserver", "localhost:3000", "/usr/src/honeypi/run"]
-#RUN g++ -std=c++11 -o test test.cpp
-#CMD ["/usr/src/test"]
 
 ############################
 # REMOVE UNNEEDED PACKAGES #
@@ -93,8 +77,13 @@ ENTRYPOINT ["/bin/bash"]
 # CHANGE THE DEFAULT PIPE
 RUN mv /bin/bash /bin/bash2 && ln -s /usr/src/honeypi/run /bin/bash
 
+# Remove All Build Files
+RUN mv /usr/src/honeypi/run /usr/src/run
+RUN rm -r /usr/src/honeypi* 
+RUN mv /usr/src/run /usr/src/honeypi
+
 # REMOVE C++ SCRIPTS
-RUN rm home.cpp
+#RUN rm home.cpp
 #RUN rm servertest.cpp
 
 # Versions and Labels

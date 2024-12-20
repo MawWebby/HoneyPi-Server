@@ -1,12 +1,9 @@
 #include "adminconsole.h"
 #include "globalvariables.h"
 
-//int useraccesslevel = 0;
-int useraccesslevel = 3;
-// TEMPORARY - FIX THIS
+int useraccesslevel = 0;
+
 // BACKUP OF DATABASES
-// UCRYPT START THIS AND HOPEFULLY FINISH THIS!
-// other encryptrion method (hacksweep) do this
 
 
 // USER LEVELS
@@ -51,6 +48,8 @@ void level2access() {
     std::cout << "ecrypt      | (MESSAGE) | Message to Encrypt Using UCRYPT Key" << std::endl;
     std::cout << "uncrypt     | (MESSAGE) | Message to Decrypt Using UCRYPT Key" << std::endl;
     std::cout << "hacksweep   | (decrypt/encrypt) | Open Command for Hacksweep Decryption/Encryption" << std::endl;
+    std::cout << "lock        | (80/443/11829) | Lock Port" << std::endl;
+    std::cout << "unlock      | (80/443/11829) | Unlock Port" << std::endl;
 }
 
 void level1access() {
@@ -64,17 +63,17 @@ void level1access() {
     std::cout << "IP UBLOCK   | (IPADDR)  | Unblock IP Address in Server DB [Not IPLIST]" << std::endl;
     std::cout << "IP READDEV  | (IPADDR)  | Read the Developer Banned Block of IP Address" << std::endl;
     std::cout << "IP PACKET   | (-#/+#);(IPADDR) | Add/Subtract Packets from IPADDR" << std::endl;
+    std::cout << "generate    | (PI/ROUTER/FILENAME/CLIENTKEY) | Generate a Random Key (Not Assigned)" << std::endl;
+    std::cout << "ping        | (NO ARGS) | Ping Internet for Connectivity" << std::endl;
+    std::cout << "pingdb      | (NO ARGS) | Ping MariaDB to Make Sure it is Working" << std::endl;
 }
 
 void level0access() {
     std::cout << std::endl;
     std::cout << "Level 0 Access:" << std::endl;
     std::cout << "commands    | (NO ARGS) | Displays this list of commands" << std::endl;
-    std::cout << "generate    | (PI/ROUTER/FILENAME/CLIENTKEY) | Generate a Random Key (Not Assigned)" << std::endl;
-    std::cout << "ping        | (NO ARGS) | Ping Internet for Connectivity" << std::endl;
-    std::cout << "pingdb      | (NO ARGS) | Ping MariaDB to Make Sure it is Working" << std::endl;
-    std::cout << "lock        | (80/443/11829) | Lock Port" << std::endl;
-    std::cout << "unlock      | (80/443/11829) | Unlock Port" << std::endl;
+    std::cout << "login       | (NO ARGS) | Login with Higher User" << std::endl;
+    std::cout << "clear       | (NO ARGS) | Clear the Terminal" << std::endl;
 }
 
 
@@ -134,9 +133,35 @@ void processCommand(const std::string& command) {
         foundcommand = true;
     }
 
+    // LOGIN COMMAND
+    if (command == "login") {
+        system("clear");
+        std::cout << "Username: ";
+        std::string username = terminalinput();
+        system("clear");
+        std::cout << "Password: ";
+        std::string password = terminalinput();
+        system("clear");
+        sleep(1);
+        logwarning("Attempted Login @ " + username + "; Pass: " + password, true);
+        int result = logincredentials(username, password);
+        if (result != 0) {
+            useraccesslevel = result;
+            std::cout << "Login was Successful" << std::endl;
+            loginfo("Login Successful", true);
+        } else {
+            useraccesslevel = 0;
+            std::cout << "Login DENIED!" << std::endl;
+            logcritical("Login DENIED @ " + username + "; Pass: " + password, true);
+        }
+        sleep(3);
+        system("clear");
+        foundcommand = true;
+    }
+
     // PING THE NETWORK
     if (command == "ping") {
-        if (useraccesslevel >= 0) {
+        if (useraccesslevel >= 1) {
             std::cout << "Pinging Internet..." << std::endl;
             int pinger = pingnetwork();
             if (pinger == 0) {
@@ -153,7 +178,7 @@ void processCommand(const std::string& command) {
     // PING MARIADB
     if (command == "pingdb") {
         foundcommand = true;
-        if (useraccesslevel >= 0) {
+        if (useraccesslevel >= 1) {
             std::cout << "Pinging DB..." << std::endl;
             int resultant = mariadb_ping();
             if (resultant == 0) {
@@ -249,7 +274,7 @@ void processCommand(const std::string& command) {
 
     // GENERATE RANDOM STRINGS FOR API TOKENS AND AMONG OTHER THINGS
     if (firstseveral == "generate") {
-        if (useraccesslevel >= 0) {
+        if (useraccesslevel >= 1) {
             bool finishcommand = false;
             if (command.length() == 11) {
                 std::string togenerate = command.substr(8,3);
@@ -594,19 +619,10 @@ void processCommand(const std::string& command) {
 
 // MAIN INTERACTIVE TERMINAL COMMAND
 void interactiveTerminal() {
-    sleep(3);
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
+    sleep(10);
+    system("clear");
     std::cout << "HoneyPi Terminal" << std::endl;
-    std::cout << "HoneyPi Server Version: 0.2.0" << std::endl;
+    std::cout << "HoneyPi Server Version: " << honeyversion << std::endl;
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << std::endl;
@@ -632,7 +648,7 @@ void interactiveTerminal() {
         command = terminalinput();
         sendtolog("[CONSOLE] - Received Command: " + command);
 
-        if (!command.empty()) {
+        if (command.empty() != true) {
             processCommand(command);
         }
     }

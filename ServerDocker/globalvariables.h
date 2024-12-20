@@ -46,3 +46,6 @@ extern std::atomic<int> serverErrors;
 // UPDATE VARIABLES
 extern std::string updatesforSERVER;
 extern std::string updatesforHONEYPI;
+
+// SERVER VERSION
+extern std::string honeyversion;
