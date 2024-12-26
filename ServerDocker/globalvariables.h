@@ -30,6 +30,8 @@
 #include "backup.h"
 #include "network.h"
 #include "encryption.h"
+#include "handleapi.h"
+#include "handlehttps.h"
 
 // SERVER SIGNALS
 extern std::atomic<int> stopSIGNAL;
@@ -49,3 +51,27 @@ extern std::string updatesforHONEYPI;
 
 // SERVER VERSION
 extern std::string honeyversion;
+
+// IP BLOCKING/PACKETS MAP
+extern std::map<std::string, int> ip11829;
+extern std::map<std::string, int> ip443;
+
+// PACKET SPAM
+extern int packetspam;
+
+// TIMING VARIABLES
+extern std::atomic<long long int> timer0(0);
+extern std::atomic<long long int> timer1(0);
+extern std::atomic<long long int> timer2(0);
+extern std::atomic<long long int> timer3(0);
+extern std::atomic<long long int> timer4(0);
+extern std::atomic<long long int> timer5(0);
+extern std::atomic<long long int> timer6(0);
+extern std::atomic<long long int> timer7(0);
+extern std::atomic<long long int> timer8(0);
+extern std::atomic<long long int> timer9(0);
+extern std::atomic<long long int> timer10(0);
+extern std::atomic<long long int> startuptime(0);
+extern std::atomic<long long int> currenttime(0);
+extern std::atomic<long long int> timesincestartup(0);
+extern std::atomic<int> calculatingtime(0);
