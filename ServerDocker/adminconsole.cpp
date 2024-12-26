@@ -44,12 +44,15 @@ void level2access() {
     std::cout << "backup      | (NO ARGS) | Backup the Server" << std::endl;
     std::cout << "update      | (NO ARGS) | Update the Server" << std::endl;
     std::cout << "logs        | (NO ARGS) | View All Logs on the Machine" << std::endl;
+    std::cout << "packetlogs  | (NO ARGS) | View All Packet Logs on the Machine" << std::endl;
     std::cout << "menc        | (STRING)  | Determine Encryption Method of String" << std::endl;
     std::cout << "ecrypt      | (MESSAGE) | Message to Encrypt Using UCRYPT Key" << std::endl;
     std::cout << "uncrypt     | (MESSAGE) | Message to Decrypt Using UCRYPT Key" << std::endl;
     std::cout << "hacksweep   | (decrypt/encrypt) | Open Command for Hacksweep Decryption/Encryption" << std::endl;
     std::cout << "lock        | (80/443/11829) | Lock Port" << std::endl;
     std::cout << "unlock      | (80/443/11829) | Unlock Port" << std::endl;
+    std::cout << "read11829packets | (NO ARGS) | Read All IP/Packets Combination on Port" << std::endl;
+    std::cout << "read443packets | (NO ARGS) | Read All IP/Packets Combination on Port" << std::endl;
 }
 
 void level1access() {
@@ -240,6 +243,42 @@ void processCommand(const std::string& command) {
     if (command == "logs") {
         if (useraccesslevel >= 2) {
             readfromlogger();
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    // PACKET LOGS COMMAND
+    if (command == "packetlogs") {
+        if (useraccesslevel >= 2) {
+            readfrompacketlogger();
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+    
+    // READ ALL PACKETS FROM IP ADDRESS/PACKET COMBO IN 11829 MAP
+    if (command == "read11829packets") {
+        if (useraccesslevel >= 2) {
+            std::cout << "11829 PACKETS MAP" << std::endl;
+            for (const auto& pair : ip11829) {
+                std::cout << "Key: " << pair.first << ", Value: " << pair.second << std::endl;
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    // READ ALL PACKETS FROM IP ADDRESS/PACKET COMBO IN 443 MAP
+    if (command == "read443packets") {
+        if (useraccesslevel >= 2) {
+            std::cout << "443 PACKETS MAP" << std::endl;
+            for (const auto& pair : ip443) {
+                std::cout << "Key: " << pair.first << ", Value: " << pair.second << std::endl;
+            }
         } else {
             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }
