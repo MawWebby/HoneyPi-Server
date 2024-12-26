@@ -31,7 +31,7 @@ RUN mkdir /home/listfiles
 RUN mkdir /home/crashlogs
 
 # MKDIR FOR SERVER SAVE/LOG DUMP
-RUN mkdir /home/savedump
+RUN mkdir /home/serverdump
 
 # MKDIR FOR HTML MAIN WEBPAGE
 RUN mkdir /home/htmlmainweb
@@ -58,6 +58,8 @@ servermaintenance.cpp \
 network.cpp \ 
 backup.cpp \
 encryption.cpp \
+handleapi.cpp \
+handlehttps.cpp \
 -lmariadbcpp -lssl -lcrypto -lcurl
 
 
