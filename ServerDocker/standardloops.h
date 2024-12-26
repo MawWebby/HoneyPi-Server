@@ -26,6 +26,12 @@ void logerror(std::string, std::string);
 // LOG INPUT COMMANDS
 void readfromlogger();
 
+// PACKET LOG OUTPUT FUNCTIONS
+void packetlogger(std::string);
+
+// PACKET LOG INPUT FUNCTIONS
+void readfrompacketlogger();
+
 // CONVERSIONS
 int stringtoint(std::string);
 

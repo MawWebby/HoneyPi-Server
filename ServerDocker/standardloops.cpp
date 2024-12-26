@@ -9,6 +9,7 @@ int stopping;
 
 // LOGFILE
 const char* logfile = "/home/serverdump/log.txt";
+const char* packetfile = "/home/serverdump/packetlog.txt";
 
 
 //////////////////////
@@ -133,6 +134,46 @@ void readfromlogger() {
         std::cout << std::endl << "Reached End of Log File" << std::endl;
     } else {
         std::cout << "[ERRO] - COULD NOT OPEN LOGFILE!" << std::endl;
+    }
+    logfilestream.close();
+}
+
+
+
+
+///////////////////////////////////
+// Send to PACKET Logger Scripts //
+///////////////////////////////////
+void packetlogger(std::string packetdata) {
+    std::ofstream logfilestream;
+    logfilestream.open(packetfile, std::ofstream::out | std::ofstream::app);
+    if (logfilestream.is_open() == true) {
+        logfilestream << packetdata << std::endl;
+    } else {
+        std::cout << "[ERRO] - COULD NOT SAVE TO PACKETFILE!" << std::endl;
+        std::cout << "[ERRO] - MESSAGE: " << packetdata << std::endl;
+    }
+    logfilestream.close();
+}
+
+
+
+
+/////////////////////////////////
+//// READ FROM LOGGER SRIPTS ////
+/////////////////////////////////
+void readfrompacketlogger() {
+    std::ifstream logfilestream;
+    logfilestream.open(packetfile);
+    if (logfilestream.is_open() == true) {
+        char linebits[2048];
+        while (logfilestream.eof() == false) {
+            logfilestream.getline(linebits, 2048);
+            std::cout << linebits << std::endl;
+        }
+        std::cout << std::endl << "Reached End of Log File" << std::endl;
+    } else {
+        std::cout << "[ERRO] - COULD NOT OPEN PACKETFILE!" << std::endl;
     }
     logfilestream.close();
 }
