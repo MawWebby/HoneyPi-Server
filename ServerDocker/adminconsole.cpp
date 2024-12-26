@@ -72,7 +72,9 @@ void level0access() {
     std::cout << std::endl;
     std::cout << "Level 0 Access:" << std::endl;
     std::cout << "commands    | (NO ARGS) | Displays this list of commands" << std::endl;
+    std::cout << "status      | (NO ARGS) | Status of Server Command" << std::endl;
     std::cout << "login       | (NO ARGS) | Login with Higher User" << std::endl;
+    std::cout << "logout      | (NO ARGS) | Log Out of Console" << std::endl;
     std::cout << "clear       | (NO ARGS) | Clear the Terminal" << std::endl;
 }
 
@@ -255,6 +257,16 @@ void processCommand(const std::string& command) {
             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }
         foundcommand = true;
+    }
+
+    // LOGOUT OF CONSOLE
+    if (command == "logout") {
+        std::cout << "Logging out..." << std::endl;
+        sleep(1);
+        system("clear");
+        sleep(1);
+        foundcommand = true;
+        useraccesslevel = 0;
     }
 
 
