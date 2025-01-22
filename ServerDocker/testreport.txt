@@ -1,14 +1,14 @@
 // TEST REPORT (THIS IS A TEST REPORT FOR SERVERS AND HONEYPOT!)
 
 // MISC.
-reportV = 1.0
+tokenID = "Dj12kP159YWZFBkK3QJdQstP11AY6btHG0Ae26b20CBIubPJCIoJDiE9A2HwVtxa"
+reportV = 1
 testflight = true
 testreport = true
 versionreporting = 0.1.0
 guestreporting = 0.1.0
-tokenID = "Dj12kP159YWZFBkK3QJdQstP11AY6btHG0Ae26b20CBIubPJCIoJDiE9A2HwVtxa"
-date = "1/22/25"
-time = "9:14:25AM"
+date = "01/22/25"
+time = "09:14:25"
 method = SSH
 fromIP = "8.8.8.8"
 partofDDOS = false
@@ -42,6 +42,12 @@ commandprocess = {
 ////////////////////
 // FILES AFFECTED //
 files = {
+
+}
+
+//////////////////////////
+// FILECHANGES AFFECTED //
+filechanges = {
 
 }
 
