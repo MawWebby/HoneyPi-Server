@@ -430,7 +430,6 @@ void handle11829Connections(int server_fd4) {
         } else {
             char client_ip[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
-            std::cout << "Connection from: " << client_ip << '\n';
             std::string ipaddress = client_ip;
             std::string connectionfrom = "Connection from: " + ipaddress;
             std::string clientipstd = client_ip;
