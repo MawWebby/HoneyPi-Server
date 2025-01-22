@@ -1,0 +1,60 @@
+// TEST REPORT (THIS IS A TEST REPORT FOR SERVERS AND HONEYPOT!)
+
+// MISC.
+reportV = 1.0
+testflight = true
+testreport = true
+versionreporting = 0.1.0
+guestreporting = 0.1.0
+tokenID = "Dj12kP159YWZFBkK3QJdQstP11AY6btHG0Ae26b20CBIubPJCIoJDiE9A2HwVtxa"
+date = "1/22/25"
+time = "9:14:25AM"
+method = SSH
+fromIP = "8.8.8.8"
+partofDDOS = false
+complete = true
+option1 = NA
+option2 = NA
+option3 = NA
+option4 = NA
+option5 = NA
+option6 = NA
+option7 = NA
+option8 = NA
+option9 = NA
+option10 = NA
+option11 = NA
+
+//////////////////////////
+// ATTEMPT COMBINATIONS //
+// (USERNAME;[$]: PASSWORD)
+usercombo = {
+(username;[$]: password)
+(username123;[$]: password123)
+}
+
+//////////////////////
+// TERMINAL PROCESS //
+commandprocess = {
+
+}
+
+////////////////////
+// FILES AFFECTED //
+files = {
+
+}
+
+////////////////////
+// ALL IPS PINGED //
+ipaddr = {
+
+}
+
+/////////////
+// option1 //
+extraopt = {
+NA
+}
+
+END
