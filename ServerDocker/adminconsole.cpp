@@ -17,13 +17,38 @@ int currenthour;
 int currentdays;
 int currentyear;
 
+// PREVIOUS COMMAND
+std::string previouscommand;
+
 
 /////////////////////////////////
 //// WAIT FOR TERMINAL INPUT ////
 /////////////////////////////////
-std::string terminalinput() {
+std::string terminalinput(bool sensitive) {
     std::string command;
     std::getline(std::cin, command);
+    if (sensitive == false) {
+        if (command == "u") {
+            switch (useraccesslevel) {
+                case 0:
+                    std::cout << ">> ";
+                    break;
+                case 1:
+                    std::cout << "user >> ";
+                    break;
+                case 2:
+                    std::cout << "admin >> ";
+                    break;
+                case 3:
+                    std::cout << "sudo >> ";
+                    break;
+            }
+            std::cout << previouscommand << std::endl;
+            return previouscommand;
+        } else {
+            previouscommand = command;
+        }
+    }
     return command;
 }
 
@@ -142,10 +167,10 @@ void processCommand(const std::string& command) {
     if (command == "login") {
         system("clear");
         std::cout << "Username: ";
-        std::string username = terminalinput();
+        std::string username = terminalinput(true);
         system("clear");
         std::cout << "Password: ";
-        std::string password = terminalinput();
+        std::string password = terminalinput(true);
         system("clear");
         sleep(1);
         logwarning("Attempted Login @ " + username + "; Pass: " + password, true);
@@ -264,7 +289,7 @@ void processCommand(const std::string& command) {
         if (useraccesslevel >= 2) {
             std::cout << "11829 PACKETS MAP" << std::endl;
             for (const auto& pair : ip11829) {
-                std::cout << "Key: " << pair.first << ", Value: " << pair.second << std::endl;
+                std::cout << "IP: " << pair.first << ", Packets: " << pair.second << std::endl;
             }
         } else {
             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
@@ -378,7 +403,7 @@ void processCommand(const std::string& command) {
                     bool completioncrypt = false;
                     std::string datatosend = "";
                     while (completioncrypt == false) {
-                        std::string newdata = terminalinput();
+                        std::string newdata = terminalinput(true);
                         if (newdata == "end") {
                             completioncrypt = true;
                         } else {
@@ -391,7 +416,7 @@ void processCommand(const std::string& command) {
                     bool completioncrypt = false;
                     std::string datatosend = "";
                     while (completioncrypt == false) {
-                        std::string newdata = terminalinput();
+                        std::string newdata = terminalinput(true);
                         if (newdata == "end") {
                             completioncrypt = true;
                         } else {
@@ -696,7 +721,7 @@ void interactiveTerminal() {
                 std::cout << "sudo >> ";
                 break;
         }
-        command = terminalinput();
+        command = terminalinput(false);
         sendtolog("[CONSOLE] - Received Command: " + command);
 
         if (command.empty() != true) {
