@@ -76,3 +76,19 @@ extern std::atomic<long long int> startuptime;
 extern std::atomic<long long int> currenttime;
 extern std::atomic<long long int> timesincestartup;
 extern std::atomic<int> calculatingtime;
+
+////////////////////////////////////////////////
+// COMMAND/FILES/AND OTHER MAPS FOR REPORTING //
+////////////////////////////////////////////////
+
+// "bash"
+extern std::atomic<std::map<std::string, int>> commandseveritymap;
+
+// "/home"
+extern std::atomic<std::map<std::string, int>> fileaccessseveritymap;
+
+// "ADD uishfes INTO /home/test.txt:1"
+extern std::atomic<std::map<std::string, int>> fileeditsseveritymap;
+
+// "/home/test.txt"
+extern std::atomic<std::map<std::string, int>> filechangesseveritymap;
