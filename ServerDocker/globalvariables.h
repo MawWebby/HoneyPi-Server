@@ -32,6 +32,7 @@
 #include "encryption.h"
 #include "handleapi.h"
 #include "handlehttps.h"
+#include "process.h"
 
 // SERVER SIGNALS
 extern std::atomic<int> stopSIGNAL;
