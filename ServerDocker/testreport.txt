@@ -10,7 +10,6 @@ guestreporting = 0.1.0
 date = "01/22/25"
 time = "09:14:25"
 method = SSH
-fromIP = "8.8.8.8"
 partofDDOS = false
 complete = true
 option1 = NA
@@ -31,30 +30,47 @@ option11 = NA
 usercombo = {
 (username;[$]: password)
 (username123;[$]: password123)
+(username123;[$]: password123)
+(username123;[$]: password123)
+(username123;[$]: password123)
 }
 
 //////////////////////
 // TERMINAL PROCESS //
 commandprocess = {
-
+"bash"
+"ping"
 }
 
 ////////////////////
 // FILES AFFECTED //
 files = {
-
+"/home"
+"/etc"
+"/bin"
 }
 
 //////////////////////////
 // FILECHANGES AFFECTED //
 filechanges = {
+"/home/test.txt"
+"/home/documents"
+}
 
+//////////////////////////
+// FILECHANGES AFFECTED //
+**********************&*&*&*&&*&*&&*&&*&*&*&*&&***&*&
+fileedits = {
+"ADD uishfes INTO /home/test.txt:1"
+"EDIT iugs INTO /home/iuaer:23"
 }
 
 ////////////////////
 // ALL IPS PINGED //
 ipaddr = {
-
+"8.8.8.8"
+"4.4.4.4"
+"1.1.1.1"
 }
 
 /////////////
