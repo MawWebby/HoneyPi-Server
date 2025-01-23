@@ -48,10 +48,19 @@ std::string ipaddress = "";
 //////////////////////////////////////////////
 ////// DETERMINE SEVERITY OF THE REPORT //////
 //////////////////////////////////////////////
-int determineseverity() {
+int determineseverity(int commandsranonreport, 
+                      int filestranonreport, 
+                      int ipaddressesonreport, 
+                      int extraoptonreport, 
+                      int fileschangeonreport, 
+                      int fileeditsonreport, 
+                      int useronreport, 
+                      int passonreport) {
+    // DETERMINE SEVERITY
 
     return -1;
 }
+    
 
 
 
@@ -359,7 +368,7 @@ int processReport(std::string filename) {
                     // fileedits - FILES EDITED          
                     if (linestr.length() == 13) {
                         if (linestr.substr(0,13) == "fileedits = {") {
-                            filechanges = true;
+                            fileedits = true;
                         }
                     }  
                 } else if (matchcondition == "ip") {
@@ -514,3 +523,48 @@ int processReport(std::string filename) {
     // do something with this
     return 255;
 }
+
+
+
+
+///////////////////////////////////////////////////////////
+////// CACHE ALL DATABASES FOR SEVERITY MEASUREMENTS //////
+////// INTO RAM (UPDATE/RESTORE RAM) //////////////////////
+///////////////////////////////////////////////////////////
+
+// "bash"
+int cachecommandseverity() {
+
+    return 0;
+}
+
+// "/home"
+int cachefileaccess() {
+
+    return 0;
+}
+
+// "ADD uishfes INTO /home/test.txt:1"
+int cachefileedit() {
+
+    return 0;
+}
+
+// "/home/test.txt"
+int cachefilechanges() {
+
+    return 0;
+}
+
+
+// Main Loop
+int cacheseverity() {
+    int returnvalues;
+    returnvalues = returnvalues + cachecommandseverity();
+    returnvalues = returnvalues + cachefileaccess();
+    returnvalues = returnvalues + cachefileedit();
+    returnvalues = returnvalues + cachefilechanges();
+    return returnvalues;
+}
+
+

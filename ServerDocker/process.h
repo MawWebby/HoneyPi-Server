@@ -8,5 +8,8 @@
 // MAIN PROCESS LOOP
 int processReport(std::string);
 
+// CACHE INTO AL DBs
+int cacheseverty();
+
 
 #endif
