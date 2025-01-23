@@ -60,6 +60,7 @@ backup.cpp \
 encryption.cpp \
 handleapi.cpp \
 handlehttps.cpp \
+process.cpp \
 -lmariadbcpp -lssl -lcrypto -lcurl
 
 
@@ -81,8 +82,10 @@ RUN mv /bin/bash /bin/bash2 && ln -s /usr/src/honeypi/run /bin/bash
 
 # Remove All Build Files
 RUN mv /usr/src/honeypi/run /usr/src/run
+RUN mv /usr/src/honeypi/testreport.txt /home/testreport.txt
 RUN rm -r /usr/src/honeypi* 
 RUN mv /usr/src/run /usr/src/honeypi
+RUN chmod 777 /home/testreport.txt
 
 # REMOVE C++ SCRIPTS
 #RUN rm home.cpp
