@@ -87,9 +87,5 @@ RUN rm -r /usr/src/honeypi*
 RUN mv /usr/src/run /usr/src/honeypi
 RUN chmod 777 /home/testreport.txt
 
-# REMOVE C++ SCRIPTS
-#RUN rm home.cpp
-#RUN rm servertest.cpp
-
 # Versions and Labels
 LABEL Name=honeypiserver Versions=0.2
