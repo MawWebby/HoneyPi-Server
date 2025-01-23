@@ -77,7 +77,8 @@ void level2access() {
     std::cout << "lock        | (80/443/11829) | Lock Port" << std::endl;
     std::cout << "unlock      | (80/443/11829) | Unlock Port" << std::endl;
     std::cout << "read11829packets | (NO ARGS) | Read All IP/Packets Combination on Port" << std::endl;
-    std::cout << "read443packets | (NO ARGS) | Read All IP/Packets Combination on Port" << std::endl;
+    std::cout << "read443packets   | (NO ARGS) | Read All IP/Packets Combination on Port" << std::endl;
+    std::cout << "testreport  | (NO ARGS) | Process the Test Report for Loop Code" << std::endl;
 }
 
 void level1access() {
@@ -317,6 +318,23 @@ void processCommand(const std::string& command) {
             std::cout << "Type 'exit' to return" << std::endl;
             sleep(2);
             system("bash2");
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    // PROCESS THE TEST COMMAND AND VERIFY
+    if (command == "testreport") {
+        if (useraccesslevel >= 2) {
+            std::cout << "FIX THIS!" << std::endl;
+            std::cout << "Starting Interaction with Test Report" << std::endl;
+            int returnvalue = processReport("/home/testreport.txt");
+            if (returnvalue != 0) {
+                std::cout << "Received Return Value of " << returnvalue << " while trying to process!" << std::endl;
+            } else {
+                std::cout << "Processed Successfully" << std::endl;
+            }
         } else {
             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }
