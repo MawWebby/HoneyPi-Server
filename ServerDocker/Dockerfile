@@ -80,6 +80,13 @@ ENTRYPOINT ["/bin/bash"]
 # CHANGE THE DEFAULT PIPE
 RUN mv /bin/bash /bin/bash2 && ln -s /usr/src/honeypi/run /bin/bash
 
+# Create the DB Tables
+RUN mkdir /home/databases
+RUN mv /usr/src/honeypi/Databases/command_severity.txt /home/databases/command_severity.txt
+RUN mv /usr/src/honeypi/Databases/file_access_severity.txt /home/databases/file_access_severity.txt
+RUN mv /usr/src/honeypi/Databases/file_changes_severity.txt /home/databases/file_changes_severity.txt
+RUN mv /usr/src/honeypi/Databases/file_edit_severity.txt /home/databases/file_edit_severity.txt
+
 # Remove All Build Files
 RUN mv /usr/src/honeypi/run /usr/src/run
 RUN mv /usr/src/honeypi/testreport.txt /home/testreport.txt

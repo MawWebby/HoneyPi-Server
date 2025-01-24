@@ -45,6 +45,19 @@ int method = 0;
 std::string ipaddress = "";
 
 
+// "bash"
+std::map<std::string, float> commandseveritymap;
+
+// "/home"
+std::map<std::string, float> fileaccessseveritymap;
+
+// "ADD uishfes INTO /home/test.txt:1"
+std::map<std::string, float> fileeditsseveritymap;
+
+// "/home/test.txt"
+std::map<std::string, float> filechangesseveritymap;
+
+
 //////////////////////////////////////////////
 ////// DETERMINE SEVERITY OF THE REPORT //////
 //////////////////////////////////////////////
@@ -135,7 +148,7 @@ int processReport(std::string filename) {
 
 
     while (completionproc != true || reportstream.eof() != true) {
-        reportstream.getline(lineraw, 300);
+        reportstream.getline(lineraw, 2048);
 
         // CONVERT TO STRING FOR ANALYSIS
         std::string linestr = lineraw;
@@ -534,25 +547,122 @@ int processReport(std::string filename) {
 
 // "bash"
 int cachecommandseverity() {
+    
+    // OPEN FILE
+    std::ifstream commandfile;
+    commandfile.open("/home/databases/command_severity.txt");
+    if (commandfile.is_open() != 1) {
+        logwarning("Unable to open command file!", true);
+        return 1;
+    }
 
+    char commandloop[2048];
+
+    // READ FROM FILE AND INSERT
+    while (commandfile.eof() != true) {
+        commandfile.getline(commandloop, 2048);
+        std::string commandmapped = commandloop;
+        if (commandmapped.length() > 6) {
+            std::string severitymeasured = commandmapped.substr(0,4);
+            float severitymeasured23 = stringtoint(severitymeasured.substr(0,1)) + (stringtoint(severitymeasured.substr(2,1))/10) + (stringtoint(severitymeasured.substr(3,1))/100);
+            std::string restofmessage = commandmapped.substr(6,commandmapped.length() - 6);
+            commandseveritymap.insert({restofmessage, severitymeasured23});
+        } else {
+            logwarning("Received an Invalid Combination!", true);
+            return 2;
+        }
+    }
     return 0;
 }
 
 // "/home"
 int cachefileaccess() {
+    
+    // OPEN FILE
+    std::ifstream fileaccess;
+    fileaccess.open("/home/databases/file_acces_severity.txt");
+    if (fileaccess.is_open() != 1) {
+        logwarning("Unable to open access file!", true);
+        return 1;
+    }
 
+    // VARs
+    char accessloop[2048];
+
+    // READ FROM FILE AND INSERT
+    while (fileaccess.eof() != true) {
+        fileaccess.getline(accessloop, 2048);
+        std::string accessmapped = accessloop;
+        if (accessmapped.length() > 6) {
+            std::string severitymeasured = accessmapped.substr(0,4);
+            float severitymeasured23 = stringtoint(severitymeasured.substr(0,1)) + (stringtoint(severitymeasured.substr(2,1))/10) + (stringtoint(severitymeasured.substr(3,1))/100);
+            std::string restofmessage = accessmapped.substr(6,accessmapped.length() - 6);
+            fileaccessseveritymap.insert({restofmessage, severitymeasured23});
+        } else {
+            logwarning("Received an Invalid Combination!", true);
+            return 2;
+        }
+    }
     return 0;
 }
 
 // "ADD uishfes INTO /home/test.txt:1"
 int cachefileedit() {
 
+    // EDIT FILE
+    std::ifstream editfile;
+    editfile.open("/home/databases/file_edit_severity.txt");
+    if (editfile.is_open() != 1) {
+        logwarning("Unable to open EDIT file!", true);
+        return 1;
+    }
+
+    char editloop[2048];
+
+    // READ FROM FILE AND INSERT
+    while (editfile.eof() != true) {
+        editfile.getline(editloop, 2048);
+        std::string editmapped = editloop;
+        if (editmapped.length() > 6) {
+            std::string severitymeasured = editmapped.substr(0,4);
+            float severitymeasured23 = stringtoint(severitymeasured.substr(0,1)) + (stringtoint(severitymeasured.substr(2,1))/10) + (stringtoint(severitymeasured.substr(3,1))/100);
+            std::string restofmessage = editmapped.substr(6,editmapped.length() - 6);
+            fileeditsseveritymap.insert({restofmessage, severitymeasured23});
+        } else {
+            logwarning("Received an Invalid Combination!", true);
+            return 2;
+        }
+    }
     return 0;
 }
 
 // "/home/test.txt"
 int cachefilechanges() {
 
+    // EDIT FILE
+    std::ifstream changefile;
+    changefile.open("/home/databases/file_changes_severity.txt");
+    if (changefile.is_open() != 1) {
+        logwarning("Unable to open CHANGE file!", true);
+        return 1;
+    }
+
+    char changeloop[2048];
+
+    // READ FROM FILE AND INSERT
+    while (changefile.eof() != true) {
+        changefile.getline(changeloop, 2048);
+        std::string changemapped = changeloop;
+        if (changemapped.length() > 6) {
+            std::string severitymeasured = changemapped.substr(0,4);
+            float severitymeasured23 = stringtoint(severitymeasured.substr(0,1)) + (stringtoint(severitymeasured.substr(2,1))/10) + (stringtoint(severitymeasured.substr(3,1))/100);
+            std::string restofmessage = changemapped.substr(6,changemapped.length() - 6);
+            filechangesseveritymap.insert({restofmessage, severitymeasured23});
+        } else {
+            logwarning("Received an Invalid Combination!", true);
+            return 2;
+        }
+    }
     return 0;
 }
 
