@@ -95,6 +95,7 @@ void level1access() {
     std::cout << "generate    | (PI/ROUTER/FILENAME/CLIENTKEY) | Generate a Random Key (Not Assigned)" << std::endl;
     std::cout << "ping        | (NO ARGS) | Ping Internet for Connectivity" << std::endl;
     std::cout << "pingdb      | (NO ARGS) | Ping MariaDB to Make Sure it is Working" << std::endl;
+    std::cout << "refresh     | (rp,wb)   | Refresh the Cache" << std::endl;
 }
 
 void level0access() {
@@ -233,10 +234,44 @@ void processCommand(const std::string& command) {
         foundcommand = true;
     }
 
+    // SYSTEM BACKUP
     if (command == "backup") {
         if (useraccesslevel >= 2) {
             std::cout << "Starting Full System Backup" << std::endl;
             startbackup(1);
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    // REFRESH TO CACHE INTO RAM
+    if (command == "refresh") {
+        if (useraccesslevel >= 1) {
+            if (command.length() == 10) {
+                std::string typeRAM = command.substr(8,2);
+                if (typeRAM == "rp") {
+                    std::cout << "Caching Report into RAM..." << std::endl;
+                    int returnweb = cacheseverity();
+                    if (returnweb != 0) {
+                        std::cout << "Caching Returned " << returnweb << std::endl;
+                    } else {
+                        std::cout << "Success" << std::endl;
+                    }
+                } else if (typeRAM == "wb") {
+                    std::cout << "Caching HTML into RAM..." << std::endl;
+                    int returnweb = loadHTMLINTORAM();
+                    if (returnweb != 0) {
+                        std::cout << "Caching Returned " << returnweb << std::endl;
+                    } else {
+                        std::cout << "Success" << std::endl;
+                    }
+                } else {
+                    std::cout << "No Valid Type!" << std::endl;
+                }
+            } else {
+                std::cout << "No Valid Type!" << std::endl;
+            }
         } else {
             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }

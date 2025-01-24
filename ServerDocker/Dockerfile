@@ -57,7 +57,7 @@ mariadbfunctions.cpp \
 servermaintenance.cpp \
 network.cpp \ 
 backup.cpp \
-encryption.cpp \
+Databases/encryption.cpp \
 handleapi.cpp \
 handlehttps.cpp \
 process.cpp \

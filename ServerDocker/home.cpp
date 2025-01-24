@@ -1861,6 +1861,19 @@ int setup() {
     // LOAD MAINHTML INTO RAM
     loginfo("HTML - Loading MAINHTML Into RAM...", true);
     int ram1 = loadHTMLINTORAM();
+    if (ram1 != 0) {
+// FINISH THIS EVENTUALLY
+    }
+
+
+    // LOAD MAIN SEVERITY CACHE INTO RAM
+    loginfo("COMMAND - Loading MAINCOMMAND Into RAM...", false);
+    int ram2 = cacheseverity();
+    if (ram2 != 0) {
+        sendtolog("ERROR");
+        logcritical("SEVERITY DID NOT RETURN 0", true);
+        startupchecks = startupchecks + 1;
+    }
     
 
 

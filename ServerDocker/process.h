@@ -9,7 +9,7 @@
 int processReport(std::string);
 
 // CACHE INTO AL DBs
-int cacheseverty();
+int cacheseverity();
 
 
 #endif

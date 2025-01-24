@@ -29,7 +29,7 @@
 #include "servermaintenance.h"
 #include "backup.h"
 #include "network.h"
-#include "encryption.h"
+#include "Databases/encryption.h"
 #include "handleapi.h"
 #include "handlehttps.h"
 #include "process.h"
@@ -82,13 +82,13 @@ extern std::atomic<int> calculatingtime;
 ////////////////////////////////////////////////
 
 // "bash"
-extern std::atomic<std::map<std::string, int>> commandseveritymap;
+extern std::map<std::string, float> commandseveritymap;
 
 // "/home"
-extern std::atomic<std::map<std::string, int>> fileaccessseveritymap;
+extern std::map<std::string, float> fileaccessseveritymap;
 
 // "ADD uishfes INTO /home/test.txt:1"
-extern std::atomic<std::map<std::string, int>> fileeditsseveritymap;
+extern std::map<std::string, float> fileeditsseveritymap;
 
 // "/home/test.txt"
-extern std::atomic<std::map<std::string, int>> filechangesseveritymap;
+extern std::map<std::string, float> filechangesseveritymap;
