@@ -1598,10 +1598,8 @@ int setup() {
 
 
 
-
     // PING MARIADB SERVER TO VERIFY CONNECTION
     startupchecks = startupchecks + mariadb_ping();
-
 
 
 
@@ -1871,8 +1869,10 @@ int setup() {
     int ram2 = cacheseverity();
     if (ram2 != 0) {
         sendtolog("ERROR");
-        logcritical("SEVERITY DID NOT RETURN 0", true);
-        startupchecks = startupchecks + 1;
+        logcritical("SEVERITY RETURNED ", false);
+        std::cout << ram2 << std::endl;
+        //startupchecks = startupchecks + 1;
+    // FIX THIS
     }
     
 

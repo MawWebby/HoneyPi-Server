@@ -34,6 +34,7 @@ void readfrompacketlogger();
 
 // CONVERSIONS
 int stringtoint(std::string);
+std::string inttostring(int);
 
 // GENERATORS
 std::string generateRandomStringHoneyPI();
