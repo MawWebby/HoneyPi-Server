@@ -547,6 +547,7 @@ std::string inttostring(int value) {
                 break;
         }
     }
+    return returnvalue;
 }
 
 
