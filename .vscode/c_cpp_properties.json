@@ -13,7 +13,10 @@
             "intelliSenseMode": "linux-gcc-arm64",
             "compilerPath": "/usr/bin/g++",
             "compilerArgs": [
-                "-lmariadbcpp"
+                "-lmariadbcpp",
+                "-lssl",
+                "-lcrypto",
+                "-lcurl"
             ]
         }
     ],
