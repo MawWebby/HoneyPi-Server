@@ -59,7 +59,6 @@ filechanges = {
 
 //////////////////////////
 // FILECHANGES AFFECTED //
-**********************&*&*&*&&*&*&&*&&*&*&*&*&&***&*&
 fileedits = {
 "ADD uishfes INTO /home/test.txt:1"
 "EDIT iugs INTO /home/iuaer:23"
