@@ -2114,8 +2114,23 @@ int main() {
                 timer5.store(time(NULL));
                 analyzeALLcogfiles();
             }
+*/
 
+            // TIMERS [6] CHECK
+            long int differenceintime6 = time(NULL) - timer6;
+            if (differenceintime6 >= 180) {
+                std::cout << "TIMER6 START" << std::endl;
+                timer6.store(time(NULL));
 
+                for (const auto& pair : ip11829) {
+                    std::cout << "IP: " << pair.first << ", Packets: " << pair.second << std::endl;
+                    if ((pair.second - 1) <= 0) {
+                        ip11829.erase(pair.first);
+                    } else {
+                        ip11829[pair.first] = pair.second - 1;
+                    }
+                }
+            }
         }
 
         // ENCOUNTERED ERRORS
