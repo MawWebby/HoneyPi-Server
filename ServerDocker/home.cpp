@@ -2108,25 +2108,13 @@ int main() {
                 maintenancescriptSIXHOUR();
             }
 
-            // TIMERS [5] CHECK
-            long int differenceintime5 = time(NULL) - timer5.load();
-            if (differenceintime5 >= 1800 || cogswaiting >= 100) {
-                timer5.store(time(NULL));
-                analyzeALLcogfiles();
-            }
-*/
-
-            // TIMERS [6] CHECK
+            // TIMERS [6] CHECK - Rotate Through DB and Remove Packets from IPs
             long int differenceintime6 = time(NULL) - timer6;
             if (differenceintime6 >= 180) {
-                std::cout << "TIMER6 START" << std::endl;
                 timer6.store(time(NULL));
-
                 for (const auto& pair : ip11829) {
-                    std::cout << "IP: " << pair.first << ", Packets: " << pair.second << std::endl;
-                    if ((pair.second - 1) <= 0) {
-                        ip11829.erase(pair.first);
-                    } else {
+                    // std::cout << "IP: " << pair.first << ", Packets: " << pair.second << std::endl;
+                    if ((pair.second) > 0) {
                         ip11829[pair.first] = pair.second - 1;
                     }
                 }
