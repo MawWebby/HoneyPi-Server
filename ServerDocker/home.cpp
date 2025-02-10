@@ -2114,7 +2114,7 @@ int main() {
                 timer6.store(time(NULL));
                 for (const auto& pair : ip11829) {
                     // std::cout << "IP: " << pair.first << ", Packets: " << pair.second << std::endl;
-                    if ((pair.second) > 0) {
+                    if ((pair.second) > 0 && (pair.second) < 15) {
                         ip11829[pair.first] = pair.second - 1;
                     }
                 }

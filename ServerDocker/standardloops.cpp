@@ -651,7 +651,7 @@ std::string generateRandomClientKey() {
 ///////////////////////////////
 int remove11829packet(std::string ipaddr) {
     int packetstot = ip11829[ipaddr];
-    if(packetstot != 0) {
+    if(packetstot != 0  && packetstot < 15) {
         ip11829[ipaddr] = packetstot - 1;
         return packetstot;
     } else {
