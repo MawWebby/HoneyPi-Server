@@ -643,3 +643,19 @@ std::string generateRandomClientKey() {
 
     return random_string;
 }
+
+
+
+///////////////////////////////
+//// REMOVE PACKET FROM IP ////
+///////////////////////////////
+int remove11829packet(std::string ipaddr) {
+    int packetstot = ip11829[ipaddr];
+    if(packetstot != 0) {
+        ip11829[ipaddr] = packetstot - 1;
+        return packetstot;
+    } else {
+       return 0; 
+    }
+    return -1;
+}

@@ -42,6 +42,10 @@ std::string generateRandomStringRouterAPI();
 std::string generateRandomFileName();
 std::string generateRandomClientKey();
 
+// REMOVE PACKETS
+int remove11829packet(std::string);
+
+
 #endif
 
 
