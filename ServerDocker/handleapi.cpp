@@ -36,6 +36,7 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
     
     // START PROCESSING HERE
     bool completedprocessing = false;
+    std::cout << header1 << ":" << data1 << ":" << header2 << ":" << data2 << std::endl;
 
     sendtolog(header1 + "|");
     sendtolog(data1 + "|");
@@ -61,8 +62,32 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
         }
 
         // ESTABLISH CONNECTION AND VERIFY API KEYS; CREATE NEW TOKEN KEYS
+        std::cout << "1" << std::endl;
         if (data1 == "ESTABLISH") {
+            std::cout << "YES" << std::endl;
+            if (header2 == "LOGIN" && data2.length() == 68) {
+                std::cout << "MAYBE" << std::endl;
+                if (data2.substr(0,4) == "API=") {
+                    std::string apiKEY = data2.substr(4,64);
+                    std::cout << "SHOULD HAVE SENT SOMETHING" << std::endl;
+                    // FIX THIS
+                    // FUTURE MARIADB COMMAND TO VERIFY APIKEY
+                    bool foundindb = true;
 
+                    if (foundindb == true) {
+                        std::string newTOKEN = generateRandomStringHoneyPI();
+                        // FIX THIS
+                        // INSERT NEW TOKEN INTO DB
+                        std::cout << "SHOULD HAVE GENNED" << std::endl;
+                        std::string data3 = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent-Length: 90\n\n{state: success; TOKEN: " + newTOKEN + "}";
+                        int send_res=send(clientID,data3.c_str(),data3.length(),0);
+                    }
+                } else {
+                    int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
+                }
+            } else {
+                int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
+            }
         }
 
         // CHECK FOR UPDATES SCRIPT
