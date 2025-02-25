@@ -62,26 +62,34 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
         }
 
         // ESTABLISH CONNECTION AND VERIFY API KEYS; CREATE NEW TOKEN KEYS
-        std::cout << "1" << std::endl;
         if (data1 == "ESTABLISH") {
-            std::cout << "YES" << std::endl;
             if (header2 == "LOGIN" && data2.length() == 68) {
-                std::cout << "MAYBE" << std::endl;
                 if (data2.substr(0,4) == "API=") {
                     std::string apiKEY = data2.substr(4,64);
-                    std::cout << "SHOULD HAVE SENT SOMETHING" << std::endl;
-                    // FIX THIS
-                    // FUTURE MARIADB COMMAND TO VERIFY APIKEY
-                    bool foundindb = true;
+                    std::string newTOKEN;
 
-                    if (foundindb == true) {
-                        std::string newTOKEN = generateRandomStringHoneyPI();
-                        // FIX THIS
-                        // INSERT NEW TOKEN INTO DB
-                        std::cout << "SHOULD HAVE GENNED" << std::endl;
-                        std::string data3 = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent-Length: 90\n\n{state: success; TOKEN: " + newTOKEN + "}";
-                        int send_res=send(clientID,data3.c_str(),data3.length(),0);
+                    // MAP OPERATIONS
+                    if (honeypotauthtotoken.find(apiKEY)->second == "") {
+                        newTOKEN = generateRandomStringHoneyPI();
+                        honeypotauthtotoken[apiKEY] = newTOKEN;
+                    } else {
+                        if (honeypotauthtotoken.find(apiKEY)->second.length() == 64) {
+                            if (previoushoneypotauth.find(apiKEY)->second.length() != 64) {
+                                previoushoneypotauth[apiKEY] = honeypotauthtotoken[apiKEY];
+                            } else {
+                                previoushoneypotauth2[apiKEY] = previoushoneypotauth[apiKEY];
+                                previoushoneypotauth[apiKEY] = honeypotauthtotoken[apiKEY];
+                            }
+                            newTOKEN = honeypotauthtotoken.find(apiKEY)->second;
+                        } else {
+                            newTOKEN = generateRandomStringHoneyPI();
+                            previoushoneypotauth[apiKEY] = honeypotauthtotoken[apiKEY];
+                            honeypotauthtotoken[apiKEY] = newTOKEN;
+                        }
                     }
+                    
+                    std::string data3 = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent-Length: 90\n\n{state: success; TOKEN: " + newTOKEN + "}";
+                    int send_res=send(clientID,data3.c_str(),data3.length(),0);
                 } else {
                     int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
                 }

@@ -171,6 +171,13 @@ int packetspam = 0;
 
 
 
+// HONEYPOT MAP
+std::map <std::string, std::string>honeypotauthtotoken;
+std::map <std::string, std::string>previoushoneypotauth;
+std::map <std::string, std::string>previoushoneypotauth2;
+
+
+
 
 // SSL INFORMATION
 SSL_CTX *ctx = SSL_CTX_new(TLS_server_method());
@@ -1599,7 +1606,7 @@ int setup() {
 
 
     // PING MARIADB SERVER TO VERIFY CONNECTION
-    startupchecks = startupchecks + mariadb_ping();
+    //startupchecks = startupchecks + mariadb_ping();
 
 
 
