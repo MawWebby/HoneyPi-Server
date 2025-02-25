@@ -57,6 +57,12 @@ extern std::string honeyversion;
 extern std::map<std::string, int> ip11829;
 extern std::map<std::string, int> ip443;
 
+// HONEYPOT MAP
+extern std::map <std::string, std::string>honeypotauthtotoken;
+extern std::map <std::string, std::string>previoushoneypotauth;
+extern std::map <std::string, std::string>previoushoneypotauth2;
+
+
 // PACKET SPAM
 extern int packetspam;
 
