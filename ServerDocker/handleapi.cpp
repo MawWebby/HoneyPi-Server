@@ -364,7 +364,7 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
   return 255;  
 }
 
-void apiconnectionthread(int clientID, std::string a11829, std::string b11829, std::string c11829) {
+void apiconnectionthread(int clientID, std::string ipaddress, std::string b11829, std::string c11829) {
     char buffer[4096] = {0};
     std::string clientIDperserver = "ClientID: " + clientID;
     int readrun = read(clientID, buffer, 4096);
@@ -372,7 +372,8 @@ void apiconnectionthread(int clientID, std::string a11829, std::string b11829, s
     
     // CHECK FOR ERROR
     if (readrun == -1) {
-        perror("read failed:");
+        logwarning("Client Disconnected Before Reading...", true);
+        ip11829[ipaddress] = ip11829[ipaddress] + 10;
     }
 
     // CONTINUE PROCESSING
@@ -380,7 +381,7 @@ void apiconnectionthread(int clientID, std::string a11829, std::string b11829, s
     std::string contenttype = "Content: " + bufferstd + "*END-OF-MESSAGE*";
 
     // SAVE PACKET TO PACKETLOG
-    packetlogger("[P11829] - ALLOWED - " + a11829 + " - " + b11829 + " - " + c11829 + " - " + clientIDperserver + " - " + readrunreturn + " - " + contenttype);
+    packetlogger("[P11829] - ALLOWED - " + ipaddress + " - " + b11829 + " - " + c11829 + " - " + clientIDperserver + " - " + readrunreturn + " - " + contenttype);
 
     // ANALYZE COMMANDS
     if (bufferstd.length() >= 50) {
@@ -501,152 +502,152 @@ void handle11829Connections(int server_fd4) {
                 loginfo("11829 port initialized", true);
                 switch (apithreadnumber) {
                     case 0: {
-                        std::thread apithreadnumber00(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber00(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber00.detach();
                         break;
                     }
                     case 1: {
-                        std::thread apithreadnumber01(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber01(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber01.detach();
                         break;
                     }
                     case 2: {
-                        std::thread apithreadnumber02(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber02(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber02.detach();
                         break;
                     }
                     case 3: {
-                        std::thread apithreadnumber03(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber03(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber03.detach();
                         break;
                     }
                     case 4: {
-                        std::thread apithreadnumber04(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber04(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber04.detach();
                         break;
                     }
                     case 5: {
-                        std::thread apithreadnumber05(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber05(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber05.detach();
                         break;
                     }
                     case 6: {
-                        std::thread apithreadnumber06(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber06(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber06.detach();
                         break;
                     }
                     case 7: {
-                        std::thread apithreadnumber07(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber07(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber07.detach();
                         break;
                     }
                     case 8: {
-                        std::thread apithreadnumber08(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber08(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber08.detach();
                         break;
                     }
                     case 9: {
-                        std::thread apithreadnumber09(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber09(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber09.detach();
                         break;
                     }
                     case 10: {
-                        std::thread apithreadnumber10(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber10(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber10.detach();
                         break;
                     }
                     case 11: {
-                        std::thread apithreadnumber11(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber11(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber11.detach();
                         break;
                     }
                     case 12: {
-                        std::thread apithreadnumber12(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber12(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber12.detach();
                         break;
                     }
                     case 13: {
-                        std::thread apithreadnumber13(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber13(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber13.detach();
                         break;
                     }
                     case 14: {
-                        std::thread apithreadnumber14(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber14(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber14.detach();
                         break;
                     }
                     case 15: {
-                        std::thread apithreadnumber15(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber15(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber15.detach();
                         break;
                     }
                     case 16: {
-                        std::thread apithreadnumber16(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber16(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber16.detach();
                         break;
                     }
                     case 17: {
-                        std::thread apithreadnumber17(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber17(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber17.detach();
                         break;
                     }
                     case 18: {
-                        std::thread apithreadnumber18(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber18(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber18.detach();
                         break;
                     }
                     case 19: {
-                        std::thread apithreadnumber19(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber19(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber19.detach();
                         break;
                     }
                     case 20: {
-                        std::thread apithreadnumber20(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber20(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber20.detach();
                         break;
                     }
                     case 21: {
-                        std::thread apithreadnumber21(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber21(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber21.detach();
                         break;
                     }
                     case 22: {
-                        std::thread apithreadnumber22(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber22(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber22.detach();
                         break;
                     }
                     case 23: {
-                        std::thread apithreadnumber23(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber23(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber23.detach();
                         break;
                     }
                     case 24: {
-                        std::thread apithreadnumber24(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber24(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber24.detach();
                         break;
                     }
                     case 25: {
-                        std::thread apithreadnumber25(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber25(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber25.detach();
                         break;
                     }
                     case 26: {
-                        std::thread apithreadnumber26(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber26(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber26.detach();
                         break;
                     }
                     case 27: {
-                        std::thread apithreadnumber27(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber27(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber27.detach();
                         break;
                     }
                     case 28: {
-                        std::thread apithreadnumber28(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber28(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber28.detach();
                         break;
                     }
                     case 29: {
-                        std::thread apithreadnumber29(apiconnectionthread, clientID, connectionfrom, foundindb, statusallow);
+                        std::thread apithreadnumber29(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
                         apithreadnumber29.detach();
                         break;
                     }
