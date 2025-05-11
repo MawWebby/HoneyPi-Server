@@ -15,9 +15,10 @@ extern int currentyear;
 std::string timedetector();
 
 // LOG OUTPUT COMMANDS
-void sendtolog(std::string);
-void sendtologopen(std::string);
+void sendtolog(std::string, bool);
+void sendtologopen(std::string, bool);
 void logdebug(std::string, bool);
+void logconsole(std::string, bool);
 void loginfo(std::string, bool);
 void logwarning(std::string, bool);
 void logcritical(std::string, bool);
@@ -44,6 +45,9 @@ std::string generateRandomClientKey();
 
 // REMOVE PACKETS
 int remove11829packet(std::string);
+
+// REMOVE PERIODS AND IPADDRS
+std::string ipstring(std::string);
 
 
 #endif
