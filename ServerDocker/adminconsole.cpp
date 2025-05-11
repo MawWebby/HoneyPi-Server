@@ -401,6 +401,15 @@ void processCommand(const std::string& command) {
         firstfour = command;
     }
 
+    // TEST IPSTRING FUNCTION
+    if (firstseveral == "ipstring") {
+        if (useraccesslevel >= 1) {
+            if (command.length() > 15) {
+                std::cout << "RETURNED FROM IPSTRING: " << ipstring(command.substr(9, command.length() - 9)) << std::endl;
+            }
+        }
+    }
+
     // GENERATE RANDOM STRINGS FOR API TOKENS AND AMONG OTHER THINGS
     if (firstseveral == "generate") {
         if (useraccesslevel >= 1) {
@@ -775,7 +784,7 @@ void interactiveTerminal() {
                 break;
         }
         command = terminalinput(false);
-        sendtolog("[CONSOLE] - Received Command: " + command);
+        logconsole("Received Command: " + command, true);
 
         if (command.empty() != true) {
             processCommand(command);
