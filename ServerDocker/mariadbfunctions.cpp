@@ -69,10 +69,10 @@ int mariadb_ping() {
         sql::ResultSet *res = stmnt->executeQuery("SELECT user FROM credentials");
         
         if (res->next() == true) {
-            sendtolog("OK");
+            sendtolog("OK", false);
             return 0;
         } else {
-            sendtolog("ERROR");
+            logcritical("ERROR", true);
             return 1;
         }
         //std::cout << "User = " << res->getString(1);
@@ -80,7 +80,7 @@ int mariadb_ping() {
 
     // CATCH EXCEPTIONS
     catch(sql::SQLException& e){
-        sendtolog("ERROR");
+        logcritical("ERROR (CAUGHT IN EXCEPTION)", true);
         crashloop(5, 1, false, "MARIADB-HANDLER", "ERROR IN TASK: ", e.what());
         std::cerr << "Error in task: " << e.what() << std::endl;
         return 1;
@@ -109,7 +109,7 @@ int mariadb_ADDIPADDR(std::string ipaddr) {
         
         // Execute query
         std::string executequery34 = mariadbaddaddrheader + ipaddr + "'," + "1," + "false," + std::to_string(timetoreset) + ")";
-        sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+        stmnt->executeQuery(executequery34);
         
         return 0;
     }
@@ -184,7 +184,7 @@ int mariadb_BLOCKIPADDR(std::string ipaddr) {
         
         // Execute query
         std::string executequery36 = mariadbblockipaddrheader + ipaddr + "'";
-        sql::ResultSet *res6 = stmnt->executeQuery(executequery36);
+        stmnt->executeQuery(executequery36);
         
         return 0;
     }
@@ -218,7 +218,7 @@ int mariadb_UNBLOCKIPADDR(std::string ipaddr) {
         
         // Execute query
         std::string executequery36 = mariadbubblockipaddrheader + ipaddr + "'";
-        sql::ResultSet *res6 = stmnt->executeQuery(executequery36);
+        stmnt->executeQuery(executequery36);
 
         return 0;
     } 
@@ -274,7 +274,7 @@ int mariadb_ADDPACKETTOIPADDR(std::string ipaddr) {
             
             // Execute query
             std::string executequery36 = mariadbwritepacketcountipaddr + std::to_string(testers) + mariadbwritepacketcountipaddr2 + ipaddr + "'";
-            sql::ResultSet *res = stmnt->executeQuery(executequery36);
+            stmnt->executeQuery(executequery36);
             
             return 0;
         } else {
@@ -334,7 +334,7 @@ int mariadb_REMOVEPACKETFROMIPADDR(std::string ipaddr) {
             
             // Execute query
             std::string executequery36 = mariadbwritepacketcountipaddr + std::to_string(testers) + mariadbwritepacketcountipaddr2 + ipaddr + "'";
-            sql::ResultSet *res = stmnt->executeQuery(executequery36);
+            stmnt->executeQuery(executequery36);
             
             return 0;
         } else {
@@ -415,7 +415,7 @@ int mariadb_REMOVEOLDIPADDR(std::string ipaddr) {
         
         // Execute query
         std::string executequery36 = mariadbremoveoldipaddr + ipaddr + "'";
-        sql::ResultSet *res = stmnt->executeQuery(executequery36);
+        stmnt->executeQuery(executequery36);
 
         return 0;
     } 
@@ -462,7 +462,7 @@ int mariadb_MAINTENANCE() {
                     int test = 0;
                 } else {
                     // REMOVE OLD IP ADDRESSES THAT DON'T CORRESPOND TO ANYTHING IMPORTANT
-                    int remove = mariadb_REMOVEOLDIPADDR(ipaddr);
+                    mariadb_REMOVEOLDIPADDR(ipaddr);
                 }
             }
         }
@@ -664,7 +664,7 @@ int mariadbRESET_PASSWORD(std::string user, std::string pass, std::string pass2)
             
             // Execute query
             std::string executequery36 = mariadbresetpasswordheader + pass + "' WHERE user = '" + user + "'";
-            sql::ResultSet *res = stmnt->executeQuery(executequery36);
+            stmnt->executeQuery(executequery36);
 
             return 0;
         }
@@ -810,7 +810,7 @@ int mariadbNEW_USER(std::string username, std::string password, std::string pass
         
         // Execute query
         std::string executequery32 = insertintocredheader + valuestoinsertupe + valuesheader + "'" + username + "'" + commaheader + "'" + password + "'" + commaheader + "'" + emailaddress + "'" + commaheader + " true" + ")";
-        sql::ResultSet *res6 = stmnt->executeQuery(executequery32);
+        stmnt->executeQuery(executequery32);
 
 
         return 0;
@@ -845,7 +845,7 @@ int mariadbINSERT_PIKEY(std::string honeypikey, std::string username) {
         
         // Execute query
         std::string executequery34 = updatecredheader + valuetoinsertSETPIAPI + "'" + honeypikey + "'" + valuetoinsertWHERE + "'" + username + "'";
-        sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+        stmnt->executeQuery(executequery34);
 
         return 0;
     } 
@@ -883,7 +883,7 @@ int mariadbINSERT_ROUTERKEY(std::string routerkey, int slottoinsert, std::string
         
         // Execute query
         std::string executequery34 = updatecredheader + valuetoinsertSETPIAPI + "'" + routerkey + "'" + valuetoinsertWHERE + "'" + username + "'";
-        sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+        stmnt->executeQuery(executequery34);
 
         return 0;
     } 
@@ -925,7 +925,6 @@ bool mariadbVALIDATE_USER(std::string username, std::string password) {
             *hello >> piapi;
 
             if (piapi == password) {
-                credentialsmatch = true;
                 // Instantiate Driver
                 sql::Driver* driver = sql::mariadb::get_driver_instance();
 
@@ -956,7 +955,6 @@ bool mariadbVALIDATE_USER(std::string username, std::string password) {
                     }
                 }
             } else {
-                credentialsmatch = false;
                 return false;
             }
         } else {
@@ -998,7 +996,7 @@ int mariadbINSERT_SESSIONKEY(std::string username, std::string sessionToken) {
         
         // Execute query
         std::string executequery34 = mariadbinsertsessionheader + sessionToken + "' WHERE user='" + username + "'";
-        sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+        stmnt->executeQuery(executequery34);
 
         return 0;
     } 
@@ -1032,7 +1030,7 @@ int mariadbCHECKIN_HONEYPI(std::string apikey) {
         
         // Execute query
         std::string executequery34 = mariadbcheckinhoneypiheader + apikey + "'";
-        sql::ResultSet *res6 = stmnt->executeQuery(executequery34);
+        stmnt->executeQuery(executequery34);
 
         return 0;
     } 
@@ -1103,7 +1101,7 @@ int mariadbREMOVE_SESSIONTOKENS() {
             
             // Execute query
             std::string executequery36 = mariadbremovesessionID24hours;
-            sql::ResultSet *res8 = stmnt->executeQuery(executequery36);
+            stmnt->executeQuery(executequery36);
         }
         return 0;
     } 
@@ -1201,7 +1199,7 @@ int mariadbREMOVE_PIAPI(std::string user) {
         
         // Execute query
         std::string executequery36 = mariadbremovepiapiheader + user + "'";
-        sql::ResultSet *res = stmnt->executeQuery(executequery36);
+        stmnt->executeQuery(executequery36);
 
         return 0;
     } 
