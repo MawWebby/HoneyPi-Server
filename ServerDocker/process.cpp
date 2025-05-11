@@ -92,8 +92,7 @@ int processReport(std::string filename) {
 
     // CHECK FOR VALID PARAMETERS
     if (filename == "") {
-        logwarning("Log File NULL: ", false);
-        sendtolog(filename);
+        logwarning("Log File NULL: " + filename, true);
         return 254;
         return 254;
     }
@@ -108,8 +107,7 @@ int processReport(std::string filename) {
     sleep(1);
 
     if (reportstream.is_open() != 1) {
-        logcritical("UNABLE TO OPEN INPUT FILE STREAM: ", false);
-        sendtolog(filename);
+        logcritical("UNABLE TO OPEN INPUT FILE STREAM: " + filename, false);
         if (reportstream.bad() == true) {
             logcritical("Received Read/Write Error!", true);
             return 11;
@@ -439,8 +437,7 @@ int processReport(std::string filename) {
                             useronreport = useronreport + 1;
                             passonreport = passonreport + 1;
                         } else {
-                            logwarning("Received Invalid Combination of User/Pass - ", false);
-                            sendtolog(linestr);
+                            logwarning("Received Invalid Combination of User/Pass - " + linestr, false);
                         }
 
                     }
@@ -669,12 +666,12 @@ int cachefilechanges() {
 
 // Main Loop
 int cacheseverity() {
-    int returnvalues;
-    returnvalues = returnvalues + cachecommandseverity();
-    returnvalues = returnvalues + cachefileaccess();
-    returnvalues = returnvalues + cachefileedit();
-    returnvalues = returnvalues + cachefilechanges();
-    return returnvalues;
+    int returnvalues2;
+    returnvalues2 = cachecommandseverity();
+    returnvalues2 = returnvalues2 + cachefileaccess();
+    returnvalues2 = returnvalues2 + cachefileedit();
+    returnvalues2 = returnvalues2 + cachefilechanges();
+    return returnvalues2;
 }
 
 
