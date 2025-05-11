@@ -73,17 +73,17 @@ int loadmainHTMLintoram() {
         int length = mainhtmlpayload.length();
         mainhtmlpayload = httpsuccess + std::to_string(length) + beforepayload + mainhtmlpayload;
         htmlmain.close();
-        sendtolog("Done");
+        sendtolog("Done", false);
         return 0;
     } else {
         mainhtmlpayload = httpservererror;
         htmlmain.close();
-        sendtolog("ERROR");
+        sendtolog("ERROR", true);
         return 1;
     }
     mainhtmlpayload = httpservererror;
     htmlmain.close();
-    sendtolog("ERROR");
+    sendtolog("ERROR", true);
     return 1;
 }
 
@@ -111,17 +111,17 @@ int loadpricingHTMLintoram() {
         int length = pricinghtmlpayload.length();
         pricinghtmlpayload = httpsuccess + std::to_string(length) + beforepayload + pricinghtmlpayload;
         htmlprice.close();
-        sendtolog("Done");
+        sendtolog("Done", false);
         return 0;
     } else {
         pricinghtmlpayload = httpservererror;
         htmlprice.close();
-        sendtolog("ERROR");
+        sendtolog("ERROR", true);
         return 1;
     }
     pricinghtmlpayload = httpservererror;
     htmlprice.close();
-    sendtolog("ERROR");
+    sendtolog("ERROR", true);
     return 1;
 }
 
@@ -149,17 +149,17 @@ int loadblogHTMLintoram() {
         int length = blogpayload.length();
         blogpayload = httpsuccess + std::to_string(length) + beforepayload + blogpayload;
         bloghtml.close();
-        sendtolog("Done");
+        sendtolog("Done", false);
         return 0;
     } else {
         blogpayload = httpservererror;
         bloghtml.close();
-        sendtolog("ERROR");
+        sendtolog("ERROR", true);
         return 1;
     }
     blogpayload = httpservererror;
     bloghtml.close();
-    sendtolog("ERROR");
+    sendtolog("ERROR", true);
     return 1;
 }
 
@@ -188,17 +188,17 @@ int loadloginHTMLintoram() {
         int length = loginpayload.length();
         loginpayload = httpsuccess + std::to_string(length) + beforepayload + loginpayload;
         loginhtml.close();
-        sendtolog("Done");
+        sendtolog("Done", false);
         return 0;
     } else {
         loginpayload = httpservererror;
         loginhtml.close();
-        sendtolog("ERROR");
+        sendtolog("ERROR", true);
         return 1;
     }
     loginpayload = httpservererror;
     loginhtml.close();
-    sendtolog("ERROR");
+    sendtolog("ERROR", true);
     return 1;
 }
 
@@ -226,17 +226,17 @@ int loadsignupHTMLintoram() {
         int length = signuppayload.length();
         signuppayload = httpsuccess + std::to_string(length) + beforepayload + signuppayload;
         signuphtml.close();
-        sendtolog("Done");
+        sendtolog("Done", false);
         return 0;
     } else {
         loginpayload = httpservererror;
         signuphtml.close();
-        sendtolog("ERROR");
+        sendtolog("ERROR", true);
         return 1;
     }
     loginpayload = httpservererror;
     signuphtml.close();
-    sendtolog("ERROR");
+    sendtolog("ERROR", true);
     return 1;
 }
 
@@ -264,17 +264,17 @@ int loadgetstartedHTMLintoram() {
         int length = getstartedpayload.length();
         getstartedpayload = httpsuccess + std::to_string(length) + beforepayload + getstartedpayload;
         getstartedstream.close();
-        sendtolog("Done");
+        sendtolog("Done", false);
         return 0;
     } else {
         getstartedpayload = httpservererror;
         getstartedstream.close();
-        sendtolog("ERROR");
+        sendtolog("ERROR", true);
         return 1;
     }
     getstartedpayload = httpservererror;
     getstartedstream.close();
-    sendtolog("ERROR");
+    sendtolog("ERROR", true);
     return 1;
 }
 
@@ -302,17 +302,17 @@ int loadaccountHTMLintoram() {
         int length = accountpayload.length();
         accountpayload = httpsuccess + std::to_string(length) + beforepayload + accountpayload;
         accountpayloadfile.close();
-        sendtolog("Done");
+        sendtolog("Done", false);
         return 0;
     } else {
         accountpayload = httpservererror;
         accountpayloadfile.close();
-        sendtolog("ERROR");
+        sendtolog("ERROR", true);
         return 1;
     }
     accountpayload = httpservererror;
     accountpayloadfile.close();
-    sendtolog("ERROR");
+    sendtolog("ERROR", true);
     return 1;
 }
 
@@ -340,17 +340,17 @@ int loadinstallHTMLintoram() {
         int length = installhtmlpayload.length();
         installhtmlpayload = httpsuccess + std::to_string(length) + beforepayload + installhtmlpayload;
         installHTMLFile.close();
-        sendtolog("Done");
+        sendtolog("Done", false);
         return 0;
     } else {
         installhtmlpayload = httpservererror;
         installHTMLFile.close();
-        sendtolog("ERROR");
+        sendtolog("ERROR", true);
         return 1;
     }
     installhtmlpayload = httpservererror;
     installHTMLFile.close();
-    sendtolog("ERROR");
+    sendtolog("ERROR", true);
     return 1;
 }
 
@@ -378,17 +378,17 @@ int loadinstallscriptSHHTMLintoram() {
         int length = installscriptSHpayload.length();
         installscriptSHpayload = httpsuccess + std::to_string(length) + beforepayload + installscriptSHpayload;
         installSHFile.close();
-        sendtolog("Done");
+        sendtolog("Done", false);
         return 0;
     } else {
         installscriptSHpayload = httpservererror;
         installSHFile.close();
-        sendtolog("ERROR");
+        sendtolog("ERROR", true);
         return 1;
     }
     installscriptSHpayload = httpservererror;
     installSHFile.close();
-    sendtolog("ERROR");
+    sendtolog("ERROR", true);
     return 1;
 }
 
@@ -418,12 +418,10 @@ int loadHTMLINTORAM() {
     loginfo("HTML - Finishing Loading into RAM...", false);
 
     if (returnvalue != 0) {
-        sendtolog("ERROR");
-        logwarning("HTML - LOADING INTO RAM RETURNED VALUE - ", false);
-        sendtologopen(std::to_string(returnvalue));
-        sendtolog(" - CONTINUING");
+        sendtolog("ERROR", true);
+        logwarning("HTML - LOADING INTO RAM RETURNED VALUE - " + std::to_string(returnvalue) + " - Continuing", false);
     } else {
-        sendtolog("DONE");
+        sendtolog("DONE", false);
     }
     return returnvalue;
 }
@@ -609,11 +607,10 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
         char buffer[2048] = {0};
         int bytes_read = SSL_read(ssl, buffer, sizeof(buffer) - 1);
         int timer89 = 0;
-//        logwarning(buffer, true);
         int timer89max = 5;
         bool completed23 = false;
-        if (buffer != "" && sizeof(buffer) >= 7) {
-            std::string bufferstring = buffer;
+        std::string bufferstring = buffer;
+        if (bufferstring != "" && bytes_read >= 7 && sizeof(buffer) >= 7) {
             std::string headerrequest = bufferstring.substr(0,4);
             
             if (bufferstring.length() >= 7) {
@@ -631,7 +628,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
                         // MAIN PAGE
                         if (nextletter == " H") {
-                            int send_res = SSL_write(ssl, mainhtmlpayload.c_str(),mainhtmlpayload.length());
+                            SSL_write(ssl, mainhtmlpayload.c_str(),mainhtmlpayload.length());
                             //int send_res=send(new_socket,mainhtmlpayload.c_str(),mainhtmlpayload.length(),0);
                             pagefound = true;
                         }
@@ -641,7 +638,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                             //index.html
                             std::string indexfulldictionary = bufferstring.substr(5, 10);
                             if (indexfulldictionary == "index.html") {
-                                int send_res=SSL_write(ssl,mainhtmlpayload.c_str(),mainhtmlpayload.length());
+                                SSL_write(ssl,mainhtmlpayload.c_str(),mainhtmlpayload.length());
                                 pagefound = true;
                             }
                         }
@@ -651,7 +648,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                             // pricing.html
                             std::string pricingfulldictionary = bufferstring.substr(5,12);
                             if (pricingfulldictionary == "pricing.html") {
-                                int send_res=SSL_write(ssl,pricinghtmlpayload.c_str(),pricinghtmlpayload.length());
+                                SSL_write(ssl,pricinghtmlpayload.c_str(),pricinghtmlpayload.length());
                                 pagefound = true;
                             }
                         }
@@ -661,7 +658,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                             // blog.html
                             std::string blogfulldictionary = bufferstring.substr(5,9);
                             if (blogfulldictionary == "blog.html") {
-                                int send_res=SSL_write(ssl,blogpayload.c_str(),blogpayload.length());
+                                SSL_write(ssl,blogpayload.c_str(),blogpayload.length());
                                 pagefound = true;
                             }
                         }
@@ -671,7 +668,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                             // login.html
                             std::string loginfulldictionary = bufferstring.substr(5,10);
                             if (loginfulldictionary == "login.html") {
-                                int send_res=SSL_write(ssl,loginpayload.c_str(),loginpayload.length());
+                                SSL_write(ssl,loginpayload.c_str(),loginpayload.length());
                                 pagefound = true;
                             }
                         }
@@ -686,21 +683,21 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                             // TOSFREE.HTML
                             if (TOSfulldictionary == "TOSFree.htm") {
                                 std::string tospayload = readTOSFree();
-                                int send_res=SSL_write(ssl,tospayload.c_str(),tospayload.length());
+                                SSL_write(ssl,tospayload.c_str(),tospayload.length());
                                 pagefound = true;
                             }
 
                             // TOSPRO.HTML
                             if (TOSfulldictionary == "TOSPro.html") {
                                 std::string tospayload = readTOSPro();
-                                int send_res=SSL_write(ssl,tospayload.c_str(),tospayload.length());
+                                SSL_write(ssl,tospayload.c_str(),tospayload.length());
                                 pagefound = true;
                             }
 
                             // TOSEnterpri
                             if (TOSfulldictionary == "TOSEnterpri") {
                                 std::string tospayload = readTOSEnterprise();
-                                int send_res=SSL_write(ssl,tospayload.c_str(),tospayload.length());
+                                SSL_write(ssl,tospayload.c_str(),tospayload.length());
                                 pagefound = true;
                             }
                         }
@@ -711,7 +708,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                             std::string privacyfulldictionary = bufferstring.substr(5,18);
                             if (privacyfulldictionary == "privacypolicy.html") {
                                 std::string tospayload = readPrivacyPolicy();
-                                int send_res=SSL_write(ssl,tospayload.c_str(),tospayload.length());
+                                SSL_write(ssl,tospayload.c_str(),tospayload.length());
                                 pagefound = true;
                             }
                         }
@@ -721,7 +718,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                             // GET-STARTED.HTML
                             std::string getstartedfulldictionary = bufferstring.substr(5,16);
                             if (getstartedfulldictionary == "get-started.html") {
-                                int send_res=SSL_write(ssl,getstartedpayload.c_str(),getstartedpayload.length());
+                                SSL_write(ssl,getstartedpayload.c_str(),getstartedpayload.length());
                                 pagefound = true;
                             }
                         }
@@ -730,7 +727,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
                         // NONE IS TRUE
                         if (pagefound != true) {
-                            int send_res=SSL_write(ssl,httpnotfound.c_str(),httpnotfound.length());
+                            SSL_write(ssl,httpnotfound.c_str(),httpnotfound.length());
                         }
                     }
                 } else {
@@ -765,8 +762,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                 }
                             }
 
-                            sendtologopen("ENOUGH!~");
-                            sendtolog(headerstringpost);
+                            loginfo("ENOUGH!~" + headerstringpost, true);
 
                             // LOGINTOACCOUNT
                             if (headerstringpost == "logintoaccount") {
@@ -871,7 +867,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                     std::string sendpayloadforlength = std::string("{") + doublequote + std::string("state") + doublequote + ":" + doublequote + "ok" + doublequote + "," + doublequote + "token" + doublequote + ":" + doublequote + sessiontoken + doublequote + "," + doublequote + "redirect" + doublequote + ":" + doublequote + "account.html" + doublequote + "}";
                                                     contentlength = sendpayloadforlength.length();
                                                     std::string sendpayloadtoclient = "HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nContent-Length: " + std::to_string(contentlength) + "\r\n" + "\r\n" + sendpayloadforlength;
-                                                    sendtolog("SENDING TO CLIENT...");
+                                                    loginfo("SENDING TO CLIENT...", false);
                                                     int send_res=SSL_write(ssl, sendpayloadtoclient.c_str(), sendpayloadtoclient.length());
                                                     if (send_res <= 0) {
                                                         // Log a critical error message
@@ -903,8 +899,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                         }
                                                     } else {
                                                         // Log the successful send operation
-                                                        sendtologopen("Sent Payload: ");
-                                                        sendtolog(sendpayloadtoclient);
+                                                        loginfo("Sent Payload: " + sendpayloadtoclient, true);
                                                     }
                                                 } else {
                                                     int contentlength = 0;
@@ -913,7 +908,7 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                     std::string sendpayloadforlength = std::string("{") + doublequote + std::string("state") + doublequote + ":" + doublequote + "wrongpass" + doublequote + "}";
                                                     contentlength = sendpayloadforlength.length();
                                                     std::string sendpayloadtoclient = "HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nContent-Length: " + std::to_string(contentlength) + "\r\n" + "\r\n" + sendpayloadforlength;
-                                                    sendtolog("SENDING TO CLIENT...");
+                                                    loginfo("SENDING TO CLIENT...", true);
                                                     int send_res=SSL_write(ssl, sendpayloadtoclient.c_str(), sendpayloadtoclient.length());
                                                     if (send_res <= 0) {
                                                         // Log a critical error message
@@ -945,22 +940,21 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                         }
                                                     } else {
                                                         // Log the successful send operation
-                                                        sendtologopen("Sent Payload: ");
-                                                        sendtolog(sendpayloadtoclient);
+                                                        loginfo("Sent Payload: " + sendpayloadtoclient, true);
                                                     }
                                                 }
                                             } else {
-                                                int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
+                                                SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
                                             }
                                         } else {
-                                            int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
+                                            SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
                                         }
                                     } else {
-                                        int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
+                                        SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
                                     }
                                     
                                 } else {
-                                    int send_res=SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
+                                    SSL_write(ssl,httpforbidden.c_str(),httpforbidden.length());
                                 }
                             } 
 
@@ -972,22 +966,22 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
 
 
                             if (pagefoundpost != true) {
-                                int send_res=SSL_write(ssl,httpfail.c_str(),httpfail.length());
+                                SSL_write(ssl,httpfail.c_str(),httpfail.length());
                             }
                         } else {
-                            sendtolog("ERROR OCCURED, dATA NOT LONG ENOUGH");
-                            int send_res=SSL_write(ssl,httpfail.c_str(),httpfail.length());
+                            logcritical("ERROR OCCURED, dATA NOT LONG ENOUGH", true);
+                            SSL_write(ssl,httpfail.c_str(),httpfail.length());
                         }                        
                     } else {
-                        int send_res=SSL_write(ssl,httpfail.c_str(),httpfail.length());
+                        SSL_write(ssl,httpfail.c_str(),httpfail.length());
                     }
                 }
             } else {
-                int send_res=SSL_write(ssl,httpfail.c_str(),httpfail.length());
+                SSL_write(ssl,httpfail.c_str(),httpfail.length());
             }
         } else {
             // FUTURE TERMINATE COMMAND
-            int send_res=SSL_write(ssl,httpfail.c_str(),httpfail.length());
+            SSL_write(ssl,httpfail.c_str(),httpfail.length());
         }
         
     } 
@@ -1080,8 +1074,8 @@ void handleConnections443(int server_fd) {
             loginfo("heyheyhey", true);
 
             inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
-            loginfo("Connection from: ", false);
-            sendtolog(client_ip);
+            std::string clientIPADDR = client_ip;
+            loginfo("Connection from: " + clientIPADDR, false);
             std::string clientipstd = client_ip;
 
             // 443 SERVER PROTECTION LAYER 1!
@@ -1091,7 +1085,7 @@ void handleConnections443(int server_fd) {
                 int logs = searchforip->second;
                 std::cout << "RECEIVED VALUE OF " << logs << std::endl;
                 if (logs >= 6) {
-                    sendtolog("DENIED!");
+                    sendtolog("DENIED!", false);
                     ip443.erase(clientipstd);
                     logs = logs + 1;
                     ip443[clientipstd] = logs;
