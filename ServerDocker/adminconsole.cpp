@@ -151,17 +151,32 @@ void processCommand(const std::string& command) {
         std::cout << "Server Status: " << serverStarted.load() << std::endl;
         std::cout << std::endl;
         std::cout << "Thread Status" << std::endl;
-        std::cout << "Port 80 Thread: " << statusP80.load() << std::endl;
-        std::cout << "Port 443 Thread: " << statusP443.load() << std::endl;
+        std::cout << "Port 80 Thread:    " << statusP80.load() << std::endl;
+        std::cout << "Port 443 Thread:   " << statusP443.load() << std::endl;
         std::cout << "Port 11829 Thread: " << statusP11829.load() << std::endl;
         std::cout << std::endl;
         std::cout << "Port Lock Status" << std::endl;
-        std::cout << "Port 80 Lock: " << lockP80.load() << std::endl;
-        std::cout << "Port 443 Lock: " << lockP443.load() << std::endl;
+        std::cout << "Port 80 Lock:    " << lockP80.load() << std::endl;
+        std::cout << "Port 443 Lock:   " << lockP443.load() << std::endl;
         std::cout << "Port 11829 Lock: " << lockP11829.load() << std::endl;
         std::cout << std::endl;
         std::cout << "Errors" << std::endl;
-        std::cout << "General Errors: " << serverErrors.load() << std::endl;
+        std::cout << "General Errors:   " << serverErrors.load() << std::endl;
+        
+        std::cout << std::endl << "Statistics" << std::endl;
+        std::cout << " - API Rejects:        " << apiRejects.load() << std::endl;
+        std::cout << " - New Connections:    " << newConnections.load() << std::endl;
+        std::cout << " - Devices Connected:  " << totalDevicesConnected.load() << std::endl;
+        std::cout << " - Processing Error:   " << processingErrors.load() << std::endl;
+        std::cout << " - Conversion Error:   " << conversionErrors.load() << std::endl;
+        std::cout << " - Encryption Error:   " << dataEncryptionErrors.load() << std::endl;
+        std::cout << " - Invalid Packets:    " << invalidPackets.load() << std::endl;
+        std::cout << " - Analyzed Packets:   " << analyzedPackets.load() << std::endl;
+        std::cout << " - Clients Denied:     " << clientsDenied.load() << std::endl;
+        std::cout << " - COGs Analyzed:      " << cogsAnalyzed.load() << std::endl;
+        std::cout << " - Networked Error:    " << networkErrors.load() << std::endl;
+        
+        
         foundcommand = true;
     }
 
@@ -364,7 +379,7 @@ void processCommand(const std::string& command) {
         if (useraccesslevel >= 2) {
             std::cout << "FIX THIS!" << std::endl;
             std::cout << "Starting Interaction with Test Report" << std::endl;
-            int returnvalue = processReport("/home/testreport.txt");
+            int returnvalue = processReport("/home/testreport.txt", "");
             if (returnvalue != 0) {
                 std::cout << "Received Return Value of " << returnvalue << " while trying to process!" << std::endl;
             } else {
