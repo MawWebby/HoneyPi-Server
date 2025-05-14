@@ -44,7 +44,7 @@ void checkforserverupdates() {
     res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errcurlno);
     if(curl) {
         curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/server.txt");
-        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackserver);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackserver);
 
         // PERFORM CURL
         res = curl_easy_perform(curl);
@@ -53,18 +53,20 @@ void checkforserverupdates() {
         std::string updatefileinformationserver = updatesforSERVER;
         if (updatefileinformationserver == "") {
             logcritical("RECEIVED NULL INSTANCE FOR SERVER VERSION! - ", false);
-            sendtologopen(errcurlno);
-            sendtologopen(" - ");
-            sendtolog(curl_easy_strerror(res));
+            sendtologopen(errcurlno, false);
+            sendtologopen(" - ", false);
+            sendtolog(curl_easy_strerror(res), false);
+            networkErrors.fetch_add(1);
         }
     
         // CLEAN UP CURL COMMAND
         curl_easy_cleanup(curl);
     } else {
         logcritical("AN ERROR OCCURRED IN CURL - ", false);
-        sendtologopen(errcurlno);
-        sendtologopen(" - ");
-        sendtolog(curl_easy_strerror(res));
+        sendtologopen(errcurlno, false);
+        sendtologopen(" - ", false);
+        sendtolog(curl_easy_strerror(res), false);
+        networkErrors.fetch_add(1);
     }
 }
 
@@ -75,8 +77,8 @@ void checkforhoneypiupdates() {
     CURLcode res;
     res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errcurlno);
     if(curl) {
-        res = curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/mainversion.txt");
-        res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackhoneypi);
+        curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/MawWebby/HoneyPi/main/Versions/mainversion.txt");
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callbackhoneypi);
 
         // PERFORM CURL
         res = curl_easy_perform(curl);
@@ -85,17 +87,19 @@ void checkforhoneypiupdates() {
         std::string updatefileinformationhoneypi = updatesforHONEYPI;
         if (updatefileinformationhoneypi == "") {
             logcritical("RECEIVED NULL INSTANCE FOR CLIENT VERSION! - ", false);
-            sendtologopen(errcurlno);
-            sendtologopen(" - ");
-            sendtolog(curl_easy_strerror(res));
+            sendtologopen(errcurlno, false);
+            sendtologopen(" - ", false);
+            sendtolog(curl_easy_strerror(res), false);
+            networkErrors.fetch_add(1);
         }
     
         // CLEAN UP CURL COMMAND
         curl_easy_cleanup(curl);
     } else {
         logcritical("AN ERROR OCCURRED IN CURL - ", false);
-        sendtologopen(errcurlno);
-        sendtologopen(" - ");
-        sendtolog(curl_easy_strerror(res));
+        sendtologopen(errcurlno, false);
+        sendtologopen(" - ", false);
+        sendtolog(curl_easy_strerror(res), false);
+        networkErrors.fetch_add(1);
     }
 }
