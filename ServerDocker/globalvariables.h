@@ -46,6 +46,18 @@ extern std::atomic<int> statusP443;
 extern std::atomic<int> statusP11829;
 extern std::atomic<int> serverErrors;
 
+// STATUS NUMBERS
+extern std::atomic<int> apiRejects;
+extern std::atomic<int> newConnections;
+extern std::atomic<int> totalDevicesConnected;
+extern std::atomic<int> processingErrors;
+extern std::atomic<int> conversionErrors;
+extern std::atomic<int> dataEncryptionErrors;
+extern std::atomic<int> invalidPackets;
+extern std::atomic<int> analyzedPackets;
+extern std::atomic<int> clientsDenied;
+extern std::atomic<int> cogsAnalyzed;
+
 // UPDATE VARIABLES
 extern std::string updatesforSERVER;
 extern std::string updatesforHONEYPI;
