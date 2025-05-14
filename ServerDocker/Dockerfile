@@ -39,6 +39,10 @@ RUN mkdir /home/htmlmainweb
 # MKDIR FOR ARCHIVE FILES
 RUN mkdir /home/archives
 
+# MKDIRS FOR CRASHLOGS FOLDER
+RUN mkdir /home/crashlogs/encrypted
+RUN mkdir /home/crashlogs/finished
+
 # INSTALL MARIADB AND MARIADB CONNECTORS
 RUN wget https://dlm.mariadb.com/3848191/Connectors/cpp/connector-cpp-1.1.4/mariadb-connector-cpp_1.1.4-1+maria~bookworm_arm64.deb
 RUN dpkg -i mariadb-connector-cpp_1.1.4-1+maria~bookworm_arm64.deb
@@ -95,4 +99,4 @@ RUN mv /usr/src/run /usr/src/honeypi
 RUN chmod 777 /home/testreport.txt
 
 # Versions and Labels
-LABEL Name=honeypiserver Versions=0.2
+LABEL Name=honeypiserver Versions=0.5
