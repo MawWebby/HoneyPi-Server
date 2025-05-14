@@ -30,12 +30,12 @@ std::string timedetector() {
 ////////////////////////////
 // Send to Logger Scripts //
 ////////////////////////////
-void sendtolog(std::string data2) {
+void sendtolog(std::string data2, bool critical) {
     serverStatus = serverStarted.load();
     updating = updateSIGNAL.load();
     stopping = stopSIGNAL.load();
 
-    if (serverStatus == false || updating == true || stopping == true) {
+    if (serverStatus == false || updating == true || stopping == true || critical == true) {
         std::cout << data2 << std::endl;
     } 
     
@@ -44,18 +44,18 @@ void sendtolog(std::string data2) {
     if (logfilestream.is_open() == true) {
         logfilestream << data2 << std::endl;
     } else {
-        std::cout << "[ERRO] - COULD NOT SAVE TO LOGFILE!" << std::endl;
-        std::cout << "[ERRO] - MESSAGE: " << data2 << std::endl;
+        std::cout << "[ERROR] - COULD NOT SAVE TO LOGFILE!" << std::endl;
+        std::cout << "[ERROR] - MESSAGE: " << data2 << std::endl;
     }
     logfilestream.close();
 }
 
-void sendtologopen(std::string data2) {
+void sendtologopen(std::string data2, bool critical) {
     serverStatus = serverStarted.load();
     updating = updateSIGNAL.load();
     stopping = stopSIGNAL.load(); 
 
-    if (serverStatus == false || updating == true || stopping == true) {
+    if (serverStatus == false || updating == true || stopping == true || critical == true) {
         std::cout << data2;
     } 
     
@@ -64,8 +64,8 @@ void sendtologopen(std::string data2) {
     if (logfilestream.is_open() == true) {
         logfilestream << data2;
     } else {
-        std::cout << "[ERRO] - COULD NOT SAVE TO LOGFILE!" << std::endl;
-        std::cout << "[ERRO] - MESSAGE: " << data2 << std::endl;
+        std::cout << "[ERROR] - COULD NOT SAVE TO LOGFILE!" << std::endl;
+        std::cout << "[ERROR] - MESSAGE: " << data2 << std::endl;
     }
     logfilestream.close();
 }
@@ -74,9 +74,19 @@ void logdebug(std::string data2, bool complete) {
     std::string timedet = timedetector();
     data2 = "[DEBUG] - " + timedet + " - " + data2;
     if (complete == false) {
-        sendtologopen(data2);
+        sendtologopen(data2, false);
     } else {
-        sendtolog(data2);
+        sendtolog(data2, false);
+    }
+}
+
+void logconsole(std::string data2, bool complete) {
+    std::string timedet = timedetector();
+    data2 = "[CONSO] - " + timedet + " - " + data2;
+    if (complete == false) {
+        sendtologopen(data2, false);
+    } else {
+        sendtolog(data2, false);
     }
 }
 
@@ -84,9 +94,9 @@ void loginfo(std::string data2, bool complete) {
     std::string timedet = timedetector();
     data2 = "[INFO ] - " + timedet + " - " + data2;
     if (complete == false) {
-        sendtologopen(data2);
+        sendtologopen(data2, false);
     } else {
-        sendtolog(data2);
+        sendtolog(data2, false);
     }
 }
 
@@ -94,9 +104,9 @@ void logwarning(std::string data2, bool complete) {
     std::string timedet = timedetector();
     data2 = "[WARN*] - " + timedet + " - " + data2;
     if (complete == false) {
-        sendtologopen(data2);
+        sendtologopen(data2, false);
     } else {
-        sendtolog(data2);
+        sendtolog(data2, false);
     }
 }
 
@@ -104,16 +114,16 @@ void logcritical(std::string data2, bool complete) {
     std::string timedet = timedetector();
     data2 = "[ERRNO] - " + timedet + " - " + data2;
     if (complete == false) {
-        sendtologopen(data2);
+        sendtologopen(data2, true);
     } else {
-        sendtolog(data2);
+        sendtolog(data2, true);
     }
 }
 
 void logerror(std::string headerdata2, std::string errormessage) {
     std::string timedet = timedetector();
     std::string data2 = "[ERROR] - " + timedet + " - " + headerdata2 + " - " + errormessage;
-    sendtolog(data2);
+    sendtolog(data2, true);
 }
 
 
@@ -258,13 +268,11 @@ int stringtoint(std::string values) {
 
             // INVALID STRING
             if (validcase != true) {
-                loginfo("AN INVALID CHARACTER WAS RECEIVED (STD->INT); THE CHARACTER WAS: ", false);
-                sendtolog(substringvalue);
-                completedwhile = true;
+                logwarning("AN INVALID CHARACTER WAS RECEIVED (STD->INT); THE CHARACTER WAS: " + substringvalue, true);
                 return 0;
             }   
         } else {
-            completedwhile == true;
+            completedwhile = true;
         }
         timing9760 = timing9760 + 1;
     }
@@ -658,4 +666,21 @@ int remove11829packet(std::string ipaddr) {
        return 0; 
     }
     return -1;
+}
+
+
+
+///////////////////////////////////////
+//// REMOVE PERIODS FROM IP STRING ////
+///////////////////////////////////////
+std::string ipstring(std::string ipinput) {
+    std::string returnvalue = "";
+    int currentnumber = 0;
+    while(currentnumber < (ipinput.length()) && currentnumber < 20) {
+        if (ipinput.substr(currentnumber, 1) != ".") {
+            returnvalue = returnvalue + ipinput.substr(currentnumber, 1);
+        }
+        currentnumber = currentnumber + 1;
+    }
+    return returnvalue;
 }
