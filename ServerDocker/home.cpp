@@ -10,7 +10,7 @@ const bool debug = false;
 const bool testing = false;
 const bool newserverupdate = true;
 const bool EXCEPTION = true;
-std::string honeyversion = "0.2.0";
+std::string honeyversion = "0.5.5";
 const int heartbeattime = 10;
 
 
@@ -43,6 +43,22 @@ std::atomic<int> statusP443(0);
 std::atomic<int> statusP11829(0);
 std::atomic<int> serverErrors(0);
 std::atomic<int> serverStarted(0);
+
+// STATUS NUMBERS
+std::atomic<int> apiRejects(0);
+std::atomic<int> newConnections(0);
+std::atomic<int> totalDevicesConnected(0);
+std::atomic<int> processingErrors(0);
+std::atomic<int> conversionErrors(0);
+std::atomic<int> dataEncryptionErrors(0);
+std::atomic<int> invalidPackets(0);
+std::atomic<int> analyzedPackets(0);
+std::atomic<int> clientsDenied(0);
+std::atomic<int> cogsAnalyzed(0);
+std::atomic<int> networkErrors(0);
+std::atomic<int> encryptionchange(0);
+std::atomic<int> readwriteoperationfail(0);
+
 
 // PACKET VARIABLES
 std::atomic<int> p80packetslastmin(0);
@@ -696,31 +712,31 @@ bool checkhoneypiupdateavailable() {
                     latesthoneyPINIBmainversion = version4.substr(0,1);
                     latesthoneyPINIBminorversion = version4.substr(2,1);
                     latesthoneyPINIBhotfixversion = version4.substr(4,1);
-                    sendtolog("Done");
+                    sendtolog("Done", false);
                     return true;
                 } else {
-                    sendtolog("ERROR");
+                    sendtolog("ERROR", false);
                     logwarning("INVALID CLIENT_VERSION RECEIVED-3!", true);
                     loginfo(aStd, true);
                     std::cout << aStd.length() << std::endl;
                     return false;
                 }
             } else {
-                sendtolog("ERROR");
+                sendtolog("ERROR", false);
                 logwarning("INVALID CLIENT_VERSION RECEIVED-2!", true);
                 loginfo(aStd, true);
                 std::cout << aStd.length() << std::endl;
                 return false;
             }
         } else {
-            sendtolog("ERROR");
+            sendtolog("ERROR", false);
             logwarning("INVALID CLIENT_VERSION RECEIVED-1!", true);
             loginfo(aStd, true);
             std::cout << aStd.length() << std::endl;
             return false;
         }
     } else {
-        sendtolog("ERROR");
+        sendtolog("ERROR", false);
         logwarning("UNABLE TO CHECK FOR CLIENT UPDATES!", true);
         loginfo(aStd, true);
         std::cout << aStd.length() << std::endl;
@@ -734,10 +750,10 @@ bool checkhoneypiupdateavailable() {
 // CHECK TO SEE IF VERSION IS DIFFERENT THAN LISTED
 bool serverupdateavailable() {
     if (honeymainversion != latesthoneyosSERVERMAJOR || honeyminorversion != latesthoneyosSERVERMINOR || honeyhotfixversion != latesthoneyosSERVERHOT) {
-        sendtolog("New Server Update Available!");
+        loginfo("New Server Update Available!", true);
         return true;
     } else {
-        sendtolog("No New Version Found");
+        loginfo("No New Version Found", true);
         return false;
     }
     return false;
@@ -757,12 +773,12 @@ bool checkserverupdateavailable() {
             bool updateavailable23 = serverupdateavailable();
             return updateavailable23;
         } else {
-            sendtolog("ERROR");
-            logcritical("INVALID UPDATE HEADER RECEIVED!", true);
+            sendtolog("ERROR", false);
+            logwarning("INVALID UPDATE HEADER RECEIVED!", true);
             return false;
         }
     } else {
-        sendtolog("ERROR");
+        sendtolog("ERROR", false);
         logwarning("UNABLE TO CHECK FOR UPDATES!", true);
         return false;
     }
@@ -772,7 +788,7 @@ bool checkserverupdateavailable() {
 // CONNECTION TO HOST TO START UPDATING!
 void connectiontohostupdate(std::string bashfile) {
     if (bashfile != "" && bashfile.length() >= 200) {
-        int resolution = system(bashfile.c_str());
+        system(bashfile.c_str());
     }
 }
 
@@ -790,13 +806,12 @@ int updatetoNewServer() {
     loginfo("Checking for Docker Control...", false);
     int res97 = system(dockerpscommand);
     if (res97 != 0) {
-        sendtolog("ERROR!");
+        logcritical("ERROR!", true);
         logcritical("UNABLE TO COMPLETE DOCKER COMMAND!", true);
         logcritical("TERMINATING UPDATE!", true);
-        updatestatus = updatestatus + 1;
         return 1;
     } else {
-        sendtolog("done");
+        sendtolog("done", true);
     }
 
     // ENDING PORT PROCESSES TO START UPDATE
@@ -807,9 +822,9 @@ int updatetoNewServer() {
     int p443s = statusP443.load();
     int p11829s = statusP11829.load();
     if (p80s == 0 && p443s == 0 && p11829s == 0) {
-        sendtolog("Done");
+        sendtolog("Done", true);
     } else {
-        sendtolog("WARNING");
+        logwarning("WARNING", true);
         int updatesig = updateSIGNAL.load();
         if (updatesig == 1) {
             logwarning("PROCESSES DID NOT CLOSE WITHIN TEN SECONDS!", true);
@@ -819,12 +834,11 @@ int updatetoNewServer() {
             p443s = statusP443.load();
             p11829s = statusP11829.load();
             if (p80s == 0 && p443s == 0 && p11829s == 0) {
-                sendtolog("OK");
+                sendtolog("OK", true);
             } else {
-                sendtolog("ERROR");
+                logcritical("ERROR", true);
                 logcritical("UNABLE TO STOP PROCESSES!", true);
                 updateSIGNAL.store(0);
-                updatestatus = updatestatus + 1;
                 logcritical("NOT CONTINUING SERVER UPDATE!", true);
                 logcritical("RESTORING SYSTEM TO OPERATIONAL STATUS!", true);
                 preventupdate.store(1);
@@ -834,7 +848,6 @@ int updatetoNewServer() {
             }
         } else {
             logcritical("SETTING UPDATESIG = 1 FAILED!", true);
-            updatestatus = updatestatus + 1;
             logcritical("NOT CONTINUING SERVER UPDATE!", true);
             logcritical("RESTORING SYSTEM TO OPERATIONAL STATUS!", true);
             preventupdate.store(1);
@@ -848,9 +861,8 @@ int updatetoNewServer() {
     loginfo("Emptying COGs in DB...", false);
     int res98 = mariadbCLEARCOGS_READ();
     if (res98 != 0) {
-        sendtolog("ERROR!");
+        logcritical("ERROR!", true);
         logcritical("UNABLE TO COMPLETE MARIADB COGs!", true);
-        updatestatus = updatestatus + 1;
         logcritical("NOT CONTINUING SERVER UPDATE!", true);
         logcritical("RESTORING SYSTEM TO OPERATIONAL STATUS!", true);
         preventupdate.store(1);
@@ -858,7 +870,7 @@ int updatetoNewServer() {
         setup();
         return 1;
     } else {
-        sendtolog("done");
+        sendtolog("done", true);
     }
 
     // DOWNLOAD GITHUB SCRIPT TO UPDATE SERVER
@@ -871,11 +883,11 @@ int updatetoNewServer() {
     sleep(2);
     int downloader = system(wgeturl.c_str());
     if (downloader != 0) {
-        sendtolog("ERROR");
+        sendtolog("ERROR", true);
         logcritical("ERROR OCCURRED ATTEMPTING TO DOWNLOAD UPDATE FILE!", true);
         updatestatus = updatestatus + 1;
     } else {
-        sendtolog("Done");
+        sendtolog("Done", true);
     }
 
     // START SERVER UPDATE FROM GITHUB SCRIPT
@@ -885,7 +897,7 @@ int updatetoNewServer() {
         std::thread updateThread(connectiontohostupdate, bashfile);
         updateThread.detach();
         sleep(4);
-        sendtolog("DONE");
+        sendtolog("DONE", true);
     } else {
         logcritical("NOT CONTINUING SERVER UPDATE!", true);
         logcritical("RESTORING SYSTEM TO OPERATIONAL STATUS!", true);
@@ -1054,7 +1066,7 @@ int writetoipliststrict(std::string writedata, int position, bool end, bool forc
     }
 
     if (ipliststrictlock == true) {
-        sendtolog("");
+        sendtolog("", true);
         logcritical("UNABLE TO WRITE TO IP LIST STRICT FILE!", true);
         logcritical("ipliststrictlock = true", true);
         return 2;
@@ -1072,7 +1084,7 @@ int writetoipliststrict(std::string writedata, int position, bool end, bool forc
             if (ipliststrict.is_open() == true) {
                 ipliststrict << writedata << '\n';
                 if (ipliststrict.fail()) {
-                    sendtolog("ERROR");
+                    logcritical("ERROR", true);
                     logcritical("AN ERROR OCCURRED WRITING TO IPLISTSTRICT", true);
                     if (ipliststrict.bad() == true) {
                         logcritical("I/O ERROR OCCURRED", true);
@@ -1113,7 +1125,7 @@ int writetoipliststandard(std::string writedata, int position, bool end, bool fo
     }
 
     if (ipliststandardlock == true) {
-        sendtolog("ERROR");
+        logcritical("ERROR", true);
         logcritical("UNABLE TO WRITE TO IP LIST STANDARD FILE!", true);
         logcritical("ipliststrictlock = true", true);
         return 2;
@@ -1131,7 +1143,7 @@ int writetoipliststandard(std::string writedata, int position, bool end, bool fo
             if (ipliststandard.is_open() == true) {
                 ipliststandard << writedata << '\n';
                 if (ipliststandard.fail()) {
-                    sendtolog("ERROR");
+                    logcritical("ERROR", true);
                     logcritical("AN ERROR OCCURRED WRITING TO ipliststandard", true);
                     if (ipliststandard.bad() == true) {
                         logcritical("I/O ERROR OCCURRED", true);
@@ -1174,7 +1186,7 @@ int writetoblockediplist(std::string writedata, bool end, bool forcelock) {
     }
 
     if (ipsafetylock == true) {
-        sendtolog("ERROR");
+        logcritical("ERROR", true);
         logcritical("UNABLE TO WRITE TO IPSAFETY FILE!", true);
         logcritical("ipliststrictlock = true", true);
         return 2;
@@ -1248,7 +1260,7 @@ int writetoUSERStream(std::string username, bool forcelock) {
                 userstream.open(userstreamfile, std::ios::app);
                 userstream << username << '\n';
                 if (userstream.fail()) {
-                    sendtolog("ERROR");
+                    logcritical("ERROR", true);
                     logcritical("AN ERROR OCCURRED WRITING TO USERSTREAM", true);
                     if (userstream.bad() == true) {
                         logcritical("I/O ERROR OCCURRED", true);
@@ -1268,7 +1280,7 @@ int writetoUSERStream(std::string username, bool forcelock) {
                 userstream.seekp(checkcommand + 8);
                 userstream << username << '\n';
                 if (userstream.fail()) {
-                    sendtolog("ERROR");
+                    logcritical("ERROR", true);
                     logcritical("AN ERROR OCCURRED WRITING TO USERSTREAM", true);
                     if (userstream.bad() == true) {
                         logcritical("I/O ERROR OCCURRED", true);
@@ -1349,18 +1361,16 @@ int analyzecogfile(std::string fileID) {
                 } else {
                     timer67 = timer67 + 1;
                     if (timer67 >= timer67max) {
-                        completion2g = true;
                         coginputstream.close();
                         std::string rmoperation = "rm " + coglocation + " >nul: ";
-                        int kale = system(rmoperation.c_str());
+                        system(rmoperation.c_str());
                         return 0;
                     }
                 }
                 
             }
         } else {
-            logcritical("COG COULD NOT BE OPENED AT: ", false);
-            sendtolog(coglocation);
+            logcritical("COG COULD NOT BE OPENED AT: " + coglocation, false);
             return 1;
             return 1;
             return 1;
@@ -1538,7 +1548,6 @@ int createnetworkport443() {
     }
 
     // REACHED HERE
-    sendtologopen("...");
     address3.sin_family = AF_INET;
     address3.sin_addr.s_addr = INADDR_ANY;
     address3.sin_port = htons(PORT);
@@ -1574,34 +1583,34 @@ int setup() {
     sleep(1);
 
 
-    sendtolog("Hello, World from 2515!");
-    sendtolog("  _____     _____     ____________      _____      ____  ________________   ____         ____           ______________     ________________  ");
-    sendtolog("  |   |     |   |    /            `     |   `      |  |  |               |  `  `        /   /           |             `   |               |  ");
-    sendtolog("  |   |     |   |   /              `    |    `     |  |  |  |¯¯¯¯¯¯¯¯¯¯¯¯    `  `      /   /            |   |¯¯¯¯¯¯`   |  |_____    ______|  ");
-    sendtolog("  |   |     |   |  /   /¯¯¯¯¯¯¯¯`   `   |     `    |  |  |  |____________     `  `    /   /             |   |______/   |        |   |        ");
-    sendtolog("  |    ¯¯¯¯¯    |  |   |         |   |  |      `   |  |  |               |     `  `  /   /              |   __________/         |   |        ");
-    sendtolog("  |    _____    |  |   |         |   |  |   |`  `  |  |  |               |      `  `/   /               |   |                   |   |        ");
-    sendtolog("  |   |     |   |  |   |         |   |  |   | `  ` |  |  |  |¯¯¯¯¯¯¯¯¯¯¯¯        |     |                |   |                   |   |        ");
-    sendtolog("  |   |     |   |  |   |         |   |  |   |  `  `|  |  |  |____________        |     |                |   |                   |   |        ");
-    sendtolog("  |   |     |   |  `   `¯¯¯¯¯¯¯¯¯    /  |   |   `     |  |               |       |     |                |   |             |¯¯¯¯¯     ¯¯¯¯¯|  ");
-    sendtolog("  |   |     |   |   `               /   |   |    `    |  |               |       |     |                |   |             |               |  ");
-    sendtolog("  ¯¯¯¯¯     ¯¯¯¯¯    ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯    ¯¯¯¯      `¯¯¯   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯        ¯¯¯¯¯¯                 ¯¯¯¯¯             ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯   ");
-    sendtolog("SERVER EDITION!");
-    sendtolog("");
-    sendtolog("");
-    sendtolog("");
-    sendtolog("");
-    sendtolog("");
-    sendtolog("Server by Matthew Whitworth (MawWebby)");
-    sendtolog("Version: " + honeyversion);
-    sendtolog("");
-    sendtolog("");
-    sendtolog("");
-    sendtolog("");
-    sendtolog("");
+    sendtolog("Hello, World from 2514!", true);
+    sendtolog("  _____     _____     ____________      _____      ____  ________________   ____         ____           ______________     ________________  ", true);
+    sendtolog("  |   |     |   |    /            `     |   `      |  |  |               |  `  `        /   /           |             `   |               |  ", true);
+    sendtolog("  |   |     |   |   /              `    |    `     |  |  |  |¯¯¯¯¯¯¯¯¯¯¯¯    `  `      /   /            |   |¯¯¯¯¯¯`   |  |_____    ______|  ", true);
+    sendtolog("  |   |     |   |  /   /¯¯¯¯¯¯¯¯`   `   |     `    |  |  |  |____________     `  `    /   /             |   |______/   |        |   |        ", true);
+    sendtolog("  |    ¯¯¯¯¯    |  |   |         |   |  |      `   |  |  |               |     `  `  /   /              |   __________/         |   |        ", true);
+    sendtolog("  |    _____    |  |   |         |   |  |   |`  `  |  |  |               |      `  `/   /               |   |                   |   |        ", true);
+    sendtolog("  |   |     |   |  |   |         |   |  |   | `  ` |  |  |  |¯¯¯¯¯¯¯¯¯¯¯¯        |     |                |   |                   |   |        ", true);
+    sendtolog("  |   |     |   |  |   |         |   |  |   |  `  `|  |  |  |____________        |     |                |   |                   |   |        ", true);
+    sendtolog("  |   |     |   |  `   `¯¯¯¯¯¯¯¯¯    /  |   |   `     |  |               |       |     |                |   |             |¯¯¯¯¯     ¯¯¯¯¯|  ", true);
+    sendtolog("  |   |     |   |   `               /   |   |    `    |  |               |       |     |                |   |             |               |  ", true);
+    sendtolog("  ¯¯¯¯¯     ¯¯¯¯¯    ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯    ¯¯¯¯      `¯¯¯   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯        ¯¯¯¯¯¯                 ¯¯¯¯¯             ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯   ", true);
+    sendtolog("SERVER EDITION!", true);
+    sendtolog("", true);
+    sendtolog("", true);
+    sendtolog("", true);
+    sendtolog("", true);
+    sendtolog("", true);
+    sendtolog("Server by Matthew Whitworth (MawWebby)", true);
+    sendtolog("Version: " + honeyversion, true);
+    sendtolog("", true);
+    sendtolog("", true);
+    sendtolog("", true);
+    sendtolog("", true);
+    sendtolog("", true);
 
     // DELAY FOR SYSTEM TO START FURTHER (FIGURE OUT CURRENT TIME)
-    sleep(0.5);
+    sleep(1);
 
 
 
@@ -1614,8 +1623,8 @@ int setup() {
     loginfo("DOCKER - Setting Container Options...", false);
     signal(SIGTERM, handleSignal);
     signal(SIGINT, handleSignal);
-    sendtolog("OK");
-    sleep(0.5);
+    sendtolog("OK", true);
+    sleep(1);
 
 
 
@@ -1624,25 +1633,26 @@ int setup() {
     loginfo("NETWORK - Checking Network Connectivity...", false);
     int results = pingnetwork();
     if(results != 0) {
-        sendtolog("ERROR");
+        logcritical("ERROR", true);
         logcritical("STARTING ANYWAY", true);
     } else {
-        sendtolog("Done");
+        sendtolog("Done", true);
     }
 
 
 
 
-
-
     // CHECK FOR SYSTEM UPDATES
-    sleep(0.5);
-
     loginfo("UPDATES - Checking for Server Updates...", false);
     bool serverupdate = checkserverupdateavailable();
+    if (serverupdate == true) {
+        std::cout << "FUTURE" << std::endl;
+    }
     loginfo("UPDATES - Checking for HoneyPi Updates...", false);
     bool honeypiupdate = checkhoneypiupdateavailable();
-
+    if(honeypiupdate == true) {
+        std::cout << "FUTURE" << std::endl;
+    }
     sleep(1);
 
 
@@ -1652,17 +1662,17 @@ int setup() {
     loginfo("Validating COG Directory...", false);
     int testing = system("touch /home/crashlogs/test.txt");
     if (testing != 0) {
-        sendtolog("ERROR");
+        logcritical("ERROR", true);
         logcritical("UNABLE TO WRITE TO CRASHLOGS FOLDER!", true);
         startupchecks = startupchecks + 1;
     } else {
         int working = system("rm /home/crashlogs/test.txt");
         if (working != 0) {
-            sendtolog("ERROR");
+            logcritical("ERROR", true);
             logcritical("UNABLE TO CLEAR CRASHLOGS FOLDER!", true);
             startupchecks = startupchecks + 1;
         } else {
-            sendtolog("DONE");
+            sendtolog("DONE", true);
         }
     }
 
@@ -1672,9 +1682,9 @@ int setup() {
     loginfo("HTML - Updating to Main Head...", false);
     int res256 = system(updatehtmlmainweb);
     if (res256 == 0) {
-        sendtolog("DONE");
+        sendtolog("DONE", true);
     } else {
-        sendtolog("ERROR");
+        logcritical("ERROR", true);
         logcritical("AN ERROR OCCURRED ATTEMPTING TO UPDATE WITH MAIN HEAD!", true);
     }
 
@@ -1705,7 +1715,7 @@ int setup() {
             } else {
                 compressed = "";
             }
-            sendtolog("Done");
+            sendtolog("Done", true);
             if (compressed == "") {
                 logwarning(filemessages[filerun] + " - No Version Found, Writing New Version...", false);
                 fileinput1.close();
@@ -1715,7 +1725,7 @@ int setup() {
                 filecreate1 << currentversionID << '\n';
                 filecreate1.flush();
                 if (filecreate1.fail() == true) {
-                    sendtolog("ERROR");
+                    logcritical("ERROR", true);
                     logcritical("AN ERROR OCCURRED WRITING TO " + filemessages[filerun], true);
                     if (filecreate1.bad() == true) {
                         logcritical("AN I/O ERROR OCCURRED", true);
@@ -1723,8 +1733,7 @@ int setup() {
                     startupchecks = startupchecks + 1;
                     filecreate1.close();
                 }
-                sleep(0.5);
-                sendtolog("Done");
+                sendtolog("Done", true);
             } else {
                 if (compressed != honeyversion) {
                     migration = migration + 1;
@@ -1794,56 +1803,56 @@ int setup() {
                                     const char* rmchar = rmcombine.c_str();
                                     int res251 = system(rmchar);
                                     if (res251 == 0) {
-                                        sendtolog("COMPLETED!");
+                                        sendtolog("COMPLETED!", true);
                                         sleep(1);
                                     } else {
-                                        sendtolog("ERROR");
+                                        logcritical("ERROR", true);
                                         logcritical("AN ERROR OCCURRED IN " + filemessages[filerun] + " MIGRATION (5)!", true);
                                         sleep(2);
                                         startupchecks = startupchecks + 1;
                                     }
                                 } else {
-                                    sendtolog("ERROR");
+                                    logcritical("ERROR", true);
                                     logcritical("AN ERROR OCCURRED IN " + filemessages[filerun] + " MIGRATION (4)!", true);
                                     sleep(2);
                                     startupchecks = startupchecks + 1;
                                 }
                             } else {
-                                sendtolog("ERROR");
+                                logcritical("ERROR", true);
                                 logcritical("AN ERROR OCCURRED IN " + filemessages[filerun] + " MIGRATION (3)!", true);
                                 sleep(2);
                                 startupchecks = startupchecks + 1;
                             }
                         } else {
-                            sendtolog("ERROR");
+                            logcritical("ERROR", true);
                             logcritical("AN ERROR OCCURRED IN " + filemessages[filerun] + " MIGRATION (2)!", true);
                             sleep(2);
                             startupchecks = startupchecks + 1;
                         }                    
                     } else {
-                        sendtolog("ERROR");
+                        logcritical("ERROR", true);
                         logcritical("AN ERROR OCCURRED IN " + filemessages[filerun] + " MIGRATION (1)!", true);
                         sleep(2);
                         startupchecks = startupchecks + 1;
                     }
                 } else {
-                    sleep(0.5);
+                    sleep(1);
                 }
             }
         } else {
-            sendtolog("FILE NOT FOUND!");
+            logwarning("FILE NOT FOUND!", true);
             logwarning("CREATING NEW " + filemessages[filerun] + " FILE...", false);
             std::string stringcommandlocation = filelocations[filerun];
             std::string filetocreate = "touch " + stringcommandlocation;
             const char* filetocreatechar = filetocreate.c_str();
-            int res260 = system(filetocreatechar);
+            system(filetocreatechar);
             std::ofstream filecreate1;
             filecreate1.open(filelocations[filerun]);
             if (filecreate1.is_open() == true) {
                 filecreate1 << "Version: " << honeyversion << std::endl << std::endl << std::endl;
                 filecreate1.flush();
                 if (filecreate1.fail() == true) {
-                    sendtolog("ERROR");
+                    logcritical("ERROR", true);
                     logcritical("AN ERROR OCCURRED WRITING TO " + filemessages[filerun], true);
                     if (filecreate1.bad() == true) {
                         logcritical("AN I/O ERROR OCCURRED", true);
@@ -1853,7 +1862,7 @@ int setup() {
                 }
                 filecreate1.close();
             } else {
-                sendtolog("ERROR");
+                logcritical("ERROR", true);
                 logcritical("UNABLE TO CREATE NEW" + filemessages[filerun] + "FILE!", true);
                 startupchecks = startupchecks + 1;
             }
@@ -1875,7 +1884,7 @@ int setup() {
     loginfo("COMMAND - Loading MAINCOMMAND Into RAM...", false);
     int ram2 = cacheseverity();
     if (ram2 != 0) {
-        sendtolog("ERROR");
+        logcritical("ERROR", true);
         logcritical("SEVERITY RETURNED ", false);
         std::cout << ram2 << std::endl;
         //startupchecks = startupchecks + 1;
@@ -1903,18 +1912,14 @@ int setup() {
     // OPEN NETWORK SERVER PORTS (1/4)
     int PORT = 80;
     loginfo("P80 - Opening Server Ports (1/4)", false);
-    sleep(0.5);
     std::thread acceptingClientsThread80(handleConnections80);
     acceptingClientsThread80.detach();
-    sendtolog("...Done");
-    sleep(0.5);
+    sendtolog("...Done", true);
 
     // OPEN NETWORK SERVER PORTS (2/4)
-    PORT = 443;
     loginfo("P443 - Opening Server Ports (2/4)", false);
     port4 = createnetworkport443();
-    sendtolog("...Done");
-    sleep(0.5);
+    sendtolog("...Done", true);
 
     // OPEN NETWORK SERVER PORTS (3/4)
     PORT = 11829;
@@ -1925,7 +1930,7 @@ int setup() {
     socklen_t addrlen2 = sizeof(address2);
     int opt2 = 1;
     
-    sleep(0.5);
+    sleep(1);
 
     if((server_fd2 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         logcritical("P11829 - FAILED TO START SOCKET", true);
@@ -1939,7 +1944,6 @@ int setup() {
     }
 
     // REACHED HERE
-    sendtologopen("...");
     address2.sin_family = AF_INET;
     address2.sin_addr.s_addr = INADDR_ANY;
     address2.sin_port = htons(PORT);
@@ -1956,8 +1960,7 @@ int setup() {
 
     fcntl(server_fd2, F_SETFL, O_NONBLOCK);
 
-    sendtolog("Done");
-    sleep(0.5);
+    sendtolog("Done", true);
 
 
 
@@ -1969,9 +1972,8 @@ int setup() {
     sleep(1);
     std::thread thread11829(handle11829Connections, server_fd2);
     thread11829.detach();
-    sleep(0.5);
 
-    sendtolog("Done");
+    sendtolog("Done", true);
 
 
 
@@ -1982,9 +1984,8 @@ int setup() {
     sleep(1);
     std::thread acceptingClientsThread443(handleConnections443, port4);
     acceptingClientsThread443.detach();
-    sleep(0.5);
 
-    sendtolog("Done");
+    sendtolog("Done", true);
 
 
 
@@ -2025,7 +2026,7 @@ int main() {
     
 
     if (startup != 0 && EXCEPTION != true) {
-        sendtolog("ERROR");
+        logcritical("ERROR", true);
         logcritical("STARTUP CHECKS RETURNED EXIT CODE 1", true);
         logcritical("THE SYSTEM COULD NOT CONTINUE!", true);
         logcritical("ALL DOCKER CONTAINERS WILL BE STOPPED", true);
@@ -2130,7 +2131,7 @@ int main() {
 
         // ENCOUNTERED ERRORS
         if (encounterederrors != 0) {
-            sendtolog("ERROR");
+            logcritical("ERROR", true);
             logcritical("HONEYPI-SERVER HAS ENCOUNTERED UNRECOVERABLE ERRORS WHILE RUNNING!", true);
             logcritical("HONEYPI-SERVER WILL NOW ATTEMPT A LOG DUMP!", true);
             
