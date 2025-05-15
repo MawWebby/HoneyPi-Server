@@ -58,6 +58,8 @@ extern std::atomic<int> analyzedPackets;
 extern std::atomic<int> clientsDenied;
 extern std::atomic<int> cogsAnalyzed;
 extern std::atomic<int> networkErrors;
+extern std::atomic<int> encryptionchange;
+extern std::atomic<int> readwriteoperationfail;
 
 // UPDATE VARIABLES
 extern std::string updatesforSERVER;

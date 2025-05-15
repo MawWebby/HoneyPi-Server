@@ -169,6 +169,7 @@ void processCommand(const std::string& command) {
         std::cout << " - Devices Connected:  " << totalDevicesConnected.load() << std::endl;
         std::cout << " - Processing Error:   " << processingErrors.load() << std::endl;
         std::cout << " - Conversion Error:   " << conversionErrors.load() << std::endl;
+        std::cout << " - Encryptions         " << encryptionchange.load() << std::endl;
         std::cout << " - Encryption Error:   " << dataEncryptionErrors.load() << std::endl;
         std::cout << " - Invalid Packets:    " << invalidPackets.load() << std::endl;
         std::cout << " - Analyzed Packets:   " << analyzedPackets.load() << std::endl;
