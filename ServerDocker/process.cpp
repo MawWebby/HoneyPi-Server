@@ -58,6 +58,14 @@ std::map<std::string, float> fileeditsseveritymap;
 std::map<std::string, float> filechangesseveritymap;
 
 
+// FILE LOCATIONS
+const std::string usernamelocation = "/home/listfiles/userstream.txt";
+
+
+
+
+
+
 //////////////////////////////////////////////
 ////// DETERMINE SEVERITY OF THE REPORT //////
 //////////////////////////////////////////////
@@ -71,9 +79,170 @@ int determineseverity(int commandsranonreport,
                       int passonreport) {
     // DETERMINE SEVERITY
 
+
+
+
+
+
+
     return -1;
 }
+
+
+
+
+
+//////////////////////////////////////////////////////////
+//// SAVE THE VARIOUS PORTIONS OF CRASHLOGS TO FILES! ////
+//////////////////////////////////////////////////////////
+// SAVE USERNAMES TO THE FILE
+int saveusernamestofile(std::map<int, std::string> usernames) {
+    std::ifstream usernamefile;
+    usernamefile.open(usernamelocation.c_str());
+    if (usernamefile.is_open() != true) {
+        logwarning("Unable to Open Username File!", true);
+        readwriteoperationfail.fetch_add(1);
+        return -1;
+    }
+
+
+    int numbertosearch = usernames.size();
+    int current = 0;
+    int saved = 0;
+    while (current < numbertosearch) {
+        bool foundbit = false;
+        int linenumber = 0;
+        while (usernamefile.eof() != true && foundbit != true) {
+            std::string getlineofuserfile = "";
+            getline(usernamefile, getlineofuserfile);
+            if (getlineofuserfile != "") {
+                int lastposofcharacter = getlineofuserfile.find_last_of(" - ");
+                int maybe = getlineofuserfile.find(usernames[current]);
+                if (lastposofcharacter >= 0) {
+                    std::string usertest = getlineofuserfile.substr(0, getlineofuserfile.length() - lastposofcharacter + 2);
+                    std::cout << "Testing:" << usertest << std::endl;
+                    if (usertest == usernames[current]) {
+                        std::cout << "FOUND PREVIOUS ENTRY FOR SIMILAR THING!" << std::endl;
+                        foundbit = true;
+                        std::string numberoftimes = getlineofuserfile.substr(lastposofcharacter + 2, getlineofuserfile.length() - lastposofcharacter - 2);
+                        std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) + 1);
+                        std::ofstream userfileWRITE;
+                        userfileWRITE.open(usernamelocation.c_str());
+                        if (userfileWRITE.is_open() != true) {
+                            std::cout << "Unable top Open File" << std::endl;
+                            return -2;
+                        }
+
+                        userfileWRITE.seekp(linenumber);
+                        userfileWRITE << usertest << " - " << newnumbertoinsert << std::endl;
+                        std::cout << usertest << " - " << newnumbertoinsert << std::endl;
+                        userfileWRITE.close();
+                        saved = saved + 1;
+                    }
+                }
+            }
+            std::cout << linenumber << std::endl;
+            linenumber = linenumber + 1;
+        }
+
+        // IF FOUND BIT != TRUE, Then Create a New Entry in the File and Save
+        if (foundbit != true) {
+            std::string numberoftimes = "1";
+            std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) + 1);
+            std::ofstream userfileWRITE;
+            userfileWRITE.open(usernamelocation.c_str(), std::ios::app);
+            if (userfileWRITE.is_open() != true) {
+                std::cout << "Unable top Open File" << std::endl;
+                return -2;
+            }
+
+            userfileWRITE.seekp(linenumber);
+            userfileWRITE << usernames[current] << " - " << newnumbertoinsert << std::endl;
+            std::cout << usernames[current] << " - " << newnumbertoinsert << std::endl;
+            userfileWRITE.close();
+            saved = saved + 1;
+        }
+
+        current = current + 1;
+        std::cout << "CURRENT" << current << std::endl;
+    }
+
+    usernamefile.close();
+
+    return saved;
+}
+
+
+
+
+
+
+
+
+
+
+
+
     
+
+
+
+
+////////////////////////////////////////////////////
+// CHANGE ENCRYPTION METHOD BACK TO STANDARD FILE //
+////////////////////////////////////////////////////
+// Outputs File Location
+std::string unencryptcog(std::string inputfile, std::string clientIP) {
+    if (inputfile == "") {
+        logwarning("Unencrypt Input File was NULL", true);
+        return "ERROR";
+    }
+
+    // OPEN THE FILE AND READ THE CONTENTS
+    std::string inputdata = "";
+    std::ifstream encryptedcogfile;
+    encryptedcogfile.open(inputfile.c_str());
+    loginfo("Converting File " + inputfile, true);
+    if (encryptedcogfile.is_open() == true) {
+        std::string praise = "";
+        while (encryptedcogfile.eof() != true) {
+            std::string buf = "";
+            getline(encryptedcogfile, buf);
+            inputdata = inputdata + buf + "\n";
+        }
+    } else {
+        logwarning("Unencrypt unable to open COG File!", true);
+        return "ERROR";
+    }
+
+    // CONVERT DATA INTO UNENCRYPTED FORMAT
+    encryptionchange.fetch_add(1);
+    std::string outputdata = ucrypt_decrypt(inputdata);
+    if (outputdata == "" || outputdata == "ERROR") {
+        logwarning("Error Caught in ucrypt()", true);
+        return "ERROR";
+    }
+
+    // CLOSE STREAM AND WRITE TO NEW FILE
+    encryptedcogfile.close();
+    std::ofstream ucryptedstream;
+    std::string newfilelocation = "/home/crashlogs/UN" + clientIP + ".txt";
+    ucryptedstream.open(newfilelocation.c_str());
+    if (ucryptedstream.is_open() == true) {
+        ucryptedstream << outputdata;
+        std::string removeprevious = "rm " + inputfile;
+        system(removeprevious.c_str());
+    } else {
+        logwarning("UCrypt Cog Unable to Open Output File Destination", true);
+        return "ERROR";
+    }
+
+    ucryptedstream.close();
+    inputdata.clear();
+    outputdata.clear();
+    return newfilelocation;
+}
+
 
 
 
@@ -86,7 +255,7 @@ int determineseverity(int commandsranonreport,
 // RETURN 12 - LOGICAL IO ERROR
 // RETURN 254 - NOT VALID FILENAME
 // RETURN 255 - SHOULD NEVER REACH HERE
-int processReport(std::string filename) {
+int processReport(std::string filename, std::string clientIP) {
 
     int linenumber = 0;
 
@@ -143,9 +312,12 @@ int processReport(std::string filename) {
     int fileeditsonreport = 0;
     int useronreport = 0;
     int passonreport = 0;
+    int numberoflineends = 0;
+
+    std::cout << "Starting to Analyze!" << std::endl;
 
 
-    while (completionproc != true || reportstream.eof() != true) {
+    while (completionproc != true && reportstream.eof() != true) {
         reportstream.getline(lineraw, 2048);
 
         // CONVERT TO STRING FOR ANALYSIS
@@ -159,6 +331,7 @@ int processReport(std::string filename) {
 
         // MAKE SURE IT IS NOT BLANK
         if (linestr.length() > 2) {
+            numberoflineends = 0;
             if (usercombo == false && commandprocess == false && files == false && ipaddr == false && extraopt == false && filechanges == false && fileedits == false) {
                 // ANALYZE EACH STRING
                 std::string matchcondition = linestr.substr(0,2);
@@ -418,12 +591,12 @@ int processReport(std::string filename) {
                                     // IGNORE
                                 } else if (currentstring == ";" && linestr.length() >= currentchar + 5) {
                                     if (linestr.substr(currentchar, 5) == ";[$]:") {
-                                        usernameacc = linestr.substr(previousstart, currentchar - previousstart - 1);
+                                        usernameacc = linestr.substr(previousstart, currentchar - previousstart);
                                         previousstart = currentchar + 4;
                                         currentchar = currentchar + 1;
                                     }
                                 } else if (currentstring == ")") {
-                                    passwordacc = linestr.substr(previousstart, currentchar - previousstart - 1);
+                                    passwordacc = linestr.substr(previousstart, currentchar - previousstart);
                                     userpasscomplete = true;
                                 }
                             }
@@ -446,11 +619,11 @@ int processReport(std::string filename) {
                     commandmap.insert({commandsranonreport, commandexec});
                     commandsranonreport = commandsranonreport + 1;
                 } else if (files == true) {
-                    std::string fileexec = linestr.substr(1, linestr.length());
+                    std::string fileexec = linestr.substr(1, linestr.length() - 2);
                     filesmap.insert({filestranonreport, fileexec});
                     filestranonreport = filestranonreport + 1;
                 } else if (ipaddr == true) {
-                    std::string ipaddr = linestr;
+                    std::string ipaddr = linestr.substr(1, linestr.length() - 2);
                     ipaddrmap[ipaddressesonreport] = ipaddr;
                     ipaddressesonreport = ipaddressesonreport + 1;
                 } else if (extraopt == true) {
@@ -484,13 +657,20 @@ int processReport(std::string filename) {
                 extraopt = false;
                 filechanges = false;
                 fileedits = false;
+                numberoflineends = 0;
+            }
+        } else {
+            numberoflineends = numberoflineends + 1;
+            if (numberoflineends >= 20) {
+                completionproc = true;
             }
         }
     }
 
 
     // PRINT EVERYTHING TO CONSOLE IF DEBUG TEST REPORT IS USED
-    if (filename == "/home/testreport.txt") {
+    // FIX THIS JUST FOR IF TRUE CASE
+    if (filename == "/home/testreport.txt" || true) {
         std::cout << "USER" << std::endl;
         for (const auto& pair : usercombomap) {
             std::cout << "#: " << pair.first << ", USER: " << pair.second << std::endl;
@@ -524,11 +704,53 @@ int processReport(std::string filename) {
             std::cout << "#: " << pair.first << ", FLSEDIT: " << pair.second << std::endl;
         }
     }
+
+    sleep(3);
     
 
 
 
-// THIS NEXT
+    // PUT ALL THE INFORMATION IN ITS CORECT SPOT AND KEEP GOING!
+    std::string dash = "-";
+    std::string colon = ":";
+    std::string dateofyear = inttostring(day) + dash + inttostring(month) + dash + inttostring(year) + " = " + inttostring(hour) + colon + inttostring(minute) + colon + inttostring(second);
+    std::cout << "TIME SEEN " << dateofyear << std::endl;
+
+
+
+    // SAVE ALL USERNAMES TO FILE
+    std::cout << "STARTING USERNAME" << std::endl;
+    std::cout << saveusernamestofile(usercombomap) << std::endl; 
+
+
+
+    // SAVE ALL PASSWORDS TO FILE
+    std::cout << "STARTING PASSWORD" << std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // THIS NEXT
+    if (clientIP == "" || clientIP == "ERROR") {
+        // NOT CONTINUE AND RETURN 0 IF EVERYTHING IS FINISHED CORRECTLY
+    }
 
     // do something with this
     return 255;
@@ -662,7 +884,6 @@ int cachefilechanges() {
     }
     return 0;
 }
-
 
 // Main Loop
 int cacheseverity() {
