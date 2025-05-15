@@ -19,7 +19,8 @@ const std::string apisendliststandard = "HAPI/1.1 200 OK\nContent-Type:text/text
 const std::string apisendlist2standard = "\n\n{state: success; crypt: ";
 const std::string apisendlist3standard = "; let: ";
 const std::string apisendlist4standard = "}";
-
+const std::string doublequote = "\"";
+const std::string apistartreporting = "{" + doublequote + "STATE" + doublequote + ":" + doublequote + "START_REPORT" + doublequote + "}";
 
 
 
@@ -32,14 +33,22 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
                std::string header4, std::string data4, std::string header5, 
                std::string data5, std::string header6, std::string data6, 
                std::string header7, std::string data7, std::string header8, 
-               std::string data8, std::string header9, std::string data9) {
+               std::string data8, std::string header9, std::string data9, std::string clientIPADDR) {
     
     // START PROCESSING HERE
     bool completedprocessing = false;
-    std::cout << header1 << ":" << data1 << ":" << header2 << ":" << data2 << std::endl;
+    //std::cout << header1 << ":" << data1 << ":" << header2 << ":" << data2 << std::endl;
 
-    sendtolog(header1 + "|");
-    sendtolog(data1 + "|");
+    std::cout << "H1=" << header1 << std::endl;
+    std::cout << "D1=" << data1 << std::endl;
+    std::cout << "H2=" << header2 << std::endl;
+    //std::cout << "D2=" << data2 << std::endl;
+    //std::cout << "H3=" << header3 << std::endl;
+    //std::cout << "D3=" << data3 << std::endl;
+    //std::cout << "H4=" << header4 << std::endl;
+    //std::cout << "D4=" << data4 << std::endl;
+    //std::cout << "H5=" << header5 << std::endl;
+    //std::cout << "D5=" << data5 << std::endl;
 
     // MAIN HEADER RELATING TO HONEYPOT/HONEYPI CONNECTIONS
     if (header1 == "CONNECTION") {
@@ -50,19 +59,21 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
             int updatesig = updateSIGNAL.load();
             int stopsig = stopSIGNAL.load();
             int statusPort = statusP11829.load();
+            newConnections.fetch_add(1);
 
             if (updatesig == 0 && stopsig == 0 && statusPort == 1) {
-                int send_res=send(clientID,apiavailable.c_str(),apiavailable.length(),0);
-                completedprocessing = true;
+                send(clientID,apiavailable.c_str(),apiavailable.length(),0);
+                analyzedPackets.fetch_add(1);
             } else {
-                int send_res=send(clientID,apiunavailable.c_str(),apiunavailable.length(),0);
-                completedprocessing = true;
+                send(clientID,apiunavailable.c_str(),apiunavailable.length(),0);
+                analyzedPackets.fetch_add(1);
+                apiRejects.fetch_add(1);
             }
             return 0;
         }
 
         // ESTABLISH CONNECTION AND VERIFY API KEYS; CREATE NEW TOKEN KEYS
-        if (data1 == "ESTABLISH") {
+        else if (data1 == "ESTABLISH") {
             if (header2 == "LOGIN" && data2.length() == 68) {
                 if (data2.substr(0,4) == "API=") {
                     std::string apiKEY = data2.substr(4,64);
@@ -89,70 +100,215 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
                     }
                     
                     std::string data3 = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent-Length: 90\n\n{state: success; TOKEN: " + newTOKEN + "}";
-                    int send_res=send(clientID,data3.c_str(),data3.length(),0);
+                    send(clientID,data3.c_str(),data3.length(),0);
+                    analyzedPackets.fetch_add(1);
+                    return 0;
                 } else {
-                    int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
+                    send(clientID,apireject.c_str(),apireject.length(),0);
+                    analyzedPackets.fetch_add(1);
+                    apiRejects.fetch_add(1);
                 }
             } else {
-                int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
+                send(clientID,apireject.c_str(),apireject.length(),0);
+                analyzedPackets.fetch_add(1);
+                apiRejects.fetch_add(1);
             }
+            return 0;
         }
 
         // CHECK FOR UPDATES SCRIPT
-        if (data1 == "CHECK_FOR_UPDATE") {
+        else if (data1 == "CHECK_FOR_UPDATE") {
 
         }
 
         // UPDATE IP LIST AND SEND TO CLIENT
-        if (data1 == "UPDATE") {
-
+        else if (data1 == "UPDATE") {
+            // FUTURE SEND TO CLIENT 
         }
 
         // REPORT HONEYPOT CONNECTED CORRECTLY TO INTERNET
-        if (data1 == "REPORT") {
+        else if (data1 == "REPORT") {
             // ADD CONDITIONS BASED ON SERVER STATUS AND OTHER THINGS
-            // int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
             int updatesig = updateSIGNAL.load();
             int stopsig = stopSIGNAL.load();
             int statusPort = statusP11829.load();
 
             if (updatesig == 0 && stopsig == 0 && statusPort == 1) {
-                int send_res=send(clientID,apiavailable.c_str(),apiavailable.length(),0);
-                completedprocessing = true;
+                send(clientID,apiavailable.c_str(),apiavailable.length(),0);
+                analyzedPackets.fetch_add(1);
             } else {
-                int send_res=send(clientID,apiunavailable.c_str(),apiunavailable.length(),0);
-                completedprocessing = true;
+                send(clientID,apiunavailable.c_str(),apiunavailable.length(),0);
+                analyzedPackets.fetch_add(1);
+                apiRejects.fetch_add(1);
             }
             return 0;
         }
 
         // HONEYPOT SENDING REPORT TO SERVER
-        if (data1 == "NEW_REPORT") {
-            // VERIFY IT IS ENCRYPTED
-            if (header2 == "METHOD" && header3 == "DATA") {
-                // DETERMINE THE METHOD OF ENCRYPTION
-                std::string decoded;
-                int keyshift = encryptionmethod(data3, 0);
-                // POSITIVE NUMBER = STANDARD CHARACTER MAP SHIFT
-                // NEGATIVE NUMBER = ECRYPTCOG
-                if (keyshift == 1) {
-                    decoded = hacksweep_decrypt(data3);
-                } else if (keyshift == 2) {
-                    decoded = ucrypt_decrypt(data3);
+        else if (data1 == "NEW_REPORT") {
+            // VERIFY DATA
+            loginfo("RECEIVED NEW_REPORT REQUEST!", true);
+            if (header2 == "TOTALPACKETS") {
+                if (statusP11829.load() == 1) {
+                    std::cout << "CREATING FILE" << std::endl;
+                    if (stringtoint(data2) < 200) {
+                        std::string filename = "/home/crashlogs/EN" + ipstring(clientIPADDR) + ".txt";
+                        int resultantnumber = access(filename.c_str(), F_OK);
+                        int testnumber = 0;
+                        bool partitionmax = false;
+                        std::string filetotest = "";
+                        if (resultantnumber != -1) {
+                            while (resultantnumber != -1 && partitionmax == false) {
+                                filetotest = "/home/crashlogs/EN" + ipstring(clientIPADDR) + "_" + inttostring(testnumber) + ".txt";
+                                resultantnumber = access(filetotest.c_str(), F_OK);
+                                testnumber = testnumber + 1;
+                                if (testnumber >= 999) {
+                                    partitionmax = true;
+                                }
+                            }
+                        } else {
+                            filetotest = filename;
+                        }
+                        
+                        
+                        // SEND VALID CONDITION
+                        if (partitionmax != true && testnumber < 1000) {
+                            filetotest = "touch " + filetotest;
+                            int results = system(filetotest.c_str());
+                            if (results == 0) {
+                                loginfo("Valid File at " + inttostring(testnumber), true);
+                                send(clientID,apistartreporting.c_str(),apistartreporting.length(),0);
+                                analyzedPackets.fetch_add(1);
+                                return 0;
+                            } else {
+                                send(clientID,apireject.c_str(),apireject.length(),0);
+                                std::cout << "Could not create file" << std::endl;
+                                analyzedPackets.fetch_add(1);
+                                apiRejects.fetch_add(1);
+                                return 0;
+                            }
+                        } else {
+                            std::cout << "Agreement could not be reached" << std::endl;
+                            send(clientID,apireject.c_str(),apireject.length(),0);
+                            analyzedPackets.fetch_add(1);
+                            apiRejects.fetch_add(1);
+                            return 0;
+                        }
+                    } else {
+                        std::cout << "Packet > 200" << std::endl;
+                        send(clientID,apireject.c_str(),apireject.length(),0);
+                        analyzedPackets.fetch_add(1);
+                        apiRejects.fetch_add(1);
+                        return 0;
+                    }
                 } else {
-                    // FAILED CONDITION!
-                    logwarning("Received Invalid Packet to Decode", true);
-                    return 30;
+                    send(clientID,apiwaittosend.c_str(),apiwaittosend.length(),0);
+                    analyzedPackets.fetch_add(1);
+                    return 0;
                 }
-
-
-                // DECODED PORTIONS START HERE!!!
+            } else {
+                send(clientID,apireject.c_str(),apireject.length(),0);
+                logwarning("Requested New_Report, Yet Lacked Total Packet Header.", true);
+                analyzedPackets.fetch_add(1);
+                apiRejects.fetch_add(1);
+                return 0;
             }
         }
 
         // HONEYPOT IN MIDDLE OF SENDING LARGE HACKER REPORT
-        if (data1 == "REPORT_PART") {
+        else if (data1 == "REPORT_PART") {
+            loginfo("Reporting part", true);
             
+            // PASSTHROUGH ADDRESS INTO FUNCTION TO CREATE FILE AND KEEP IT CONSTANT?
+            std::string ipstartname = ipstring(clientIPADDR);
+            std::string testcurrentfile = "/home/crashlogs/EN" + ipstartname + ".txt";
+            std::string testpastfile = testcurrentfile;
+            std::string headerforfile = "/home/crashlogs/EN" + ipstartname + "_";
+            int resultant = access(testcurrentfile.c_str(), R_OK);
+            int testnumberresult = 0;
+            if (resultant == -1) {
+                while (resultant == -1) {
+                    testcurrentfile = headerforfile + inttostring(testnumberresult) + ".txt";
+                    resultant = access(testcurrentfile.c_str(), R_OK);
+                    if (resultant == 0) {
+                        testpastfile = testcurrentfile;
+                    }
+                    testnumberresult = testnumberresult + 1;
+                }
+            } else {
+                testpastfile = testcurrentfile;
+            }
+
+            std::ofstream encryptfilestreamsave;
+            encryptfilestreamsave.open(testpastfile.c_str(), std::ios::app);
+            if (encryptfilestreamsave.is_open() == true) {
+                if (header3 == "DATA" && data3 != "REPORTFINISH=TRUE") {
+                    encryptfilestreamsave << data4;
+                    encryptfilestreamsave.close();
+                    send(clientID,apisuccess.c_str(),apisuccess.length(),0);
+                } else if (header4 == "DATA" && data3 == "REPORTFINISH=TRUE") {
+                    encryptfilestreamsave << data5 << std::endl << std::endl;
+                    encryptfilestreamsave.close();
+                    send(clientID,apisuccess.c_str(),apisuccess.length(),0);
+                    std::string commandtomovetofinish = "";
+                    std::string movedfilelocation = "";
+                    if (testnumberresult == 0) {
+                        movedfilelocation = "/home/crashlogs/DOEN" + ipstring(clientIPADDR) + ".txt";
+                        commandtomovetofinish = "mv " + testpastfile + " " + movedfilelocation;
+                    } else {
+                        movedfilelocation = "/home/crashlogs/DOEN" + ipstring(clientIPADDR) + "_" + inttostring(testnumberresult) + ".txt";
+                        commandtomovetofinish = "mv " + testpastfile + " " + movedfilelocation;
+                    }
+                    int sysresult = system(commandtomovetofinish.c_str());
+                    if (sysresult == 0) {
+                        loginfo("Finished Client COG", true);
+
+                        // LOOPS HERE TO PROCESS THE REPORT AND THEN ADD IT IF NECESSARY
+                        std::string ucryptcog = unencryptcog(movedfilelocation, ipstring(clientIPADDR));
+                        if (ucryptcog != "" && ucryptcog != "ERROR") {
+                            int analyze = processReport(ucryptcog, ipstring(clientIPADDR));
+                            if (analyze != 0) {
+                                logcritical("processReport did not Return 0! (" + inttostring(analyze) + ")", true);
+                                conversionErrors.fetch_add(1);
+                            }
+                            cogsAnalyzed.fetch_add(1);
+                        } else {
+                            logwarning("Failed to Analyze COG File, leaving in folder for later", true);
+                            std::cout << "Ucrypt() error" << std::endl;
+                            dataEncryptionErrors.fetch_add(1);
+                        }
+                        analyzedPackets.fetch_add(1);
+                        return 0;
+                    } else {
+                        logcritical("COULD NOT MOVE FILE TO FINISHED!", true);
+                        send(clientID,apireject.c_str(),apireject.length(),0);
+                        analyzedPackets.fetch_add(1);
+                        apiRejects.fetch_add(1);
+                        return 0;
+                    }
+                } else {
+                    std::cout << "INVALID" << std::endl;
+                    logcritical("INVALID PACKET RECEIVED IN WRITING REPORT_PART!", true);
+                    send(clientID,apireject.c_str(),apireject.length(),0);
+                    analyzedPackets.fetch_add(1);
+                    apiRejects.fetch_add(1);
+                    return 0;
+                }
+            } else {
+                logcritical("UNABLE TO OPEN COG FILE: " + testpastfile, true);
+                send(clientID,apireject.c_str(),apireject.length(),0);
+                analyzedPackets.fetch_add(1);
+                apiRejects.fetch_add(1);
+                return 0;
+            }
+        }
+        
+        // IF NOTHING MATCHES, ASSUME AN INVALID CONNECTION
+        else {
+            send(clientID,apireject.c_str(),apireject.length(),0);
+            analyzedPackets.fetch_add(1);
+            apiRejects.fetch_add(1);
+            return 0;
         }
     } else if (header1 == "LOGIN") {
         // DIFFERENT LOGIN METHODS ASSOCIATED HERE
@@ -161,17 +317,21 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
 
 
     if (completedprocessing == false) {
+        invalidPackets.fetch_add(1);
+        analyzedPackets.fetch_add(1);
         return 1;
     } else {
+        analyzedPackets.fetch_add(1);
         return 0;
     }
+    invalidPackets.fetch_add(1);
+    analyzedPackets.fetch_add(1);
     return 255;
 }
 
 // ANALYZE THE API REQUESTS
-int analyzeAPIandexecute(int clientID, std::string messageA) {
-    sendtolog("ANALYZING");
-    sendtolog(messageA);
+int analyzeAPIandexecute(int clientID, std::string messageA, std::string clientIPADDR) {
+    loginfo("ANALYZING" + messageA, false);
     std::string message = messageA;
     std::string charactertoanalyze = "";
     std::string charactertoanalyze2 = "";
@@ -196,7 +356,6 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
         if (charactertoanalyze == "{" && charactertoanalyze2 == doublequote) {
             int characteranalyzing = 2;
             int charactertwoanalyzing = 3;
-            int charactertoanalyzemax = message.length();
             int previousmarker = 2;
 
             bool completedapiread = false;
@@ -210,11 +369,10 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
                     // ANALYZE THE LETTERS TO A RESULT
                     if (charactertoanalyze == "\"" && charactertoanalyze2 == ",") {
                         std::string headerlength = message.substr(previousmarker, characteranalyzing - previousmarker);
-                        sendtolog("CURRENT STRING");
-                        sendtolog(headerlength);
+                        loginfo("CURRENT STRING:" + headerlength, true);
 
                         characteranalyzing = characteranalyzing + 1;
-                        previousmarker = characteranalyzing;
+                        previousmarker = characteranalyzing + 1;
 
                         if (firstheader == "") {
                             firstheader = headerlength;
@@ -231,24 +389,25 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
                                         if (fifthheader == "") {
                                             fifthheader = headerlength;
                                         } else {
-                                            sendtolog("OVERFLOW ERROR IN HAPI PARSER!");
+                                            logcritical("OVERFLOW ERROR IN HAPI PARSER! ", true);
+                                            conversionErrors.fetch_add(1);
+                                            analyzedPackets.fetch_add(1);
                                             return 1;
                                         }
                                     }
                                 }
                             }
                         }
-                        previousmarker = previousmarker + 3;
+                        previousmarker = previousmarker + 2;
                     }
 
                     // ANALYZE DATA HANDLERS TO RESULT
                     if (charactertoanalyze == "\"" && charactertoanalyze2 == ";") {
                         std::string dataheaderlength = message.substr(previousmarker, characteranalyzing - previousmarker);
-                        sendtolog("CURRENT DATA_STRING");
-                        sendtolog(dataheaderlength);
+                        loginfo("CURRENT DATA_STRING" + dataheaderlength, true);
 
                         characteranalyzing = characteranalyzing + 1;
-                        previousmarker = characteranalyzing;
+                        previousmarker = characteranalyzing + 1;
 
                         if (firstdataheader == "") {
                             firstdataheader = dataheaderlength;
@@ -265,23 +424,25 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
                                         if (fifthdataheader == "") {
                                             fifthdataheader = dataheaderlength;
                                         } else {
-                                            sendtolog("OVERFLOW ERROR IN HAPI PARSER!");
+                                            logcritical("OVERFLOW ERROR IN HAPI PARSER!", true);
+                                            conversionErrors.fetch_add(1);
+                                            analyzedPackets.fetch_add(1);
                                             return 1;
                                         }
                                     }
                                 }
                             }
                         }
-                        previousmarker = previousmarker + 3;
+                        previousmarker = previousmarker + 2;
                     }
 
                     if (charactertoanalyze == "\"" && charactertoanalyze2 == "}") {
                         std::string dataheaderlength = message.substr(previousmarker, characteranalyzing - previousmarker);
-                        sendtolog("CURRENT DATA_STRING");
-                        sendtolog(dataheaderlength);
+                        loginfo("CURRENT DATA_STRING" + dataheaderlength, true);
 
                         characteranalyzing = characteranalyzing + 1;
                         previousmarker = characteranalyzing;
+                        // + 1
 
                         if (firstdataheader == "") {
                             firstdataheader = dataheaderlength;
@@ -298,7 +459,9 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
                                         if (fifthdataheader == "") {
                                             fifthdataheader = dataheaderlength;
                                         } else {
-                                            sendtolog("OVERFLOW ERROR IN HAPI PARSER!");
+                                            logcritical("OVERFLOW ERROR IN HAPI PARSER!", true);
+                                            conversionErrors.fetch_add(1);
+                                            analyzedPackets.fetch_add(1);
                                             return 1;
                                         }
                                     }
@@ -309,7 +472,7 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
                         completedapiread = true;
                     }
                 } else {
-                    sendtolog("A PARSER ERROR OCCURRED IN HAPI!");
+                    logcritical("A PARSER ERROR OCCURRED IN HAPI!", true);
                 }
 
                 characteranalyzing = characteranalyzing + 1;
@@ -321,59 +484,67 @@ int analyzeAPIandexecute(int clientID, std::string messageA) {
 
             // CHECK FOR NULL CASE
             if (firstheader == "" || firstdataheader == "") {
-                sendtolog("EMPTY HAPI REQUEST RECEIVED (0)");
+                logwarning("EMPTY HAPI REQUEST RECEIVED (0)", true);
                 errors = errors + 1;
             }
 
             // CHECK FOR VALID SETS OF DATA
             if ((firstheader != "" && firstdataheader == "") || (firstheader == "" && firstdataheader != "")) {
-                sendtolog("INVALID HAPI REQUEST (1)");
+                logwarning("INVALID HAPI REQUEST (1)", true);
                 errors = errors + 1;
             }
             if ((secondheader != "" && seconddataheader == "") || (secondheader == "" && seconddataheader != "")) {
-                sendtolog("INVALID HAPI REQUEST (2)");
+                logwarning("INVALID HAPI REQUEST (2)", true);
                 errors = errors + 1;
             }
             if ((thirdheader != "" && thirddataheader == "") || (thirdheader == "" && thirddataheader != "")) {
-                sendtolog("INVALID HAPI REQUEST (3)");
+                logwarning("INVALID HAPI REQUEST (3)", true);
                 errors = errors + 1;
             }
             if ((fourthheader != "" && fourthdataheader == "") || (fourthheader == "" && fourthdataheader != "")) {
-                sendtolog("INVALID HAPI REQUEST (4)");
+                logwarning("INVALID HAPI REQUEST (4)", true);
                 errors = errors + 1;
             }
             if ((fifthheader != "" && fifthheader == "") || (fifthheader == "" && fifthheader != "")) {
-                sendtolog("INVALID HAPI REQUEST (5)");
+                logwarning("INVALID HAPI REQUEST (5)", true);
                 errors = errors + 1;
             }
 
             if (errors == 0) {
                 // START PROCESSING HERE
-                int runtime = processAPI(clientID, firstheader, firstdataheader, secondheader, seconddataheader, thirdheader, thirddataheader, fourthheader, fourthdataheader, fifthheader, fifthdataheader, "", "", "", "", "", "", "", "");
+                int runtime = processAPI(clientID, firstheader, firstdataheader, secondheader, seconddataheader, thirdheader, thirddataheader, fourthheader, fourthdataheader, fifthheader, fifthdataheader, "", "", "", "", "", "", "", "", clientIPADDR);
                 return runtime;
             } else {
                 // INVALID REQUEST RECEIVED
+                invalidPackets.fetch_add(1);
+                analyzedPackets.fetch_add(1);
                 return 1;
             }
-            sendtolog("FINISHED!");
+            loginfo("FINISHED!", true);
         }
     } else {
-        sendtolog("NULL STRING RECEIVED!");
+        logcritical("NULL STRING RECEIVED!", true);
+        invalidPackets.fetch_add(1);
+        conversionErrors.fetch_add(1);
+        analyzedPackets.fetch_add(1);
         return 1;
     }
-  return 255;  
+    invalidPackets.fetch_add(1);
+    analyzedPackets.fetch_add(1);
+    return 255;  
 }
 
 void apiconnectionthread(int clientID, std::string ipaddress, std::string b11829, std::string c11829) {
     char buffer[4096] = {0};
-    std::string clientIDperserver = "ClientID: " + clientID;
+    std::string clientIDperserver = "ClientID: " + inttostring(clientID);
     int readrun = read(clientID, buffer, 4096);
-    std::string readrunreturn = "Characters Read: " + readrun;
+    std::string readrunreturn = "Characters Read: " + inttostring(readrun);
     
     // CHECK FOR ERROR
     if (readrun == -1) {
         logwarning("Client Disconnected Before Reading...", true);
         ip11829[ipaddress] = ip11829[ipaddress] + 10;
+        invalidPackets.fetch_add(1);
     }
 
     // CONTINUE PROCESSING
@@ -404,29 +575,43 @@ void apiconnectionthread(int clientID, std::string ipaddress, std::string b11829
                 if (lineanalyze == "/1.1") {
                     if (bufferstd.substr(9,22) == "Content-Type:text/json") {
                         std::string messagetoread = bufferstd.substr(33, bufferstd.length() - 33);
-                        int result = analyzeAPIandexecute(clientID, messagetoread);
+                        int result = analyzeAPIandexecute(clientID, messagetoread, ipaddress);
                         if (result != 0) {
-                            sendtolog("AN ERROR OCCURRED");
+                            logcritical("AN ERROR OCCURRED (HAPI)", true);
+                            std::cout << "RETURNED:" << result << std::endl;
+                            invalidPackets.fetch_add(1);
                         }
+                        //analyzedPackets.fetch_add(1);
                     } else {
-                        sendtolog("RECEIVED INCOMPATIBLE STRING FROM HAPI");
+                        logcritical("RECEIVED INCOMPATIBLE STRING FROM HAPI", true);
+                        invalidPackets.fetch_add(1);
+                        analyzedPackets.fetch_add(1);
                     }
                 } else {
                     // UNSUPPORTED HAPI VERSION
-                    sendtolog("UNSUPPORTED VERSION");
+                    logcritical("UNSUPPORTED VERSION", true);
+                    apiRejects.fetch_add(1);
+                    invalidPackets.fetch_add(1);
+                    analyzedPackets.fetch_add(1);
                 }
             } else {
                 // FAIL
+                loginfo("Received NOT HAPI Packet on HAPI Interface!", true);
+                invalidPackets.fetch_add(1);
+                analyzedPackets.fetch_add(1);
             }
             
         } else {
-            
             // SEND ERROR ON API PORT
-            int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
+            send(clientID,apireject.c_str(),apireject.length(),0);
+            invalidPackets.fetch_add(1);
+            analyzedPackets.fetch_add(1);
         }
     } else {
         // SEND ERROR ON API PORT
-        int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
+        send(clientID,apireject.c_str(),apireject.length(),0);
+        invalidPackets.fetch_add(1);
+        analyzedPackets.fetch_add(1);
     }
 
     close(clientID);
@@ -460,6 +645,8 @@ void handle11829Connections(int server_fd4) {
                 }
             } else {
                 loginfo("UNABLE TO ACCEPT API CONNECTION", true);
+                invalidPackets.fetch_add(1);
+                analyzedPackets.fetch_add(1);
             }
         } else {
             char client_ip[INET_ADDRSTRLEN];
@@ -478,7 +665,7 @@ void handle11829Connections(int server_fd4) {
             auto searchforip = ip11829.find(clientipstd);
             if (searchforip != ip11829.end()) {
                 int logs = searchforip->second;
-                foundindb = "Found in DB Previous - Packets: " + logs;
+                foundindb = "Found in DB Previous - Packets: " + inttostring(logs);
                 if (logs >= 6) {
                     statusallow = statusallow + "DENIED!";
                     ip11829.erase(clientipstd);
@@ -651,8 +838,158 @@ void handle11829Connections(int server_fd4) {
                         apithreadnumber29.detach();
                         break;
                     }
+                    case 30: {
+                        std::thread apithreadnumber30(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber30.detach();
+                        break;
+                    }
+                    case 31: {
+                        std::thread apithreadnumber31(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber31.detach();
+                        break;
+                    }
+                    case 32: {
+                        std::thread apithreadnumber32(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber32.detach();
+                        break;
+                    }
+                    case 33: {
+                        std::thread apithreadnumber33(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber33.detach();
+                        break;
+                    }
+                    case 34: {
+                        std::thread apithreadnumber34(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber34.detach();
+                        break;
+                    }
+                    case 35: {
+                        std::thread apithreadnumber35(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber35.detach();
+                        break;
+                    }
+                    case 36: {
+                        std::thread apithreadnumber36(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber36.detach();
+                        break;
+                    }
+                    case 37: {
+                        std::thread apithreadnumber37(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber37.detach();
+                        break;
+                    }
+                    case 38: {
+                        std::thread apithreadnumber38(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber38.detach();
+                        break;
+                    }
+                    case 39: {
+                        std::thread apithreadnumber39(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber39.detach();
+                        break;
+                    }
+                    case 40: {
+                        std::thread apithreadnumber40(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber40.detach();
+                        break;
+                    }
+                    case 41: {
+                        std::thread apithreadnumber41(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber41.detach();
+                        break;
+                    }
+                    case 42: {
+                        std::thread apithreadnumber42(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber42.detach();
+                        break;
+                    }
+                    case 43: {
+                        std::thread apithreadnumber43(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber43.detach();
+                        break;
+                    }
+                    case 44: {
+                        std::thread apithreadnumber44(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber44.detach();
+                        break;
+                    }
+                    case 45: {
+                        std::thread apithreadnumber45(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber45.detach();
+                        break;
+                    }
+                    case 46: {
+                        std::thread apithreadnumber46(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber46.detach();
+                        break;
+                    }
+                    case 47: {
+                        std::thread apithreadnumber47(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber47.detach();
+                        break;
+                    }
+                    case 48: {
+                        std::thread apithreadnumber48(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber48.detach();
+                        break;
+                    }
+                    case 49: {
+                        std::thread apithreadnumber49(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber49.detach();
+                        break;
+                    }
+                    case 50: {
+                        std::thread apithreadnumber50(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber50.detach();
+                        break;
+                    }
+                    case 51: {
+                        std::thread apithreadnumber51(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber51.detach();
+                        break;
+                    }
+                    case 52: {
+                        std::thread apithreadnumber52(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber52.detach();
+                        break;
+                    }
+                    case 53: {
+                        std::thread apithreadnumber53(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber53.detach();
+                        break;
+                    }
+                    case 54: {
+                        std::thread apithreadnumber54(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber54.detach();
+                        break;
+                    }
+                    case 55: {
+                        std::thread apithreadnumber55(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber55.detach();
+                        break;
+                    }
+                    case 56: {
+                        std::thread apithreadnumber56(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber56.detach();
+                        break;
+                    }
+                    case 57: {
+                        std::thread apithreadnumber57(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber57.detach();
+                        break;
+                    }
+                    case 58: {
+                        std::thread apithreadnumber58(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber58.detach();
+                        break;
+                    }
+                    case 59: {
+                        std::thread apithreadnumber59(apiconnectionthread, clientID, ipaddress, foundindb, statusallow);
+                        apithreadnumber59.detach();
+                        break;
+                    }
                 }
-                if (apithreadnumber == 29) {
+                if (apithreadnumber == 59) {
                     apithreadnumber = 0;
                 } else {
                     apithreadnumber = apithreadnumber + 1;
@@ -660,7 +997,9 @@ void handle11829Connections(int server_fd4) {
                 
             } else {
                 // SEND ERROR ON API PORT
-                int send_res=send(clientID,apireject.c_str(),apireject.length(),0);
+                send(clientID,apireject.c_str(),apireject.length(),0);
+                clientsDenied.fetch_add(1);
+                analyzedPackets.fetch_add(1);
                 close(clientID);
                 packetlogger("[P11829] - BLOCKED - " + connectionfrom + " - " + foundindb + " - " + statusallow);
             }
