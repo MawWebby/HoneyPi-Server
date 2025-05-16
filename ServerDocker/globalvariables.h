@@ -47,19 +47,20 @@ extern std::atomic<int> statusP11829;
 extern std::atomic<int> serverErrors;
 
 // STATUS NUMBERS
-extern std::atomic<int> apiRejects;
-extern std::atomic<int> newConnections;
-extern std::atomic<int> totalDevicesConnected;
-extern std::atomic<int> processingErrors;
-extern std::atomic<int> conversionErrors;
-extern std::atomic<int> dataEncryptionErrors;
-extern std::atomic<int> invalidPackets;
-extern std::atomic<int> analyzedPackets;
-extern std::atomic<int> clientsDenied;
-extern std::atomic<int> cogsAnalyzed;
-extern std::atomic<int> networkErrors;
-extern std::atomic<int> encryptionchange;
-extern std::atomic<int> readwriteoperationfail;
+extern std::atomic<long long int> apiRejects;
+extern std::atomic<long long int> newConnections;
+extern std::atomic<long long int> totalDevicesConnected;
+extern std::atomic<long long int> processingErrors;
+extern std::atomic<long long int> conversionErrors;
+extern std::atomic<long long int> dataEncryptionErrors;
+extern std::atomic<long long int> invalidPackets;
+extern std::atomic<long long int> analyzedPackets;
+extern std::atomic<long long int> clientsDenied;
+extern std::atomic<long long int> cogsAnalyzed;
+extern std::atomic<long long int> networkErrors;
+extern std::atomic<long long int> encryptionchange;
+extern std::atomic<long long int> readwriteoperationfail;
+extern std::atomic<long long int> entryAdded;
 
 // UPDATE VARIABLES
 extern std::string updatesforSERVER;

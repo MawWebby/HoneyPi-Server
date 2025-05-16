@@ -666,7 +666,7 @@ void handle11829Connections(int server_fd4) {
             if (searchforip != ip11829.end()) {
                 int logs = searchforip->second;
                 foundindb = "Found in DB Previous - Packets: " + inttostring(logs);
-                if (logs >= 6) {
+                if (logs >= 11) {
                     statusallow = statusallow + "DENIED!";
                     ip11829.erase(clientipstd);
                     logs = logs + 1;

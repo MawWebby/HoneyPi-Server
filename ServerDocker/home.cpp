@@ -45,19 +45,20 @@ std::atomic<int> serverErrors(0);
 std::atomic<int> serverStarted(0);
 
 // STATUS NUMBERS
-std::atomic<int> apiRejects(0);
-std::atomic<int> newConnections(0);
-std::atomic<int> totalDevicesConnected(0);
-std::atomic<int> processingErrors(0);
-std::atomic<int> conversionErrors(0);
-std::atomic<int> dataEncryptionErrors(0);
-std::atomic<int> invalidPackets(0);
-std::atomic<int> analyzedPackets(0);
-std::atomic<int> clientsDenied(0);
-std::atomic<int> cogsAnalyzed(0);
-std::atomic<int> networkErrors(0);
-std::atomic<int> encryptionchange(0);
-std::atomic<int> readwriteoperationfail(0);
+std::atomic<long long int> apiRejects(0);
+std::atomic<long long int> newConnections(0);
+std::atomic<long long int> totalDevicesConnected(0);
+std::atomic<long long int> processingErrors(0);
+std::atomic<long long int> conversionErrors(0);
+std::atomic<long long int> dataEncryptionErrors(0);
+std::atomic<long long int> invalidPackets(0);
+std::atomic<long long int> analyzedPackets(0);
+std::atomic<long long int> clientsDenied(0);
+std::atomic<long long int> cogsAnalyzed(0);
+std::atomic<long long int> networkErrors(0);
+std::atomic<long long int> encryptionchange(0);
+std::atomic<long long int> readwriteoperationfail(0);
+std::atomic<long long int> entryAdded(0);
 
 
 // PACKET VARIABLES
