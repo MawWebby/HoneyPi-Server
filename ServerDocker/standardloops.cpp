@@ -295,42 +295,42 @@ std::string inttostring(int value) {
     bool hexa = false;
 
     // DETERMINE CASE
-    if (value < 9) {
+    if (value <= 9) {
         single = true;
         doublenum = false;
         triple = false;
         quad = false;
         penta = false;
         hexa = false;
-    } else if (value < 99) {
+    } else if (value <= 99) {
         single = true;
         doublenum = true;
         triple = false;
         quad = false;
         penta = false;
         hexa = false;
-    } else if (value < 999) {
+    } else if (value <= 999) {
         single = true;
         doublenum = true;
         triple = true;
         quad = false;
         penta = false;
         hexa = false;
-    } else if (value < 9999) {
+    } else if (value <= 9999) {
         single = true;
         doublenum = true;
         triple = true;
         quad = true;
         penta = false;
         hexa = false;
-    } else if (value < 99999) {
+    } else if (value <= 99999) {
         single = true;
         doublenum = true;
         triple = true;
         quad = true;
         penta = true;
         hexa = false;
-    } else if (value < 999999) {
+    } else if (value <= 999999) {
         single = true;
         doublenum = true;
         triple = true;
