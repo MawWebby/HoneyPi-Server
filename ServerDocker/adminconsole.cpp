@@ -96,6 +96,10 @@ void level1access() {
     std::cout << "ping        | (NO ARGS) | Ping Internet for Connectivity" << std::endl;
     std::cout << "pingdb      | (NO ARGS) | Ping MariaDB to Make Sure it is Working" << std::endl;
     std::cout << "refresh     | (rp,wb)   | Refresh the Cache" << std::endl;
+    std::cout << std::endl;
+    std::cout << "+" << std::endl;
+    std::cout << "- user      | (USERNAME)| Add a Point to a Username in the UserStream File" << std::endl;
+    std::cout << "- pass      | (PASSWORD)| Add a Point to a Password in the PassStream File" << std::endl;
 }
 
 void level0access() {
@@ -176,7 +180,7 @@ void processCommand(const std::string& command) {
         std::cout << " - Clients Denied:     " << clientsDenied.load() << std::endl;
         std::cout << " - COGs Analyzed:      " << cogsAnalyzed.load() << std::endl;
         std::cout << " - Networked Error:    " << networkErrors.load() << std::endl;
-        
+        std::cout << " - Entries Saved:      " << entryAdded.load() << std::endl;
         
         foundcommand = true;
     }
@@ -647,6 +651,7 @@ void processCommand(const std::string& command) {
         firstthree = command.substr(0,3);
     }
 
+    // THE IP COMMANDS
     if (firstthree == "IP ") {
         if (useraccesslevel >= 1) {
             if (command.length() >= 10) {
@@ -760,7 +765,46 @@ void processCommand(const std::string& command) {
         foundcommand = true;
     }
 
+    // THE FILE COMMANDS
+    if (firstthree == "+ u") {
+        if (useraccesslevel >= 1) {
+            if (firstseveral.length() == 8) {
+                if (firstseveral.substr(0,7) == "+ user ") {
+                    std::map<int, std::string> userbase;
+                    userbase[0] = command.substr(7, command.length() - 7);
+                    int returnvalue = saveusernamestofile(userbase);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                }
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
 
+    if (firstthree == "+ p") {
+        if (useraccesslevel >= 1) {
+            if (firstseveral.length() == 8) {
+                if (firstseveral.substr(0,7) == "+ pass ") {
+                    std::map<int, std::string> userbase;
+                    userbase[0] = command.substr(7, command.length() - 7);
+                    int returnvalue = savepasswordstofile(userbase);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                }
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
 
     // MAKE SURE THE COMMAND IS FOUND
     if (foundcommand == false) {
