@@ -60,7 +60,7 @@ std::map<std::string, float> filechangesseveritymap;
 
 // FILE LOCATIONS
 const std::string usernamelocation = "/home/listfiles/userstream.txt";
-
+const std::string passwordlocation = "/home/listfiles/passstream.txt";
 
 
 
@@ -89,54 +89,58 @@ int determineseverity(int commandsranonreport,
 }
 
 
-
-
+// FIX THIS - ADD ANALYZING COGS HEADER
+// + user test
+// + pass test
 
 //////////////////////////////////////////////////////////
 //// SAVE THE VARIOUS PORTIONS OF CRASHLOGS TO FILES! ////
 //////////////////////////////////////////////////////////
 // SAVE USERNAMES TO THE FILE
 int saveusernamestofile(std::map<int, std::string> usernames) {
-    std::ifstream usernamefile;
-    usernamefile.open(usernamelocation.c_str());
+    std::fstream usernamefile;
+    usernamefile.open(usernamelocation.c_str(), std::ios::in | std::ios::out);
     if (usernamefile.is_open() != true) {
         logwarning("Unable to Open Username File!", true);
         readwriteoperationfail.fetch_add(1);
+        processingErrors.fetch_add(1);
         return -1;
     }
 
 
     int numbertosearch = usernames.size();
+    std::cout << "ARRAY SIZE" << numbertosearch << std::endl;
     int current = 0;
     int saved = 0;
     while (current < numbertosearch) {
         bool foundbit = false;
         int linenumber = 0;
+        int charlength = 0;
         while (usernamefile.eof() != true && foundbit != true) {
             std::string getlineofuserfile = "";
             getline(usernamefile, getlineofuserfile);
             if (getlineofuserfile != "") {
-                int lastposofcharacter = getlineofuserfile.find_last_of(" - ");
+                int lastposofcharacter = getlineofuserfile.find_last_of("-");
+                std::cout << "LAST FIND" << std::endl;
                 int maybe = getlineofuserfile.find(usernames[current]);
                 if (lastposofcharacter >= 0) {
-                    std::string usertest = getlineofuserfile.substr(0, getlineofuserfile.length() - lastposofcharacter + 2);
-                    std::cout << "Testing:" << usertest << std::endl;
+                    std::string usertest = getlineofuserfile.substr(0, lastposofcharacter - 1);
+                    std::cout << "Testing:" << usertest << "|" << std::endl;
                     if (usertest == usernames[current]) {
                         std::cout << "FOUND PREVIOUS ENTRY FOR SIMILAR THING!" << std::endl;
+                        long long int poswriter = usernamefile.tellg();
                         foundbit = true;
-                        std::string numberoftimes = getlineofuserfile.substr(lastposofcharacter + 2, getlineofuserfile.length() - lastposofcharacter - 2);
-                        std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) + 1);
-                        std::ofstream userfileWRITE;
-                        userfileWRITE.open(usernamelocation.c_str());
-                        if (userfileWRITE.is_open() != true) {
-                            std::cout << "Unable top Open File" << std::endl;
-                            return -2;
-                        }
+                        std::string numberoftimes = getlineofuserfile.substr(lastposofcharacter + 2);
+                        std::cout << "POS:" << lastposofcharacter << "ENTRY:" << numberoftimes << std::endl;
 
-                        userfileWRITE.seekp(linenumber);
-                        userfileWRITE << usertest << " - " << newnumbertoinsert << std::endl;
+                        // fix this - writing position for new and make sure number is correct!
+                        std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) + 1);
+                        //std::ofstream userfileWRITE;
+                        //userfileWRITE.open(usernamelocation.c_str());
+
+                        usernamefile.seekp(poswriter - getlineofuserfile.length() - 1);
+                        usernamefile << usertest << " - " << newnumbertoinsert << std::endl;
                         std::cout << usertest << " - " << newnumbertoinsert << std::endl;
-                        userfileWRITE.close();
                         saved = saved + 1;
                     }
                 }
@@ -147,16 +151,17 @@ int saveusernamestofile(std::map<int, std::string> usernames) {
 
         // IF FOUND BIT != TRUE, Then Create a New Entry in the File and Save
         if (foundbit != true) {
-            std::string numberoftimes = "1";
-            std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) + 1);
+            std::cout << "NO PREVIOUS ENTRY FOUND, CREATING NEW" << std::endl;
+            std::string newnumbertoinsert = "1";
             std::ofstream userfileWRITE;
             userfileWRITE.open(usernamelocation.c_str(), std::ios::app);
             if (userfileWRITE.is_open() != true) {
                 std::cout << "Unable top Open File" << std::endl;
-                return -2;
+                readwriteoperationfail.fetch_add(1);
+                processingErrors.fetch_add(1);
+                return -3;
             }
 
-            userfileWRITE.seekp(linenumber);
             userfileWRITE << usernames[current] << " - " << newnumbertoinsert << std::endl;
             std::cout << usernames[current] << " - " << newnumbertoinsert << std::endl;
             userfileWRITE.close();
@@ -167,10 +172,108 @@ int saveusernamestofile(std::map<int, std::string> usernames) {
         std::cout << "CURRENT" << current << std::endl;
     }
 
+    std::cout << "CURRENT FILE" << std::endl;
+    std::string catread = "cat /home/listfiles/userstream.txt";
+    system(catread.c_str());
+
     usernamefile.close();
+
+    entryAdded.fetch_add(saved);
 
     return saved;
 }
+
+// SAVE PASSWORDS TO THE FILE
+int savepasswordstofile(std::map<int, std::string> passwords) {
+    std::fstream passwordfile;
+    passwordfile.open(passwordlocation.c_str(), std::ios::in | std::ios::out);
+    if (passwordfile.is_open() != true) {
+        logwarning("Unable to Open Passwords File!", true);
+        readwriteoperationfail.fetch_add(1);
+        processingErrors.fetch_add(1);
+        return -1;
+    }
+
+
+    int numbertosearch = passwords.size();
+    std::cout << "ARRAY SIZE" << numbertosearch << std::endl;
+    int current = 0;
+    int saved = 0;
+    while (current < numbertosearch) {
+        bool foundbit = false;
+        int linenumber = 0;
+        int charlength = 0;
+        while (passwordfile.eof() != true && foundbit != true) {
+            std::string getlineofpassfile = "";
+            getline(passwordfile, getlineofpassfile);
+            if (getlineofpassfile != "") {
+                int lastposofcharacter = getlineofpassfile.find_last_of("-");
+                std::cout << "LAST FIND" << std::endl;
+                int maybe = getlineofpassfile.find(passwords[current]);
+                if (lastposofcharacter >= 0) {
+                    std::string usertest = getlineofpassfile.substr(0, lastposofcharacter - 1);
+                    std::cout << "Testing:" << usertest << "|" << std::endl;
+                    if (usertest == passwords[current]) {
+                        std::cout << "FOUND PREVIOUS ENTRY FOR SIMILAR THING!" << std::endl;
+                        long long int poswriter = passwordfile.tellg();
+                        foundbit = true;
+                        std::string numberoftimes = getlineofpassfile.substr(lastposofcharacter + 2);
+                        std::cout << "POS:" << lastposofcharacter << "ENTRY:" << numberoftimes << std::endl;
+
+                        // fix this - writing position for new and make sure number is correct!
+                        std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) + 1);
+                        //std::ofstream userfileWRITE;
+                        //userfileWRITE.open(usernamelocation.c_str());
+
+                        passwordfile.seekp(poswriter - getlineofpassfile.length() - 1);
+                        passwordfile << usertest << " - " << newnumbertoinsert << std::endl;
+                        std::cout << usertest << " - " << newnumbertoinsert << std::endl;
+                        saved = saved + 1;
+                    }
+                }
+            }
+            std::cout << linenumber << std::endl;
+            linenumber = linenumber + 1;
+        }
+
+        // IF FOUND BIT != TRUE, Then Create a New Entry in the File and Save
+        if (foundbit != true) {
+            std::cout << "NO PREVIOUS ENTRY FOUND, CREATING NEW" << std::endl;
+            std::string newnumbertoinsert = "1";
+            std::ofstream passfileWRITE;
+            passfileWRITE.open(passwordlocation.c_str(), std::ios::app);
+            if (passfileWRITE.is_open() != true) {
+                std::cout << "Unable top Open File" << std::endl;
+                processingErrors.fetch_add(1);
+                readwriteoperationfail.fetch_add(1);
+                return -3;
+            }
+
+            passfileWRITE << passwords[current] << " - " << newnumbertoinsert << std::endl;
+            std::cout << passwords[current] << " - " << newnumbertoinsert << std::endl;
+            passfileWRITE.close();
+            saved = saved + 1;
+        }
+
+        current = current + 1;
+        std::cout << "CURRENT" << current << std::endl;
+    }
+
+    std::cout << "CURRENT FILE" << std::endl;
+    std::string catread = "cat /home/listfiles/passstream.txt";
+    system(catread.c_str());
+
+    passwordfile.close();
+
+    entryAdded.fetch_add(saved);
+
+    return saved;
+}
+
+
+
+
+
 
 
 
