@@ -85,21 +85,28 @@ void level1access() {
     std::cout << std::endl;
     std::cout << "Level 1 Access:" << std::endl;
     std::cout << "shutdown    | (NO ARGS) | Shutdown the Server" << std::endl;
-    std::cout << "IP CHECK    | (IPADDR)  | Check for IP in Server DB [Not IPLIST]" << std::endl;
-    std::cout << "IP ADD      | (IPADDR)  | Add IP into Server DB [NOT IPLIST]" << std::endl;
-    std::cout << "IP REMOVE   | (IPADDR)  | Remove IP Address from Server DB [Not IPLIST]" << std::endl;
-    std::cout << "IP BLOCK    | (IPADDR)  | Block IP Address in Server DB [Not IPLIST]" << std::endl;
-    std::cout << "IP UBLOCK   | (IPADDR)  | Unblock IP Address in Server DB [Not IPLIST]" << std::endl;
-    std::cout << "IP READDEV  | (IPADDR)  | Read the Developer Banned Block of IP Address" << std::endl;
-    std::cout << "IP PACKET   | (-#/+#);(IPADDR) | Add/Subtract Packets from IPADDR" << std::endl;
     std::cout << "generate    | (PI/ROUTER/FILENAME/CLIENTKEY) | Generate a Random Key (Not Assigned)" << std::endl;
     std::cout << "ping        | (NO ARGS) | Ping Internet for Connectivity" << std::endl;
     std::cout << "pingdb      | (NO ARGS) | Ping MariaDB to Make Sure it is Working" << std::endl;
     std::cout << "refresh     | (rp,wb)   | Refresh the Cache" << std::endl;
     std::cout << std::endl;
     std::cout << "+" << std::endl;
-    std::cout << "- user      | (USERNAME)| Add a Point to a Username in the UserStream File" << std::endl;
-    std::cout << "- pass      | (PASSWORD)| Add a Point to a Password in the PassStream File" << std::endl;
+    std::cout << "  user      | (USERNAME)| Add a Point to a Username in the UserStream File" << std::endl;
+    std::cout << "  pass      | (PASSWORD)| Add a Point to a Password in the PassStream File" << std::endl;
+    std::cout << "  comm      | (COMMANDS)| Add a Point to a Command in the CommandStream File" << std::endl;
+    std::cout << std::endl;
+    std::cout << "-" << std::endl;
+    std::cout << "  user      | (USERNAME)| Remove a Point to a Username in the UserStream File (DEBUG ONLY)" << std::endl;
+    std::cout << std::endl;
+    std::cout << "IP          [!!!DEPRECATED COMMAND!!!]" << std::endl;
+    std::cout << "   CHECK    | (IPADDR)  | Check for IP in Server DB [Not IPLIST]" << std::endl;
+    std::cout << "   ADD      | (IPADDR)  | Add IP into Server DB [NOT IPLIST]" << std::endl;
+    std::cout << "   REMOVE   | (IPADDR)  | Remove IP Address from Server DB [Not IPLIST]" << std::endl;
+    std::cout << "   BLOCK    | (IPADDR)  | Block IP Address in Server DB [Not IPLIST]" << std::endl;
+    std::cout << "   UBLOCK   | (IPADDR)  | Unblock IP Address in Server DB [Not IPLIST]" << std::endl;
+    std::cout << "   READDEV  | (IPADDR)  | Read the Developer Banned Block of IP Address" << std::endl;
+    std::cout << "   PACKET   | (-#/+#);(IPADDR) | Add/Subtract Packets from IPADDR" << std::endl;
+    std::cout << "COMMAND will soon be replaced with non-MariaDB Version that is txt related" << std::endl;
 }
 
 void level0access() {
@@ -772,7 +779,7 @@ void processCommand(const std::string& command) {
                 if (firstseveral.substr(0,7) == "+ user ") {
                     std::map<int, std::string> userbase;
                     userbase[0] = command.substr(7, command.length() - 7);
-                    int returnvalue = saveusernamestofile(userbase);
+                    int returnvalue = saveusernamestofile(userbase, false);
                     if (returnvalue != 1) {
                         std::cout << "INSERT Returned " << returnvalue << std::endl;
                     } else {
@@ -790,9 +797,89 @@ void processCommand(const std::string& command) {
         if (useraccesslevel >= 1) {
             if (firstseveral.length() == 8) {
                 if (firstseveral.substr(0,7) == "+ pass ") {
-                    std::map<int, std::string> userbase;
-                    userbase[0] = command.substr(7, command.length() - 7);
-                    int returnvalue = savepasswordstofile(userbase);
+                    std::map<int, std::string> passbase;
+                    passbase[0] = command.substr(7, command.length() - 7);
+                    int returnvalue = savepasswordstofile(passbase, false);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                }
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    if (firstthree == "+ c") {
+        if (useraccesslevel >= 1) {
+            if (firstseveral.length() == 8) {
+                if (firstseveral.substr(0,7) == "+ comm ") {
+                    std::map<int, std::string> commbase;
+                    commbase[0] = command.substr(7, command.length() - 7);
+                    int returnvalue = savecommandstofile(commbase, false);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                }
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    if (firstthree == "- u") {
+        if (useraccesslevel >= 1) {
+            if (firstseveral.length() == 8) {
+                if (firstseveral.substr(0,7) == "- user ") {
+                    std::string userbase;
+                    userbase = command.substr(7, command.length() - 7);
+                    int returnvalue = removeusernamefromfile(userbase, false);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                }
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    if (firstthree == "- p") {
+        if (useraccesslevel >= 1) {
+            if (firstseveral.length() == 8) {
+                if (firstseveral.substr(0,7) == "- pass ") {
+                    std::string passbase;
+                    passbase = command.substr(7, command.length() - 7);
+                    int returnvalue = removepasswordfromfile(passbase, false);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                }
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    if (firstthree == "- c") {
+        if (useraccesslevel >= 1) {
+            if (firstseveral.length() == 8) {
+                if (firstseveral.substr(0,7) == "- comm ") {
+                    std::string commbase;
+                    commbase = command.substr(7, command.length() - 7);
+                    int returnvalue = removecommandfromfile(commbase, false);
                     if (returnvalue != 1) {
                         std::cout << "INSERT Returned " << returnvalue << std::endl;
                     } else {
