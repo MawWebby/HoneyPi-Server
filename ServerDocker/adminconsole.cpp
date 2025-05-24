@@ -279,11 +279,11 @@ void processCommand(const std::string& command) {
                 std::string typeRAM = command.substr(8,2);
                 if (typeRAM == "rp") {
                     std::cout << "Caching Report into RAM..." << std::endl;
-                    int returnweb = cacheseverity();
-                    if (returnweb != 0) {
-                        std::cout << "Caching Returned " << returnweb << std::endl;
+                    std::map<int, std::map<std::string, float>> returnweb = cacheseverity();
+                    if (returnweb[0]["ERROR"] != -1) {
+                        std::cout << "OK" << std::endl;
                     } else {
-                        std::cout << "Success" << std::endl;
+                        std::cout << "FAILED" << std::endl;
                     }
                 } else if (typeRAM == "wb") {
                     std::cout << "Caching HTML into RAM..." << std::endl;
@@ -785,6 +785,8 @@ void processCommand(const std::string& command) {
                     } else {
                         std::cout << "OK" << std::endl;
                     }
+                } else {
+                    std::cout << "INVALID OPTION FOR '+'" << std::endl;
                 }
             }
         } else {
@@ -805,6 +807,8 @@ void processCommand(const std::string& command) {
                     } else {
                         std::cout << "OK" << std::endl;
                     }
+                } else {
+                    std::cout << "INVALID OPTION FOR '+'" << std::endl;
                 }
             }
         } else {
@@ -825,8 +829,50 @@ void processCommand(const std::string& command) {
                     } else {
                         std::cout << "OK" << std::endl;
                     }
+                } else {
+                    std::cout << "INVALID OPTION FOR '+'" << std::endl;
                 }
             }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    if (firstthree == "+ f") {
+        if (useraccesslevel >= 1) {
+            if (firstseveral.length() == 8) {
+                if (firstseveral.substr(0,7) == "+ fold ") {
+                    std::map<int, std::string> foldbase;
+                    foldbase[0] = command.substr(7, command.length() - 7);
+                    int returnvalue = savefoldertofile(foldbase, false);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                } else if (firstseveral.substr(0,7) == "+ flvw") {
+                    std::map<int, std::string> filebase;
+                    filebase[0] = command.substr(7, command.length() - 7);
+                    int returnvalue = savefilesviewedtofile(filebase, false);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                } else if (firstseveral.substr(0,7) == "+ flch") {
+                    std::map<int, std::string> filebase;
+                    filebase[0] = command.substr(7, command.length() - 7);
+                    int returnvalue = savefileeffectstofile(filebase, false);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                } else {
+                    std::cout << "INVALID OPTION FOR '+'" << std::endl;
+                }
+            } 
         } else {
             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }
@@ -845,6 +891,8 @@ void processCommand(const std::string& command) {
                     } else {
                         std::cout << "OK" << std::endl;
                     }
+                } else {
+                    std::cout << "INVALID OPTION FOR '+'" << std::endl;
                 }
             }
         } else {
@@ -885,6 +933,8 @@ void processCommand(const std::string& command) {
                     } else {
                         std::cout << "OK" << std::endl;
                     }
+                } else {
+                    std::cout << "INVALID OPTION FOR '+'" << std::endl;
                 }
             }
         } else {
@@ -892,6 +942,36 @@ void processCommand(const std::string& command) {
         }
         foundcommand = true;
     }
+
+    /*
+    if (firstthree == "- f") {
+        if (useraccesslevel >= 1) {
+            if (firstseveral.length() == 8) {
+                if (firstseveral.substr(0,7) == "- fold ") {
+                    std::string commbase;
+                    commbase = command.substr(7, command.length() - 7);
+                    int returnvalue = removecommandfromfile(commbase, false);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                } else {
+                    std::cout << "INVALID OPTION FOR '+'" << std::endl;
+                }
+            }
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+*/
+
+
+
+
+
+
 
     // MAKE SURE THE COMMAND IS FOUND
     if (foundcommand == false) {
