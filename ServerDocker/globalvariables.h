@@ -104,7 +104,8 @@ extern std::atomic<int> calculatingtime;
 ////////////////////////////////////////////////
 
 // "bash"
-extern std::map<std::string, float> commandseveritymap;
+//extern std::map<std::string, float> commandseveritymap;
+extern std::atomic<std::string> commandseveritymap2;
 
 // "/home"
 extern std::map<std::string, float> fileaccessseveritymap;
