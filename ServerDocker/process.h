@@ -8,25 +8,46 @@
 
 
 // SAVE THE VARIOUS FUNCTIONS TO FILES
-int saveusernamestofile(std::map<int, std::string>, bool);
-int savepasswordstofile(std::map<int, std::string>, bool);
-int savecommandstofile(std::map<int, std::string>, bool);
-int savefoldertofile(std::map<int, std::string>, bool);
-int savefilesviewedtofile(std::map<int, std::string>, bool);
-int savefileeffectstofile(std::map<int, std::string>, bool);
+int saveusernamestofile(std::map<int, std::string>, bool);//G111
+int savepasswordstofile(std::map<int, std::string>, bool);//G111
+int savecommandstofile(std::map<int, std::string>, bool);//G
+int savefoldertofile(std::map<int, std::string>, bool);//G
+int savefilesviewedtofile(std::map<int, std::string>, bool);//G
+int savefileeffectstofile(std::map<int, std::string>, bool);//G
 int saveipaddrPREMIUMFILE(std::map<int, std::string>, int, bool);
 int saveiptoSTANDARDFILE(std::string, bool);
 int saveiptoSTRICTFILE(std::string, bool);
-std::map<int, float> saveiptoTIMEBASEDFILE(std::string, int, bool);
+std::map<int, float> saveiptoTIMEBASEDFILE(std::string, float, bool);//G111
 int saveiptoMOREINFOFILE(std::string ipaddr, bool systemcall);
 int saveextraopttofile(std::map<int, std::string>, bool);
-int devblockipaddrtofiles(std::map<int, std::string>, bool);
+int devblockipaddrtofiles(std::string, bool);
+
 
 
 // REMOVE NUMBER IF NEEDED FROM FILE
-int removeusernamefromfile(std::string, bool);
-int removepasswordfromfile(std::string, bool);
-int removecommandfromfile(std::string, bool);
+int removeusernamefromfile(std::string, bool);//G
+int removepasswordfromfile(std::string, bool);//G
+int removecommandfromfile(std::string, bool);//G
+int removefolderfromfile(std::string, bool);//G
+int removefileviewfromfile(std::string, bool);//G
+int removefileeffectfromfile(std::string, bool);//G
+int removeipSTANDARDfromfile(std::string, std::string, std::string, bool);
+int removeipSTRICTfromfile(std::string, std::string, std::string, bool);
+int removepacketfromipaddrrawfile(std::string, std::string, std::string, bool);
+
+
+
+// READ FROM FILES
+std::map<int, std::string> readfromipraw(std::string);
+std::map<int, std::map<int, std::string>> readcogprocessinglocations();
+std::map<int, std::string> readlistofcogsforIP(std::string);
+std::string readfromtoconsole(std::string);
+int changecogfiletofinish(std::string);
+
+
+
+// MAINTENANCE SCRIPTS
+std::map<int, std::map<int, std::string>> runipstandardstrictpurginglist(bool, bool, bool);
 
 
 
