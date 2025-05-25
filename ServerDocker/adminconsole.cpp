@@ -2,6 +2,7 @@
 #include "globalvariables.h"
 
 int useraccesslevel = 0;
+std::string user = "-";
 
 // BACKUP OF DATABASES
 
@@ -54,6 +55,44 @@ std::string terminalinput(bool sensitive) {
 
 
 
+
+
+//////////////////////////////////////
+//// PLUS / MINUS COMMANDS HEADER ////
+//////////////////////////////////////
+void plusminuscommands() {
+    std::cout << "+" << std::endl;
+    std::cout << "  user      | (USERNAME)| Add a Point to a Username in the UserStream File" << std::endl;
+    std::cout << "  pass      | (PASSWORD)| Add a Point to a Password in the PassStream File" << std::endl;
+    std::cout << "  comm      | (COMMANDS)| Add a Point to a Command in the CommandStream File" << std::endl;
+    std::cout << "  fold      | (FOLDERS) | Add a Point to a Folder in the FolderStream File" << std::endl;
+    std::cout << "  flvw      | (FILES)   | Add a Point to a File Viewed in the Stream File" << std::endl;
+    std::cout << "  flch      | (FILES)   | Add a Point to a File Edited in the Stream File" << std::endl;
+    std::cout << std::endl;
+    std::cout << "-" << std::endl;
+    std::cout << "  user      | (USERNAME)| Remove a Point to a Username in the UserStream File" << std::endl;
+    std::cout << "  pass      | (PASSWORD)| Remove a Point to a Password in the PassStream File" << std::endl;
+    std::cout << "  comm      | (COMMANDS)| Remove a Point to a Command in the CommStream File" << std::endl;
+    std::cout << "  fold      | (FOLDERS) | Remove a Point to a Folder in the FolderStream File" << std::endl;
+    std::cout << "  flvw      | (FILES)   | Remove a Point to a Viewed File in the FileViewStream File" << std::endl;
+    std::cout << "  flch      | (FILES)   | Remove a Point to a Edited File in the FileEditStream File" << std::endl;
+    return;
+}
+
+
+
+
+void ipcommands() {
+    std::cout << std::endl;
+    std::cout << "IP" << std::endl;
+    std::cout << "   RAW      | (IPADDR)  | Read from IP Raw File for IP Address and Report Back" << std::endl;
+    std::cout << "   ADD      | (IPADDR; SEVERITY) | Add New Report to an IP Address in File Stream" << std::endl;
+}
+
+
+
+
+
 ////////////////////////////////////
 //// USER ACCESS LEVEL COMMANDS ////
 ////////////////////////////////////
@@ -79,6 +118,8 @@ void level2access() {
     std::cout << "read11829packets | (NO ARGS) | Read All IP/Packets Combination on Port" << std::endl;
     std::cout << "read443packets   | (NO ARGS) | Read All IP/Packets Combination on Port" << std::endl;
     std::cout << "testreport  | (NO ARGS) | Process the Test Report for Loop Code" << std::endl;
+    std::cout << "+           | (NO ARGS) | Display the Plus/Minus Commands" << std::endl;
+    std::cout << "-           | (NO ARGS) | Display the Plus/Minus Commands" << std::endl;
 }
 
 void level1access() {
@@ -90,22 +131,8 @@ void level1access() {
     std::cout << "pingdb      | (NO ARGS) | Ping MariaDB to Make Sure it is Working" << std::endl;
     std::cout << "refresh     | (rp,wb)   | Refresh the Cache" << std::endl;
     std::cout << std::endl;
-    std::cout << "+" << std::endl;
-    std::cout << "  user      | (USERNAME)| Add a Point to a Username in the UserStream File" << std::endl;
-    std::cout << "  pass      | (PASSWORD)| Add a Point to a Password in the PassStream File" << std::endl;
-    std::cout << "  comm      | (COMMANDS)| Add a Point to a Command in the CommandStream File" << std::endl;
-    std::cout << std::endl;
-    std::cout << "-" << std::endl;
-    std::cout << "  user      | (USERNAME)| Remove a Point to a Username in the UserStream File (DEBUG ONLY)" << std::endl;
-    std::cout << std::endl;
-    std::cout << "IP          [!!!DEPRECATED COMMAND!!!]" << std::endl;
-    std::cout << "   CHECK    | (IPADDR)  | Check for IP in Server DB [Not IPLIST]" << std::endl;
-    std::cout << "   ADD      | (IPADDR)  | Add IP into Server DB [NOT IPLIST]" << std::endl;
-    std::cout << "   REMOVE   | (IPADDR)  | Remove IP Address from Server DB [Not IPLIST]" << std::endl;
-    std::cout << "   BLOCK    | (IPADDR)  | Block IP Address in Server DB [Not IPLIST]" << std::endl;
-    std::cout << "   UBLOCK   | (IPADDR)  | Unblock IP Address in Server DB [Not IPLIST]" << std::endl;
-    std::cout << "   READDEV  | (IPADDR)  | Read the Developer Banned Block of IP Address" << std::endl;
-    std::cout << "   PACKET   | (-#/+#);(IPADDR) | Add/Subtract Packets from IPADDR" << std::endl;
+    plusminuscommands();
+    ipcommands();
     std::cout << "COMMAND will soon be replaced with non-MariaDB Version that is txt related" << std::endl;
 }
 
@@ -203,15 +230,17 @@ void processCommand(const std::string& command) {
         system("clear");
         sleep(1);
         logwarning("Attempted Login @ " + username + "; Pass: " + password, true);
-        int result = logincredentials(username, password);
-        if (result != 0) {
-            useraccesslevel = result;
+        std::map<int, std::string> result = logincredentials(username, password);
+        if (result[0] == "1") {
+            useraccesslevel = stringtoint(result[1]);
+            user = result[2];
             std::cout << "Login was Successful" << std::endl;
             loginfo("Login Successful", true);
         } else {
             useraccesslevel = 0;
+            user = "-";
             std::cout << "Login DENIED!" << std::endl;
-            logcritical("Login DENIED @ " + username + "; Pass: " + password, true);
+            logwarning("Login DENIED @ " + username + "; Pass: " + password, true);
         }
         sleep(3);
         system("clear");
@@ -411,6 +440,7 @@ void processCommand(const std::string& command) {
         sleep(1);
         foundcommand = true;
         useraccesslevel = 0;
+        user = "-";
     }
 
 
@@ -664,105 +694,52 @@ void processCommand(const std::string& command) {
             if (command.length() >= 10) {
                 std::string subco = command.substr(3,4);
                 
-                // IP CHECK FOR CHECK
-                if (subco == "CHEC") {
-                    std::cout << "Checking for IP" << std::endl;
-                    std::string iptocheck = command.substr(9, command.length() - 9);
-                    int resultant = mariadb_CHECKIPADDR(iptocheck);
-                    if (resultant == 1) {
-                        std::cout << "IP Address is in Range" << std::endl;
-                    } else {
-                        std::cout << "IP Address Not Found" << std::endl;
-                    }
-                
-                // IP CHECK FOR ADD
-                } else if (subco == "ADD ") {
-                    std::cout << "Adding IP" << std::endl;
-                    std::string iptocheck = command.substr(7, command.length() - 7);
-                    int resultant = mariadb_ADDIPADDR(iptocheck);
-                    if (resultant == 0) {
-                        std::cout << "OK" << std::endl;
-                    } else {
+                if (subco == "RAW ") {
+                    std::cout << "IP:" << command.substr(7) << std::endl;
+                    std::map<int, std::string> returnedvalues = readfromipraw(command.substr(7));
+                    if (returnedvalues[0] == "NULL") {
+                        std::cout << "IP Not Found in DB" << std::endl;
+                    } else if (returnedvalues[0] == "ERROR") {
                         std::cout << "ERROR" << std::endl;
-                    } 
-                // IP CHECK FOR REMOVE
-                } else if (subco == "REMO") {
-                    std::cout << "Removing IP" << std::endl;
-                    std::string iptocheck = command.substr(10, command.length() - 10);
-                    int resultant = mariadb_REMOVEOLDIPADDR(iptocheck);
-                    if (resultant == 0) {
-                        std::cout << "IP Address Removed" << std::endl;
                     } else {
-                        std::cout << "ERROR Removing IP Address" << std::endl;
-                    }
-                // IP CHECK FOR BLOCK
-                    // FIX THIS BY ADDING NUMBEROFPACKETSCHANGEDANDMORE  ip block 1
-                } else if (subco == "BLOC") {
-                    std::cout << "Blocking IP" << std::endl;
-                    std::string iptocheck = command.substr(9, command.length() - 9);
-                    int resultant = mariadb_BLOCKIPADDR(iptocheck);
-                    if (resultant == 0) {
-                        std::cout << "OK" << std::endl;
-                    } else {
-                        std::cout << "ERROR" << std::endl;
-                    } 
-                // IP CHECK FOR UNBLOCK
-                } else if (subco == "UBLO") {
-                    std::cout << "Unblocking IP" << std::endl;
-                    std::string iptocheck = command.substr(11, command.length() - 11);
-                    int resultant = mariadb_UNBLOCKIPADDR(iptocheck);
-                    if (resultant == 0) {
-                        std::cout << "OK" << std::endl;
-                    } else {
-                        std::cout << "ERROR" << std::endl;
-                    } 
-                } else if (subco == "READ") {
-                    std::cout << "Reading DEV Block of IP" << std::endl;
-                    std::string iptocheck = command.substr(12, command.length() - 12);
-                    bool resultant = mariadb_READDEVBLOCK(iptocheck);
-                    if (resultant == true) {
-                        std::cout << "DEV Block = Banned!" << std::endl;
-                    } else {
-                        std::cout << "DEV Block not found or false" << std::endl;
-                    } 
-                } else if (subco == "PACK") {
-                    std::cout << "Adjusting Packets of IP" << std::endl;
-                    std::string symbol = command.substr(10, 1);
-                    int symbolmath = 0;
-                    if (symbol == "-") {
-                        symbolmath = 1;
-                    } else if (symbol == "+") {
-                        symbolmath = 2;
-                    } else {
-                        std::cout << "No Valid Option Received" << std::endl;
-                    }
+                        std::cout << "RECEIVED" << std::endl;
+                        
+                        // TIME COMPARITORS
+                        const time_t newestpacket = static_cast<const time_t> (stringtoint(returnedvalues[2]));
+                        const time_t firstpack = static_cast<const time_t> (stringtoint(returnedvalues[3]));
 
-                    int resultant = 3;
-
-                    if (symbolmath != 0) {
-                        std::string numberofpackets = command.substr(11, 1);
-                        int numberoftimes = stringtoint(numberofpackets);
-                        std::string iptocheck = command.substr(12, command.length() - 12);
-                        int numberofcalls = 0;
-                        if (symbolmath == 1) {
-                            while (numberofcalls < numberoftimes) {
-                                resultant = mariadb_REMOVEPACKETFROMIPADDR(iptocheck);
-                                numberofcalls = numberofcalls + 1;
-                            }
-                        } else if (symbolmath == 2) {
-                            while (numberofcalls < numberoftimes) {
-                                resultant = mariadb_ADDPACKETTOIPADDR(iptocheck);
-                                numberofcalls = numberofcalls + 1;
-                            }
-                        }
-                    }
-
-                    if (resultant == 0) {
-                        std::cout << "OK" << std::endl;
-                    } else {
-                        std::cout << "ERROR" << std::endl;
+                        // REPORTING INFORMATION
+                        std::cout << "IP Address in File       | " << returnedvalues[0] << "|" << std::endl;
+                        std::cout << "Severity Last 30 Reports | " << returnedvalues[1] << "|" << std::endl;
+                        std::cout << "Newest Packet Time       | " << ctime(&newestpacket);
+                        std::cout << "First Packet             | " << ctime(&firstpack);
+                        std::cout << "Number of Reports        | " << returnedvalues[4] << "|" << std::endl;
+                        std::cout << "Max Severity Recorded    | " << returnedvalues[5] << "|" << std::endl;
+                        std::cout << "Min Severity Recorded    | " << returnedvalues[6] << "|" << std::endl;
+                        std::cout << "Mean Severity            | " << returnedvalues[7] << "|" << std::endl;
+                        std::cout << "Developer Ban of IP      | " << returnedvalues[8] << "|" << std::endl;
+                        std::cout << "Permanent Ban of IP      | " << returnedvalues[9] << "|" << std::endl;
+                        std::cout << "Lifted Ban for IP        | " << returnedvalues[10] << "|" << std::endl;
+                        std::cout << "Associated with HoneyPi  | " << returnedvalues[11] << "|" << std::endl;
+                        std::cout << "Number of Reports (Today)| " << returnedvalues[12] << "|" << std::endl;
+                        std::cout << "Days Since Last Report   | " << returnedvalues[13] << "|" << std::endl;
+                        std::cout << "Notes                    | " << returnedvalues[14] << "|" << std::endl;
+                        std::cout << std::endl;
+                        std::cout << "Position in File         | " << returnedvalues[100] << std::endl;
+                        std::cout << "Length of Entry          | " << returnedvalues[101] << std::endl;
                     }
                 }
+
+                if (subco == "ADD ") {
+
+                    std::cout << "IP:" << command.substr(7, command.length()) << std::endl;
+                    std::map<int, float> returnedvalues = saveiptoTIMEBASEDFILE(command.substr(7, command.length()), 10, false);
+
+                }
+                std::string catcommand = "cat /home/listfiles/iplistraw.txt";
+                system(catcommand.c_str());
+
+            
             } else {
                 std::cout << "No Valid Options Received" << std::endl;
             }
@@ -773,6 +750,13 @@ void processCommand(const std::string& command) {
     }
 
     // THE FILE COMMANDS
+    if (command == "+" || command == "-") {
+        if (useraccesslevel >= 2) {
+            plusminuscommands();
+        }
+        foundcommand = true;
+    }
+
     if (firstthree == "+ u") {
         if (useraccesslevel >= 1) {
             if (firstseveral.length() == 8) {
@@ -851,7 +835,7 @@ void processCommand(const std::string& command) {
                     } else {
                         std::cout << "OK" << std::endl;
                     }
-                } else if (firstseveral.substr(0,7) == "+ flvw") {
+                } else if (firstseveral.substr(0,7) == "+ flvw ") {
                     std::map<int, std::string> filebase;
                     filebase[0] = command.substr(7, command.length() - 7);
                     int returnvalue = savefilesviewedtofile(filebase, false);
@@ -860,7 +844,7 @@ void processCommand(const std::string& command) {
                     } else {
                         std::cout << "OK" << std::endl;
                     }
-                } else if (firstseveral.substr(0,7) == "+ flch") {
+                } else if (firstseveral.substr(0,7) == "+ flch ") {
                     std::map<int, std::string> filebase;
                     filebase[0] = command.substr(7, command.length() - 7);
                     int returnvalue = savefileeffectstofile(filebase, false);
@@ -892,7 +876,7 @@ void processCommand(const std::string& command) {
                         std::cout << "OK" << std::endl;
                     }
                 } else {
-                    std::cout << "INVALID OPTION FOR '+'" << std::endl;
+                    std::cout << "INVALID OPTION FOR '-'" << std::endl;
                 }
             }
         } else {
@@ -913,6 +897,8 @@ void processCommand(const std::string& command) {
                     } else {
                         std::cout << "OK" << std::endl;
                     }
+                } else {
+                    std::cout << "INVALID OPTION FOR '-'" << std::endl;
                 }
             }
         } else {
@@ -934,7 +920,7 @@ void processCommand(const std::string& command) {
                         std::cout << "OK" << std::endl;
                     }
                 } else {
-                    std::cout << "INVALID OPTION FOR '+'" << std::endl;
+                    std::cout << "INVALID OPTION FOR '-'" << std::endl;
                 }
             }
         } else {
@@ -943,21 +929,39 @@ void processCommand(const std::string& command) {
         foundcommand = true;
     }
 
-    /*
+    
     if (firstthree == "- f") {
         if (useraccesslevel >= 1) {
             if (firstseveral.length() == 8) {
                 if (firstseveral.substr(0,7) == "- fold ") {
-                    std::string commbase;
-                    commbase = command.substr(7, command.length() - 7);
-                    int returnvalue = removecommandfromfile(commbase, false);
+                    std::string foldbase;
+                    foldbase = command.substr(7, command.length() - 7);
+                    int returnvalue = removefolderfromfile(foldbase, false);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                } else if (firstseveral.substr(0,7) == "- flvw ") {
+                    std::string filebase;
+                    filebase = command.substr(7, command.length() - 7);
+                    int returnvalue = removefileviewfromfile(filebase, false);
+                    if (returnvalue != 1) {
+                        std::cout << "INSERT Returned " << returnvalue << std::endl;
+                    } else {
+                        std::cout << "OK" << std::endl;
+                    }
+                } else if (firstseveral.substr(0,7) == "- flch ") {
+                    std::string filebase;
+                    filebase = command.substr(7, command.length() - 7);
+                    int returnvalue = removefileeffectfromfile(filebase, false);
                     if (returnvalue != 1) {
                         std::cout << "INSERT Returned " << returnvalue << std::endl;
                     } else {
                         std::cout << "OK" << std::endl;
                     }
                 } else {
-                    std::cout << "INVALID OPTION FOR '+'" << std::endl;
+                    std::cout << "INVALID OPTION FOR '-'" << std::endl;
                 }
             }
         } else {
@@ -965,7 +969,7 @@ void processCommand(const std::string& command) {
         }
         foundcommand = true;
     }
-*/
+
 
 
 
