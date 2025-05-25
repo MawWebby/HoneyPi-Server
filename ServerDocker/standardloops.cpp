@@ -209,7 +209,7 @@ int stringtoint(std::string values) {
     }
 
     // CHECK FOR LONG INT
-    if (values.length() > 9) {
+    if (values.length() > 19) {
         loginfo("RECEIVED A SUPER LONG STRING TO ANALYZE! (STD->INT)", true);
         return 0;
     }
