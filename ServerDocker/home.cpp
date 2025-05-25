@@ -348,26 +348,26 @@ std::map <int, const char*> tempfilelocations = {
 
 // FILE FRIENDLY NAME
 std::map <int, std::string> filemessages = {
-    {0, "IP LIST STRICT"},
-    {1, "IP LIST STANDARD"},
-    {2, "IP LIST RAW"},
-    {3, "IP LIST MORE INFO"},
-    {4, "MAC LIST"},
-    {5, "SEVERITY LIST"},
-    {6, "ACCOUNTS / MACS / AND APIs INFO"},
+    {0, "IP LIST STRICT"},                  // used
+    {1, "IP LIST STANDARD"},                // used
+    {2, "IP LIST RAW"},                     // used
+    {3, "IP LIST MORE INFO"},               // used
+    {4, "MAC LIST"},                        // CHANGED TO FILEEDITS! 
+    {5, "SEVERITY LIST"},                   
+    {6, "ACCOUNTS / MACS / AND APIs INFO"}, // change to entry history type
     {7, "IP SAFETY"},
     {8, "SERVER CONFIG 1"},
-    {9, "USERNAME STREAM"},
-    {10, "PASSWORD STREAM"},
+    {9, "USERNAME STREAM"},                 // used
+    {10, "PASSWORD STREAM"},                // used
     {11, "SERVER DUMP FILE"},
-    {12, "LOG FILE"},
-    {13, "FOLDERS ACCESSED FILE"},
-    {14, "FILES ACCESED FILE"},
-    {15, "COMMANDS RAN FILE"},
-    {16, "ERRORS FILE"},
+    {12, "LOG FILE"},                       // used
+    {13, "FOLDERS ACCESSED FILE"},          // used
+    {14, "FILES ACCESED FILE"},             // used
+    {15, "COMMANDS RAN FILE"},              // used
+    {16, "ERRORS FILE"},                    
     {17, "IP ACCESSED SERVER FILE"},
-    {18, "LOGINS ATTEMPTED ON SERVER FILE"},
-    {19, "SERVER HISTORY FILE (JSON)"},
+    {18, "LOGINS ATTEMPTED ON SERVER FILE"}, // fix this
+    {19, "SERVER HISTORY FILE (JSON)"}, // fix this rotating log file
 };
 
 
@@ -1883,15 +1883,16 @@ int setup() {
 
     // LOAD MAIN SEVERITY CACHE INTO RAM
     loginfo("COMMAND - Loading MAINCOMMAND Into RAM...", false);
-    int ram2 = cacheseverity();
-    if (ram2 != 0) {
+    std::map<int, std::map<std::string, float>> ram2 = cacheseverity();
+    std::map<int, std::map<std::string, float>> errormap;
+    errormap[0]["ERROR"] = -1;
+    if (ram2 == errormap) {
         logcritical("ERROR", true);
-        logcritical("SEVERITY RETURNED ", false);
-        std::cout << ram2 << std::endl;
-        //startupchecks = startupchecks + 1;
-    // FIX THIS
+        logcritical("CACHING RETURNED WITH THE ERROR MAP!", true);
+        startupchecks = startupchecks + 1;
     }
-    
+
+
 
 
 
