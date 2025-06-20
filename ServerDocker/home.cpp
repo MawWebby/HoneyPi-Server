@@ -10,7 +10,7 @@ const bool debug = false;
 const bool testing = false;
 const bool newserverupdate = true;
 const bool EXCEPTION = true;
-std::string honeyversion = "0.5.5";
+std::string honeyversion = "0.6.0";
 const int heartbeattime = 10;
 
 
@@ -317,6 +317,7 @@ std::map <int, const char*> filelocations = {
     {17, "/home/serverdump/ipaccessed.txt"},
     {18, "/home/serverdump/login.txt"},
     {19, "/home/serverdump/serverhistory.txt"},
+    {20, "/home/listfiles/extramap.txt"}
 };
 
 
@@ -342,6 +343,7 @@ std::map <int, const char*> tempfilelocations = {
     {17, "/home/serverdump/tempipaccessed.txt"},
     {18, "/home/serverdump/templogin.txt"},
     {19, "/home/serverdump/tempserverhistory.txt"},
+    {20, "/home/listfiles/tempextramap.txt"}
 };
 
 
@@ -368,6 +370,7 @@ std::map <int, std::string> filemessages = {
     {17, "IP ACCESSED SERVER FILE"},
     {18, "LOGINS ATTEMPTED ON SERVER FILE"}, // fix this
     {19, "SERVER HISTORY FILE (JSON)"}, // fix this rotating log file
+    {20, "EXTRA OPTION MAP"}
 };
 
 
@@ -689,6 +692,7 @@ void handleSignal(int signal) {
 
 // CHECK TO SEE IF LATEST HONEYPI VERSION FOR CLIENT DEVICES HAS CHANGED
 bool checkhoneypiupdateavailable() {
+    loginfo("UPDATES - Checking for HoneyPi Updates...", false);
     checkforhoneypiupdates();
     std::string updatefileinformationhoneypi = updatesforHONEYPI;
     std::string aStd = updatefileinformationhoneypi;
@@ -750,11 +754,13 @@ bool checkhoneypiupdateavailable() {
 
 // CHECK TO SEE IF VERSION IS DIFFERENT THAN LISTED
 bool serverupdateavailable() {
-    if (honeymainversion != latesthoneyosSERVERMAJOR || honeyminorversion != latesthoneyosSERVERMINOR || honeyhotfixversion != latesthoneyosSERVERHOT) {
-        loginfo("New Server Update Available!", true);
+    if (stringtoint(honeymainversion) < stringtoint(latesthoneyosSERVERMAJOR) || stringtoint(honeyminorversion) < stringtoint(latesthoneyosSERVERMINOR) || stringtoint(honeyhotfixversion) < stringtoint(latesthoneyosSERVERHOT)) {
+        sendtolog("Done", true);
+        loginfo("UPDATES - New Server Update Available!", true);
         return true;
     } else {
-        loginfo("No New Version Found", true);
+        sendtolog("", true);
+        sendtolog("No New Version Found", true);
         return false;
     }
     return false;
@@ -762,6 +768,7 @@ bool serverupdateavailable() {
 
 // CHECK THAT SERVER HAS A VALID HEADER
 bool checkserverupdateavailable() {
+    loginfo("UPDATES - Checking for Server Updates...", false);
     checkforserverupdates();
     std::string aStd = updatesforSERVER;
     if (aStd.length() >=19) {
@@ -1621,7 +1628,7 @@ int setup() {
 
 
     // SET DOCKER CONTAINER OPTIONS
-    loginfo("DOCKER - Setting Container Options...", false);
+    loginfo("DOCKER  - Setting Container Options...", false);
     signal(SIGTERM, handleSignal);
     signal(SIGINT, handleSignal);
     sendtolog("OK", true);
@@ -1644,12 +1651,13 @@ int setup() {
 
 
     // CHECK FOR SYSTEM UPDATES
-    loginfo("UPDATES - Checking for Server Updates...", false);
     bool serverupdate = checkserverupdateavailable();
     if (serverupdate == true) {
-        std::cout << "FUTURE" << std::endl;
+        std::cout << "updateduringsetup()" << std::endl;
+        // updateduringstartup(true, "pull_and_restart");
     }
-    loginfo("UPDATES - Checking for HoneyPi Updates...", false);
+    // FIX THIS - ADD NEW UPDATE SCRIPT WITHOUT SHUTTING DOWN (EVERYTHING DOWN ANYWAY)
+
     bool honeypiupdate = checkhoneypiupdateavailable();
     if(honeypiupdate == true) {
         std::cout << "FUTURE" << std::endl;
@@ -1660,7 +1668,7 @@ int setup() {
 
 
     // VERIFY SERVER FOLDERS ARE OPEN
-    loginfo("Validating COG Directory...", false);
+    loginfo("COG_DIR - Validating COG Directory...", false);
     int testing = system("touch /home/crashlogs/test.txt");
     if (testing != 0) {
         logcritical("ERROR", true);
@@ -1680,13 +1688,13 @@ int setup() {
 
 
     // CALL NEW HTML MAIN WEB PAGES
-    loginfo("HTML - Updating to Main Head...", false);
+    loginfo("HTML    - Updating to Main Head...", false);
     int res256 = system(updatehtmlmainweb);
     if (res256 == 0) {
         sendtolog("DONE", true);
     } else {
-        logcritical("ERROR", true);
-        logcritical("AN ERROR OCCURRED ATTEMPTING TO UPDATE WITH MAIN HEAD!", true);
+        sendtolog("ERROR", true);
+        logcritical("HTML    - AN ERROR OCCURRED ATTEMPTING TO UPDATE WITH MAIN HEAD!", true);
     }
 
 
@@ -1697,12 +1705,12 @@ int setup() {
     std::string compressed;
     int migration = 0;
     int filerun = 0;
-    int filerunmax = 19;
+    int filerunmax = filelocations.size() - 1;
     bool completederr = false;
 
     // MAIN MIGRATION/CHECK SCRIPT
     while (filerunmax >= filerun && completederr != true) {
-        loginfo("FILEACCESSV3 - READING " + filemessages[filerun] + "...", false);
+        loginfo("FILEV3  - READING " + filemessages[filerun] + "...", false);
         std::ifstream fileinput1;
         fileinput1.open(filelocations[filerun]);
         if (fileinput1.is_open() == true) {
@@ -1718,6 +1726,7 @@ int setup() {
             }
             sendtolog("Done", true);
             if (compressed == "") {
+                sendtolog("", true);
                 logwarning(filemessages[filerun] + " - No Version Found, Writing New Version...", false);
                 fileinput1.close();
                 std::ofstream filecreate1;
@@ -1841,8 +1850,8 @@ int setup() {
                 }
             }
         } else {
-            logwarning("FILE NOT FOUND!", true);
-            logwarning("CREATING NEW " + filemessages[filerun] + " FILE...", false);
+            sendtolog("FILE NOT FOUND!", true);
+            logwarning("FILEV3  - CREATING NEW " + filemessages[filerun] + " FILE...", false);
             std::string stringcommandlocation = filelocations[filerun];
             std::string filetocreate = "touch " + stringcommandlocation;
             const char* filetocreatechar = filetocreate.c_str();
@@ -1853,7 +1862,7 @@ int setup() {
                 filecreate1 << "Version: " << honeyversion << std::endl << std::endl << std::endl;
                 filecreate1.flush();
                 if (filecreate1.fail() == true) {
-                    logcritical("ERROR", true);
+                    sendtolog("ERROR", true);
                     logcritical("AN ERROR OCCURRED WRITING TO " + filemessages[filerun], true);
                     if (filecreate1.bad() == true) {
                         logcritical("AN I/O ERROR OCCURRED", true);
@@ -1863,10 +1872,11 @@ int setup() {
                 }
                 filecreate1.close();
             } else {
-                logcritical("ERROR", true);
+                sendtolog("ERROR", true);
                 logcritical("UNABLE TO CREATE NEW" + filemessages[filerun] + "FILE!", true);
                 startupchecks = startupchecks + 1;
             }
+            sendtolog("Done", true);
         }
         filerun = filerun + 1;
     }
@@ -1874,7 +1884,7 @@ int setup() {
 
 
     // LOAD MAINHTML INTO RAM
-    loginfo("HTML - Loading MAINHTML Into RAM...", true);
+    loginfo("HTML    - Loading MAINHTML Into RAM...", true);
     int ram1 = loadHTMLINTORAM();
     if (ram1 != 0) {
 // FINISH THIS EVENTUALLY
@@ -1882,7 +1892,7 @@ int setup() {
 
 
     // LOAD MAIN SEVERITY CACHE INTO RAM
-    loginfo("COMMAND - Loading MAINCOMMAND Into RAM...", false);
+    loginfo("COMMAND - Loading Severity into RAM...", false);
     std::map<int, std::map<std::string, float>> ram2 = cacheseverity();
     std::map<int, std::map<std::string, float>> errormap;
     errormap[0]["ERROR"] = -1;
@@ -1890,6 +1900,8 @@ int setup() {
         logcritical("ERROR", true);
         logcritical("CACHING RETURNED WITH THE ERROR MAP!", true);
         startupchecks = startupchecks + 1;
+    } else {
+        sendtolog("Done", true);
     }
 
 
@@ -1962,7 +1974,7 @@ int setup() {
 
     fcntl(server_fd2, F_SETFL, O_NONBLOCK);
 
-    sendtolog("Done", true);
+    sendtolog("...Done", true);
 
 
 
