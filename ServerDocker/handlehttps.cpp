@@ -393,33 +393,33 @@ int loadinstallscriptSHHTMLintoram() {
 }
 
 int loadHTMLINTORAM() {
-    loginfo("HTML - Loading All Main HTML Pages into RAM!", true);
+    loginfo("HTML    - Loading All Main HTML Pages into RAM!", true);
     int returnvalue = 0;
-    loginfo("HTML - Loading index.html into RAM...", false);
+    loginfo("HTML    - Loading index.html into RAM...", false);
     returnvalue = returnvalue + loadmainHTMLintoram();
-    loginfo("HTML - Loading pricing.html into RAM...", false);
+    loginfo("HTML    - Loading pricing.html into RAM...", false);
     returnvalue = returnvalue + loadpricingHTMLintoram();
-    loginfo("HTML - Loading blog.html into RAM...", false);
+    loginfo("HTML    - Loading blog.html into RAM...", false);
     returnvalue = returnvalue + loadblogHTMLintoram();
-    loginfo("HTML - Loading login.html into RAM...", false);
+    loginfo("HTML    - Loading login.html into RAM...", false);
     returnvalue = returnvalue + loadloginHTMLintoram();
-    loginfo("HTML - Loading signup.html into RAM...", false);
+    loginfo("HTML    - Loading signup.html into RAM...", false);
     returnvalue = returnvalue + loadsignupHTMLintoram();
-    loginfo("HTML - Loading getstarted.html into RAM...", false);
+    loginfo("HTML    - Loading getstarted.html into RAM...", false);
     returnvalue = returnvalue + loadgetstartedHTMLintoram();
-    loginfo("HTML - Loading account.html into RAM...", false);
+    loginfo("HTML    - Loading account.html into RAM...", false);
     returnvalue = returnvalue + loadaccountHTMLintoram();
-    loginfo("HTML - Loading install.html into RAM...", false);
+    loginfo("HTML    - Loading install.html into RAM...", false);
     returnvalue = returnvalue + loadinstallHTMLintoram();
-    loginfo("HTML - Loading installscript.sh into RAM...", false);
+    loginfo("HTML    - Loading installscript.sh into RAM...", false);
     returnvalue = returnvalue + loadinstallscriptSHHTMLintoram();
 
     // returnvalue = returnvalue + 
-    loginfo("HTML - Finishing Loading into RAM...", false);
+    loginfo("HTML    - Finishing Loading into RAM...", false);
 
     if (returnvalue != 0) {
         sendtolog("ERROR", true);
-        logwarning("HTML - LOADING INTO RAM RETURNED VALUE - " + std::to_string(returnvalue) + " - Continuing", false);
+        logwarning("HTML    - LOADING INTO RAM RETURNED VALUE - " + std::to_string(returnvalue) + " - Continuing", true);
     } else {
         sendtolog("DONE", false);
     }
