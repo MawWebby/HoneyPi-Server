@@ -14,7 +14,7 @@ int savecommandstofile(std::map<int, std::string>, bool);//G
 int savefoldertofile(std::map<int, std::string>, bool);//G
 int savefilesviewedtofile(std::map<int, std::string>, bool);//G
 int savefileeffectstofile(std::map<int, std::string>, bool);//G
-int saveipaddrPREMIUMFILE(std::map<int, std::string>, int, bool);
+int saveipaddrPREMIUMFILE(std::map<int, std::string>, std::map<int, std::map<std::string, float>>, bool);
 int saveiptoSTANDARDFILE(std::string, bool);
 int saveiptoSTRICTFILE(std::string, bool);
 std::map<int, float> saveiptoTIMEBASEDFILE(std::string, float, bool);//G111
@@ -45,6 +45,10 @@ std::string readfromtoconsole(std::string);
 int changecogfiletofinish(std::string);
 
 
+// READ FROM IP FILES
+int ipinstandardfile(std::string);
+int ipinstrictfile(std::string);
+
 
 // MAINTENANCE SCRIPTS
 std::map<int, std::map<int, std::string>> runipstandardstrictpurginglist(bool, bool, bool);
@@ -57,7 +61,7 @@ std::string unencryptcog(std::string, std::string);
 
 
 // MAIN PROCESS LOOP
-int processReport(std::string, std::string);
+int processReport(std::string, std::string, bool, std::string);
 
 
 
