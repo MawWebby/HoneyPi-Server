@@ -86,7 +86,10 @@ void ipcommands() {
     std::cout << std::endl;
     std::cout << "IP" << std::endl;
     std::cout << "   RAW      | (IPADDR)  | Read from IP Raw File for IP Address and Report Back" << std::endl;
-    std::cout << "   ADD      | (IPADDR; SEVERITY) | Add New Report to an IP Address in File Stream" << std::endl;
+    std::cout << "   ADD      | (IPADDR)  | Add New Report to an IP Address in File Stream (Only Effects Raw)" << std::endl;
+    std::cout << "   NEW      | (IPADDR)  | Add New Report and Link to General IP Files (Adds to IP Lists)" << std::endl;
+    std::cout << "   ACHE     | (IPADDR)  | Check for IP Address in Standard File Stream" << std::endl;
+    std::cout << "   BCHE     | (IPADDR)  | Check for IP Address in Strict File" << std::endl;
 }
 
 
@@ -105,6 +108,7 @@ void level3access() {
 void level2access() {
     std::cout << std::endl;
     std::cout << "Level 2 Access:" << std::endl;
+    std::cout << "cat         | (NO ARGS) | Read File and Output it To Console" << std::endl;
     std::cout << "backup      | (NO ARGS) | Backup the Server" << std::endl;
     std::cout << "update      | (NO ARGS) | Update the Server" << std::endl;
     std::cout << "logs        | (NO ARGS) | View All Logs on the Machine" << std::endl;
@@ -416,11 +420,16 @@ void processCommand(const std::string& command) {
     }
 
     // PROCESS THE TEST COMMAND AND VERIFY
-    if (command == "testreport") {
+    if (command == "testreport" || command == "testreport f") {
         if (useraccesslevel >= 2) {
-            std::cout << "FIX THIS!" << std::endl;
             std::cout << "Starting Interaction with Test Report" << std::endl;
-            int returnvalue = processReport("/home/testreport.txt", "");
+            int returnvalue = -100;
+            if (command == "testreport f") {
+                returnvalue = processReport("/home/testreport.txt", "localhost", false, "");
+            } else {
+                returnvalue = processReport("/home/testreport.txt", "localhost", true, "");
+            }
+
             if (returnvalue != 0) {
                 std::cout << "Received Return Value of " << returnvalue << " while trying to process!" << std::endl;
             } else {
@@ -465,6 +474,13 @@ void processCommand(const std::string& command) {
                 std::cout << "RETURNED FROM IPSTRING: " << ipstring(command.substr(9, command.length() - 9)) << std::endl;
             }
         }
+    }
+
+    // READ FROM FILE THROUGH SYSTEM 
+    if (firstfour == "cat ") {
+        //std::string restofcommand = "cat " + command.substr(4,command.length());
+        system(command.c_str());
+        foundcommand = true;
     }
 
     // GENERATE RANDOM STRINGS FOR API TOKENS AND AMONG OTHER THINGS
@@ -736,6 +752,47 @@ void processCommand(const std::string& command) {
                     std::map<int, float> returnedvalues = saveiptoTIMEBASEDFILE(command.substr(7, command.length()), 10, false);
 
                 }
+
+                if (subco == "NEW ") {
+                    std::string ipaddstring = command.substr(7, command.length());
+                    std::cout << "IP:" << ipaddstring << std::endl;
+                    //std::map<int, float> returnedvalues = saveiptoTIMEBASEDFILE(command.substr(7, command.length()), 10, false);
+                    std::map<int, std::string> ipaddrs;
+                    std::map<int, std::map<std::string, float>> severity;
+                    ipaddrs[0] = ipaddstring;
+                    severity[0][ipaddstring] = 10;
+                    int returned = saveipaddrPREMIUMFILE(ipaddrs, severity, false);
+                    if (returned >= 0) {
+                        std::cout << "OK" << std::endl;
+                    } else {
+                        std::cout << "ERROR" << std::endl;
+                    }
+                }
+                
+                if (subco == "ACHE") {
+                    std::cout << "IP:" << command.substr(8, command.length()) << std::endl;
+                    int returnedvalues = ipinstandardfile(command.substr(8, command.length()));
+                    if (returnedvalues == 0) {
+                        std::cout << "N/A" << std::endl;
+                    } else if (returnedvalues == 1) {
+                        std::cout << "FOUND" << std::endl;
+                    } else {
+                        std::cout << "ERROR" << std::endl;
+                    }
+                }
+
+                if (subco == "BCHE") {
+                    std::cout << "IP:" << command.substr(8, command.length()) << std::endl;
+                    int returnedvalues = ipinstrictfile(command.substr(8, command.length()));
+                    if (returnedvalues == 0) {
+                        std::cout << "N/A" << std::endl;
+                    } else if (returnedvalues == 1) {
+                        std::cout << "FOUND" << std::endl;
+                    } else {
+                        std::cout << "ERROR" << std::endl;
+                    }
+                }
+                
                 std::string catcommand = "cat /home/listfiles/iplistraw.txt";
                 system(catcommand.c_str());
 
