@@ -17,7 +17,7 @@ int savefileeffectstofile(std::map<int, std::string>, bool);//G
 int saveipaddrPREMIUMFILE(std::map<int, std::string>, std::map<int, std::map<std::string, float>>, bool);
 int saveiptoSTANDARDFILE(std::string, bool);
 int saveiptoSTRICTFILE(std::string, bool);
-std::map<int, float> saveiptoTIMEBASEDFILE(std::string, float, bool);//G111
+std::map<int, float> saveiptoTIMEBASEDFILE(std::string, float, bool, int);//G111
 int saveiptoMOREINFOFILE(std::string ipaddr, bool systemcall);
 int saveextraopttofile(std::map<int, std::string>, bool);
 int devblockipaddrtofiles(std::string, bool);

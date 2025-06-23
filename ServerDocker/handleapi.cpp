@@ -266,9 +266,15 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
                         // LOOPS HERE TO PROCESS THE REPORT AND THEN ADD IT IF NECESSARY
                         std::string ucryptcog = unencryptcog(movedfilelocation, ipstring(clientIPADDR));
                         if (ucryptcog != "" && ucryptcog != "ERROR") {
-                            int analyze = processReport(ucryptcog, ipstring(clientIPADDR));
+                            int analyze = processReport(ucryptcog, ipstring(clientIPADDR), false, "");
                             if (analyze != 0) {
                                 logcritical("processReport did not Return 0! (" + inttostring(analyze) + ")", true);
+                                
+                                
+                                // IF ANALYZE != 0, THEN 
+                                // FIX THIS - ADD MOVE COG TO TEMP SPOT FOR MAN REVIEW
+
+
                                 conversionErrors.fetch_add(1);
                             }
                             cogsAnalyzed.fetch_add(1);

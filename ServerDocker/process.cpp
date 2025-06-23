@@ -1,5 +1,6 @@
 #include "process.h"
 #include "globalvariables.h"
+#include <filesystem>
 
 // MAP VARIABLES
 std::map<int, std::string> usercombomap;
@@ -71,6 +72,7 @@ const std::string fileeditslocation = "/home/listfiles/maclist.txt";
 const std::string ipliststrictlocation = "/home/listfiles/ipliststrict.txt";
 const std::string iplistraw = "/home/listfiles/iplistraw.txt";
 const std::string ipliststandardlocation = "/home/listfiles/ipliststandard.txt";
+const std::string extraoptfile = "/home/listfiles/extramap.txt";
 
 
 
@@ -213,6 +215,80 @@ int holdcogforreview(std::string filelocation, std::string newlocation, int reas
 
 
 
+
+/////////////////////////////////
+// MOVE COG TO NORMAL POSITION //
+/////////////////////////////////
+// EXPECTED RESULT
+// RETURN = 0;
+
+// UNEXPECTED RESULTS
+// RETURN -1 = RECEIVED NULL PARAMETERS
+// RETURN -2 = Unable to Open Input
+// RETURN -3 = UNABLE TO OPEN OUTPUT
+// RETURN -4 = RECEIVED NULL CLIENT IP
+
+int normalfinalizecog(std::string filelocation, std::string cogname, bool systemcall, std::string honeyIP)
+{
+    if (filelocation == "" || filelocation == "ERROR") {
+        logwarning("Finalize Cog Received NULL!", true);
+        return -1;
+    }
+
+    if (honeyIP == "" || honeyIP == "ERROR") {
+        logwarning("Finalize Cog Received NULL Client IP!", true);
+        return -4;
+    }
+
+    std::ifstream inputcogfile;
+    std::ofstream outputfilestream;
+    inputcogfile.open(filelocation.c_str());
+    if (inputcogfile.is_open() != true) {
+        logwarning("Unable to Open Input Cog File (Moving Final)", true);
+        return -2;
+    }
+
+    std::string outputfilelocation = "/home/crashlogs/finished/" + cogname + ".txt";
+    outputfilestream.open(outputfilelocation.c_str());
+    if(outputfilestream.is_open() != true) {
+        logwarning("UNABLE TO CREATE NEW OUTPUT FILE STREAM (Moving Final)", true);
+        return -3;
+    }
+
+    outputfilestream << "FINISHED COG FILE" << std::endl;
+    time_t currentvalue = time(NULL);
+    std::string times = ctime(&currentvalue);
+    times = times.substr(0, times.length() - 2);
+    outputfilestream << "Finished at: " << times << "UTC time" << std::endl;
+    outputfilestream << "HoneyPi Server Version: " << honeyversion << std::endl;
+    outputfilestream << "Client IP: " << honeyIP << std::endl;
+    outputfilestream << std::endl;
+    outputfilestream << "========================" << std::endl;
+    outputfilestream << " BEGINNING OF COG BELOW " << std::endl;
+    outputfilestream << "========================" << std::endl;
+    outputfilestream << std::endl;
+    while (inputcogfile.eof() != true) {
+        std::string information = "";
+        getline(inputcogfile, information);
+        outputfilestream << information << std::endl;
+    }
+
+    outputfilestream << "=======END OF COG=======" << std::endl;
+
+    std::cout << "RESULTS" << std::endl;
+    std::string testcommand = "cat " + outputfilelocation;
+    system(testcommand.c_str());
+
+    if (filelocation != "/home/testreport.txt") {
+        std::string removecommand = "rm " + filelocation;
+        system(removecommand.c_str());
+    }
+
+    inputcogfile.close();
+    outputfilestream.close();
+
+    return 0;
+}
 
 
 
@@ -392,7 +468,12 @@ int saveusernamestofile(std::map<int, std::string> usernames, bool systemcall) {
         bool foundbit = false;
         int linenumber = 0;
         int charlength = 0;
+        usernamefile.seekg(0);
+        usernamefile.seekp(0);
+        usernamefile.clear();
+        //std::cout << current << ":" << usernames[current] << std::endl;
         while (usernamefile.eof() != true && foundbit != true) {
+            std::cout << "TRUE" << std::endl;
             std::string getlineofuserfile = "";
             getline(usernamefile, getlineofuserfile);
             if (getlineofuserfile != "") {
@@ -509,6 +590,9 @@ int savepasswordstofile(std::map<int, std::string> passwords, bool systemcall) {
         bool foundbit = false;
         int linenumber = 0;
         int charlength = 0;
+        passwordfile.seekg(0);
+        passwordfile.seekp(0);
+        passwordfile.clear();
         while (passwordfile.eof() != true && foundbit != true) {
             std::string getlineofpassfile = "";
             getline(passwordfile, getlineofpassfile);
@@ -623,6 +707,9 @@ int savecommandstofile(std::map<int, std::string> commands, bool systemcall) {
         bool foundbit = false;
         int linenumber = 0;
         int charlength = 0;
+        commandfile.seekg(0);
+        commandfile.seekp(0);
+        commandfile.clear();
         while (commandfile.eof() != true && foundbit != true) {
             std::string getlineofcomfile = "";
             getline(commandfile, getlineofcomfile);
@@ -737,6 +824,9 @@ int savefoldertofile(std::map<int, std::string> folders, bool systemcall) {
         bool foundbit = false;
         int linenumber = 0;
         int charlength = 0;
+        folderfile.seekg(0);
+        folderfile.seekp(0);
+        folderfile.clear();
         while (folderfile.eof() != true && foundbit != true) {
             std::string getlineoffolderfile = "";
             getline(folderfile, getlineoffolderfile);
@@ -850,6 +940,9 @@ int savefilesviewedtofile(std::map<int, std::string> filechanges, bool systemcal
         bool foundbit = false;
         int linenumber = 0;
         int charlength = 0;
+        viewedfile.seekg(0);
+        viewedfile.seekp(0);
+        viewedfile.clear();
         while (viewedfile.eof() != true && foundbit != true) {
             std::string getlineofviewfile = "";
             getline(viewedfile, getlineofviewfile);
@@ -964,6 +1057,9 @@ int savefileeffectstofile(std::map<int, std::string> fileeffects, bool systemcal
         bool foundbit = false;
         int linenumber = 0;
         int charlength = 0;
+        fileedits.seekg(0);
+        fileedits.seekp(0);
+        fileedits.clear();
         while (fileedits.eof() != true && foundbit != true) {
             std::string getlineoffileedits = "";
             getline(fileedits, getlineoffileedits);
@@ -1063,16 +1159,19 @@ int savefileeffectstofile(std::map<int, std::string> fileeffects, bool systemcal
 int saveipaddrPREMIUMFILE(std::map<int, std::string> ipaddrs, std::map<int, std::map<std::string, float>> severity, bool systemcall) {
     int ipstosave = ipaddrs.size();
     int currently = 0;
+    bool errormap = false;
     while (currently < ipstosave) {
         std::string ipaddr = ipaddrs[currently];
         int severitynumber = severity[currently][ipaddr];
         if (severitynumber > 0) {
-            std::map<int, float> returnedvalues = saveiptoTIMEBASEDFILE(ipaddr, severitynumber, true);
+            std::map<int, float> returnedvalues = saveiptoTIMEBASEDFILE(ipaddr, severitynumber, true, 1);
 
             // STRICT
             if (returnedvalues[0] < 0.2) {
+                std::cout << "SAVING TO STRICT!" << std::endl;
                 logwarning("ERROR OCCURRED IN IP LOG FUNCTION!", true);
                 saveiptoSTRICTFILE(ipaddrs[currently], true);
+                errormap = true;
             } else {
                 if (returnedvalues[0] > strictmax || returnedvalues[1] > severscoremax) {
                     saveiptoSTRICTFILE(ipaddrs[currently], true);
@@ -1083,6 +1182,7 @@ int saveipaddrPREMIUMFILE(std::map<int, std::string> ipaddrs, std::map<int, std:
             if (returnedvalues[1] < 0.2) {
                 logwarning("ERROR OCCURRED IN IP LOG FUNCTION (2)!", true);
                 saveiptoSTRICTFILE(ipaddrs[currently], true);
+                errormap = true;
             } else {
                 if (returnedvalues[1] > severscoremax) {
                     saveiptoSTANDARDFILE(ipaddrs[currently], true);
@@ -1096,15 +1196,11 @@ int saveipaddrPREMIUMFILE(std::map<int, std::string> ipaddrs, std::map<int, std:
         currently = currently + 1;
     }
 
+    // ADD TO MORE INFO
+    // ADD TO EXTRA INFO
+    
 
-
-
-
-    // FIX THIS
-
-
-
-    return 1;
+    return currently;
 }
 
 
@@ -1192,7 +1288,7 @@ int saveiptoSTRICTFILE(std::string ipaddr, bool systemcall) {
 // RETURNS SCORE OF IP
 // 0 => NumberOfTimes (STRICT)
 // 1 => TotalScore (STANDARD)
-std::map<int, float> saveiptoTIMEBASEDFILE(std::string ipaddr, float severity, bool systemcall) {
+std::map<int, float> saveiptoTIMEBASEDFILE(std::string ipaddr, float severity, bool systemcall, int packets) {
     std::map<int, float> returnvalues;
     returnvalues[0] = -1;
     returnvalues[1] = -1;
@@ -1210,6 +1306,10 @@ std::map<int, float> saveiptoTIMEBASEDFILE(std::string ipaddr, float severity, b
     // CHECK FOR PREVIOUS CONDITION
     std::map<int, std::string> readvalues;
     readvalues = readfromipraw(ipaddr);
+
+    if (packets == -1) {
+        severity = stringtofloat(readvalues[7]);
+    }
 
 
 
@@ -1244,10 +1344,8 @@ std::map<int, float> saveiptoTIMEBASEDFILE(std::string ipaddr, float severity, b
     }
     std::string returnedIPADDR = readvalues[0];
     std::string runningseverityOLD = readvalues[1];
-    float runningseverityNEW = stringtoint(runningseverityOLD);
+    float runningseverityNEW = stringtofloat(runningseverityOLD);
 
-    // FIX THIS - ADD STRING TO FLOAT FUNCTION
-    // FIX THIS - FOR LONG INTS TO STRING
     
     runningseverityNEW = (((runningseverityNEW - (runningseverityNEW/30)) * 30) + severity)/30;
     
@@ -1257,7 +1355,15 @@ std::map<int, float> saveiptoTIMEBASEDFILE(std::string ipaddr, float severity, b
     
     
     int numberofpackets = stringtoint(readvalues[4]);
-    numberofpackets = numberofpackets + 1;
+    if (packets == 1) {
+        numberofpackets = numberofpackets + 1;
+    } else if (packets == -1) {
+        numberofpackets = numberofpackets - 1;
+
+    } else {
+        logwarning("NUM NOT SET CORRECTLY (SAVING)", true);
+        return returnvalues;
+    }
     std::string numberofpacketsNEW = inttostring(numberofpackets);
     
     
@@ -1356,27 +1462,18 @@ std::map<int, float> saveiptoTIMEBASEDFILE(std::string ipaddr, float severity, b
 
 
 
-// FIX THIS - CHANGE INTTOSTRING STRINGTOINT TO LONG LONG INTS!!!
-// FIX THIS - ADD FLOATTOSTRING AND STRINGTOFLOAT FUNCTION!
 
-
-
-// IP ADD 10.72.92.5
-// IP ADD 10.72.92.3
-// IP ADD 10.72.92.50
-// + user test
-// + user ello
 
 
 // ADD IPADDR TO IP MORE INFO FILE 
-int saveiptoMOREINFOFILE(std::string ipaddr, bool systemcall) {
+int saveiptoMOREINFOFILE(std::string ipaddr, int method, bool systemcall) {
     // FIX THIS
 
 
 
     return -1;
 }
-// FIX THIS - ADD "CAT" TO EVERYTHING WITHOUT SYSTEM CALLS!
+
 
 // ADD IPADDR TO PERMANENT IP FILE
 int saveiptoPERMANENTFILE(std::string, int severity, bool systemcall) {
@@ -1393,9 +1490,120 @@ int saveiptoPERMANENTFILE(std::string, int severity, bool systemcall) {
 // RECEIVED ON EXTRA OPT IN SEPARTE FILE
 // NOTHING FOR NOW CAUSE EXTRA NOT NEEDED YET!
 int saveextraopttofile(std::map<int, std::string> extraopt, bool systemcall) {
-    return -1;
-    // FIX THIS
+    std::fstream extrastream;
+    extrastream.open(extraoptfile.c_str(), std::ios::in | std::ios::out);
+    if (extrastream.is_open() != true) {
+        logwarning("Unable to Open EXTRA OPT FILE!", true);
+        readwriteoperationfail.fetch_add(1);
+        processingErrors.fetch_add(1);
+        return -1;
+    }
+
+
+    int numbertosearch = extraopt.size();
+    int current = 0;
+    int saved = 0;
+    while (current < numbertosearch) {
+        bool foundbit = false;
+        int linenumber = 0;
+        int charlength = 0;
+        extrastream.seekg(0);
+        extrastream.seekp(0);
+        extrastream.clear();
+        while (extrastream.eof() != true && foundbit != true) {
+            std::string getlineofextraopt = "";
+            getline(extrastream, getlineofextraopt);
+            if (getlineofextraopt != "") {
+                int lastposofcharacter = getlineofextraopt.find_last_of("-");
+                int maybe = getlineofextraopt.find(extraopt[current]);
+                if (lastposofcharacter >= 0) {
+                    std::string extraopttest = getlineofextraopt.substr(0, lastposofcharacter - 1);
+                    if (extraopttest == extraopt[current]) {
+                        long long int poswriter = extrastream.tellg();
+                        foundbit = true;
+                        std::string numberoftimes = getlineofextraopt.substr(lastposofcharacter + 2);
+                        std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) + 1);
+                        std::string possible6 = extraopttest + " - " + newnumbertoinsert;
+
+                        
+                        
+                        if (possible6.length() != getlineofextraopt.length()) {
+                            std::fstream effectnewfix;
+                            effectnewfix.open(extraoptfile.c_str());
+                            if (effectnewfix.is_open() != true) {
+                                return -1;
+                            }
+                            std::string lineA = "";
+                            std::string lineB = "";
+                            bool switchAB = false;
+                            // false = A; true = B;
+                            extrastream.seekg(poswriter);
+                            effectnewfix.seekp(poswriter - getlineofextraopt.length() - 1);
+                            getline(extrastream, lineA);
+                            effectnewfix << possible6 << std::endl;
+                            while(extrastream.eof() != true) {
+                                if (switchAB == false) {
+                                    switchAB = true;
+                                    getline(extrastream, lineB);
+                                    effectnewfix << lineA << std::endl;
+                                } else {
+                                    switchAB = false;
+                                    getline(extrastream, lineA);
+                                    effectnewfix << lineB << std::endl;
+                                }
+                            }
+                            if (switchAB == false) {
+                                extrastream << lineA << std::endl;
+                            } else {
+                                extrastream << lineB << std::endl;
+                            }
+                        } else {
+                            extrastream.seekp(poswriter - getlineofextraopt.length() - 1);
+                            extrastream << extraopttest << " - " << newnumbertoinsert << std::endl;
+                        }
+
+
+
+                        saved = saved + 1;
+                    }
+                }
+            }
+            linenumber = linenumber + 1;
+        }
+
+        // IF FOUND BIT != TRUE, Then Create a New Entry in the File and Save
+        if (foundbit != true) {
+            std::string newnumbertoinsert = "1";
+            std::ofstream extraoptWRITE;
+            extraoptWRITE.open(extraoptfile.c_str(), std::ios::app);
+            if (extraoptWRITE.is_open() != true) {
+                logwarning("Unable top Open File", true);
+                processingErrors.fetch_add(1);
+                readwriteoperationfail.fetch_add(1);
+                return -3;
+            }
+
+            extraoptWRITE << extraopt[current] << " - " << newnumbertoinsert << std::endl;
+            extraoptWRITE.close();
+            saved = saved + 1;
+        }
+
+        current = current + 1;
+    }
+
+    if (systemcall == false) {
+        std::cout << "CURRENT FILE" << std::endl;
+        std::string catread = "cat /home/listfiles/extramap.txt";
+        system(catread.c_str());
+    }
+
+    extrastream.close();
+
+    entryAdded.fetch_add(saved);
+
+    return saved;
 }
+
 
 
 // ADD IP THAT THE DEV HAS PERMANENTLY BLOCKED FROM REACHING HIS SERVERS
@@ -1452,7 +1660,6 @@ int removeusernamefromfile(std::string username, bool systemcall) {
                         long long int poswriter = usernamefile.tellg();
                         std::string numberoftimes = getlineofuserfile.substr(lastposofcharacter + 2);
 
-                        // fix this - writing position for new and make sure number is correct!
                         if (numberoftimes == "1" || numberoftimes == "0") {
                             std::cout << "Clearing Entry..." << std::endl;
                             usernamefile.seekp(poswriter - getlineofuserfile.length() - 1);
@@ -1465,9 +1672,6 @@ int removeusernamefromfile(std::string username, bool systemcall) {
                             saved = saved + 1;
                         } else {
                             std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) - 1);
-                            //std::ofstream userfileWRITE;
-                            //userfileWRITE.open(usernamelocation.c_str());
-    
                             usernamefile.seekp(poswriter - getlineofuserfile.length() - 1);
                             usernamefile << usertest << " - " << newnumbertoinsert << std::endl;
                             saved = saved + 1;
@@ -1530,8 +1734,6 @@ int removepasswordfromfile(std::string password, bool systemcall) {
                     if (passtest == password) {
                         long long int poswriter = passwordfile.tellg();
                         std::string numberoftimes = getlineofpassfile.substr(lastposofcharacter + 2);
-
-                        // fix this - writing position for new and make sure number is correct!
                         if (numberoftimes == "1" || numberoftimes == "0") {
                             std::cout << "Clearing Entry..." << std::endl;
                             passwordfile.seekp(poswriter - getlineofpassfile.length() - 1);
@@ -1544,9 +1746,6 @@ int removepasswordfromfile(std::string password, bool systemcall) {
                             saved = saved + 1;
                         } else {
                             std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) - 1);
-                            //std::ofstream userfileWRITE;
-                            //userfileWRITE.open(usernamelocation.c_str());
-    
                             passwordfile.seekp(poswriter - getlineofpassfile.length() - 1);
                             passwordfile << passtest << " - " << newnumbertoinsert << std::endl;
                             saved = saved + 1;
@@ -1609,8 +1808,6 @@ int removecommandfromfile(std::string command, bool systemcall) {
                     if (commtest == command) {
                         long long int poswriter = commandfile.tellg();
                         std::string numberoftimes = getlineofcommfile.substr(lastposofcharacter + 2);
-
-                        // fix this - writing position for new and make sure number is correct!
                         if (numberoftimes == "1" || numberoftimes == "0") {
                             std::cout << "Clearing Entry..." << std::endl;
                             commandfile.seekp(poswriter - getlineofcommfile.length() - 1);
@@ -1623,9 +1820,6 @@ int removecommandfromfile(std::string command, bool systemcall) {
                             saved = saved + 1;
                         } else {
                             std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) - 1);
-                            //std::ofstream userfileWRITE;
-                            //userfileWRITE.open(usernamelocation.c_str());
-    
                             commandfile.seekp(poswriter - getlineofcommfile.length() - 1);
                             commandfile << commtest << " - " << newnumbertoinsert << std::endl;
                             saved = saved + 1;
@@ -1688,8 +1882,6 @@ int removefolderfromfile(std::string folder, bool systemcall) {
                     if (foldtest == folder) {
                         long long int poswriter = folderfile.tellg();
                         std::string numberoftimes = getlineoffoldfile.substr(lastposofcharacter + 2);
-
-                        // fix this - writing position for new and make sure number is correct!
                         if (numberoftimes == "1" || numberoftimes == "0") {
                             std::cout << "Clearing Entry..." << std::endl;
                             folderfile.seekp(poswriter - getlineoffoldfile.length() - 1);
@@ -1702,9 +1894,6 @@ int removefolderfromfile(std::string folder, bool systemcall) {
                             saved = saved + 1;
                         } else {
                             std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) - 1);
-                            //std::ofstream userfileWRITE;
-                            //userfileWRITE.open(usernamelocation.c_str());
-    
                             folderfile.seekp(poswriter - getlineoffoldfile.length() - 1);
                             folderfile << foldtest << " - " << newnumbertoinsert << std::endl;
                             saved = saved + 1;
@@ -1767,8 +1956,6 @@ int removefileviewfromfile(std::string file, bool systemcall) {
                     if (filetest == file) {
                         long long int poswriter = viewfile.tellg();
                         std::string numberoftimes = getlineofviewfile.substr(lastposofcharacter + 2);
-
-                        // fix this - writing position for new and make sure number is correct!
                         if (numberoftimes == "1" || numberoftimes == "0") {
                             std::cout << "Clearing Entry..." << std::endl;
                             viewfile.seekp(poswriter - getlineofviewfile.length() - 1);
@@ -1781,9 +1968,6 @@ int removefileviewfromfile(std::string file, bool systemcall) {
                             saved = saved + 1;
                         } else {
                             std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) - 1);
-                            //std::ofstream userfileWRITE;
-                            //userfileWRITE.open(usernamelocation.c_str());
-    
                             viewfile.seekp(poswriter - getlineofviewfile.length() - 1);
                             viewfile << filetest << " - " << newnumbertoinsert << std::endl;
                             saved = saved + 1;
@@ -1846,8 +2030,6 @@ int removefileeffectfromfile(std::string file, bool systemcall) {
                     if (filetest == file) {
                         long long int poswriter = editfile.tellg();
                         std::string numberoftimes = getlineofeditfile.substr(lastposofcharacter + 2);
-
-                        // fix this - writing position for new and make sure number is correct!
                         if (numberoftimes == "1" || numberoftimes == "0") {
                             std::cout << "Clearing Entry..." << std::endl;
                             editfile.seekp(poswriter - getlineofeditfile.length() - 1);
@@ -1860,9 +2042,6 @@ int removefileeffectfromfile(std::string file, bool systemcall) {
                             saved = saved + 1;
                         } else {
                             std::string newnumbertoinsert = inttostring(stringtoint(numberoftimes) - 1);
-                            //std::ofstream userfileWRITE;
-                            //userfileWRITE.open(usernamelocation.c_str());
-    
                             editfile.seekp(poswriter - getlineofeditfile.length() - 1);
                             editfile << filetest << " - " << newnumbertoinsert << std::endl;
                             saved = saved + 1;
@@ -1964,7 +2143,7 @@ int removeipSTRICTfromfile(std::string ipaddr, std::string num, std::string user
 
 
 
-// REMOVE PACKET FROM IPADDR RAW
+// REMOVE PACKET FROM IPADDR RAW (MANUAL)
 // ERROR RETURNS
 // -100 => Non-System Call
 // -101 => Non-Root Call
@@ -1982,6 +2161,12 @@ int removepacketfromipaddrrawfile(std::string ipaddr, std::string num, std::stri
         return -102;
     }
 
+
+    std::map<int, float> ipinquestion = saveiptoTIMEBASEDFILE(ipaddr, 2, true, -1);
+    if (ipinquestion[0] == 0) {
+        // REMOVE FROM LIST
+        // FIX THIS
+    }
     
     
 
@@ -2109,6 +2294,61 @@ std::map<int, std::string> readfromipraw(std::string ipaddr) {
 
 
 
+
+
+// CHECK FOR IP IN FILES
+// RETURNS 1 (YES)/0 (NO)/-# (ERROR)
+int ipinstandardfile(std::string ipaddr) {
+    if (ipaddr == "") {
+        return -1;
+    }
+
+    std::ifstream ipstandard;
+    ipstandard.open(ipliststandardlocation.c_str());
+    if (ipstandard.is_open() != true) {
+        return -2;
+    }
+
+    std::string returnedvalues = "";
+    while (ipstandard.eof() != true) {
+        getline(ipstandard, returnedvalues);
+        if (returnedvalues == ipaddr) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+// RETURNS TRUE (YES)/FALSE (NO)
+int ipinstrictfile(std::string ipaddr) {
+    if (ipaddr == "") {
+        return -1;
+    }
+
+    std::ifstream ipstrict;
+    ipstrict.open(ipliststrictlocation.c_str());
+    if (ipstrict.is_open() != true) {
+        return -2;
+    }
+
+    std::string returnedvalues = "";
+    while (ipstrict.eof() != true) {
+        getline(ipstrict, returnedvalues);
+        if (returnedvalues == ipaddr) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+
+
+
+
 // RETURNS COG FILES THAT NEED TO BE READ
 // NORMAL RETURN
 // 0 => STATUS ([1]=OK; [0]=ERROR)
@@ -2124,6 +2364,12 @@ std::map<int, std::map<int, std::string>> readcogprocessinglocations() {
 
     // FIX THIS ADD LIST OF COGS!
 
+    std::string path = "/home/listfiles";
+
+    for (const auto & entry : std::filesystem::directory_iterator(path)) {
+        std::cout << entry.path() << std::endl;
+        std::string test = entry.path();
+    }
 
 
     return errormap;
@@ -2265,28 +2511,70 @@ std::string unencryptcog(std::string inputfile, std::string clientIP) {
 
 
 
+
+
+
+
+
+
+
+
 ////////////////////////////////////////////////////////////////
 ////// PROCESS REPORT FOR THE COMMAND TO WORK (MAIN LOOP) //////
 ////////////////////////////////////////////////////////////////
 
+// EXPECTED RETURN
+// RETURN 0 - COMPLETED SUCCESSFULLY
+// RETURN 1 - MOVE DELAYED TILL PARENT OPERATION COMPLETES
+
+// UNEXPECTED RETURNS
 // RETURN 10 - FILE STREAM NOT OPENED CORRECTLY
 // RETURN 11 - READ/WRITE ERROR
 // RETURN 12 - LOGICAL IO ERROR
+// RETURN 200 - Sub-Function Mismatch (Username)
+// RETURN 201 - Sub-Function Mismatch (Passwords)
+// RETURN 202 - Sub-Function Mismatch (Commands)
+// RETURN 203 - Sub-Function Mismatch (Folders)
+// RETURN 204 - Sub-Function Mismatch (Files Viewed)
+// RETURN 205 - Sub-Function Mismatch (File Edits (Transitions))
+// RETURN 206 - Sub-Function Mismatch (Extra)
+// RETURN 207 - Sub-Function Mismatch (IP ADDR INSERT)
+// RETURN 251 - RECEIVED ERROR IN CACHING FILES
+// RETURN 252 - RECEIVED LOCAL CALL WITH NO COG
+// RETURN 253 - RECEIVED NULL CASE FOR IP ADDRESS
 // RETURN 254 - NOT VALID FILENAME
 // RETURN 255 - SHOULD NEVER REACH HERE
-int processReport(std::string filename, std::string clientIP) {
+int processReport(std::string filename, std::string clientIP, bool localcall, std::string coglocale) {
 
     int linenumber = 0;
 
     // CHECK FOR VALID PARAMETERS
-    if (filename == "") {
-        logwarning("Log File NULL: " + filename, true);
-        return 254;
-        return 254;
+    if (filename == "" && localcall == false) {
+        if (localcall != true) {
+            logwarning("Log File NULL: " + filename, true);
+            return 254;
+            return 254;
+        } else {
+            filename = "/home/crashlogs/DOEN" + coglocale + ".txt";
+        }
+    }
+
+    if (localcall == true && filename == "") {
+        if (coglocale == "" || coglocale == "ERROR") {
+            logwarning("RECEIVED LOCAL WITH NO COG!", true);
+            return 252;
+        }
     }
 
     if (filename == "/home/testreport.txt") {
         std::cout << "DEBUG MODE" << std::endl;
+    }
+
+    // THIS NEXT
+    if (clientIP == "" || clientIP == "ERROR") {
+        // NOT CONTINUE AND RETURN 0 IF EVERYTHING IS FINISHED CORRECTLY
+        logwarning("Received Null Case for ClientIP Address! (Process)" , true);
+        return 253;
     }
 
     // OPEN INPUT FILE
@@ -2333,7 +2621,7 @@ int processReport(std::string filename, std::string clientIP) {
     int passonreport = 0;
     int numberoflineends = 0;
 
-    std::cout << "Starting to Analyze!" << std::endl;
+    if (localcall == true) std::cout << "Starting to Analyze!" << std::endl;
 
 
     while (completionproc != true && reportstream.eof() != true) {
@@ -2343,7 +2631,7 @@ int processReport(std::string filename, std::string clientIP) {
         std::string linestr = lineraw;
         
         // DEBUG HANDLER
-        if (filename == "/home/testreport.txt") {
+        if (localcall == true) {
             std::cout << linenumber << ": " << linestr.length() << ": " << lineraw << std::endl;
             linenumber = linenumber + 1;
         }
@@ -2471,7 +2759,6 @@ int processReport(std::string filename, std::string clientIP) {
                     if (linestr.length() == 18) {
                         if (linestr.substr(0,18) == "commandprocess = {") {
                             commandprocess = true;
-                            std::cout << "REACHED HERE" << std::endl;
                         }
                     } 
                 } else if (matchcondition == "op") {
@@ -2594,7 +2881,7 @@ int processReport(std::string filename, std::string clientIP) {
                     completionproc = true;
                 }
             } else {
-                std::cout << "MAPPING" << std::endl;
+                if (localcall == true) std::cout << "MAPPING" << std::endl;
                 if (usercombo == true) {
                     // USERNAME AND PASSWORD STRINGS TO MAP FACE
                     if (linestr.length() >= 8 && linestr.substr(linestr.length() - 1, 1) == ")") {
@@ -2615,7 +2902,8 @@ int processReport(std::string filename, std::string clientIP) {
                                         currentchar = currentchar + 1;
                                     }
                                 } else if (currentstring == ")") {
-                                    passwordacc = linestr.substr(previousstart, currentchar - previousstart);
+                                    passwordacc = linestr.substr(previousstart + 2, currentchar - previousstart - 1);
+                                    passwordacc = passwordacc.substr(0, passwordacc.length() - 1);
                                     userpasscomplete = true;
                                 }
                             }
@@ -2688,8 +2976,7 @@ int processReport(std::string filename, std::string clientIP) {
 
 
     // PRINT EVERYTHING TO CONSOLE IF DEBUG TEST REPORT IS USED
-    // FIX THIS JUST FOR IF TRUE CASE
-    if (filename == "/home/testreport.txt" || true) {
+    if (localcall == true) {
         std::cout << "USER" << std::endl;
         for (const auto& pair : usercombomap) {
             std::cout << "#: " << pair.first << ", USER: " << pair.second << std::endl;
@@ -2733,29 +3020,99 @@ int processReport(std::string filename, std::string clientIP) {
     std::string dash = "-";
     std::string colon = ":";
     std::string dateofyear = inttostring(day) + dash + inttostring(month) + dash + inttostring(year) + " = " + inttostring(hour) + colon + inttostring(minute) + colon + inttostring(second);
-    std::cout << "TIME SEEN " << dateofyear << std::endl;
+    if (localcall == true) std::cout << "TIME SEEN " << dateofyear << std::endl;
 
 
 
     // SAVE ALL USERNAMES TO FILE
-    std::cout << "STARTING USERNAME" << std::endl;
-    std::cout << saveusernamestofile(usercombomap, true) << std::endl; 
+    if (localcall == true) std::cout << "STARTING USERNAME..." << std::endl;
+    int changedusernames = saveusernamestofile(usercombomap, !(localcall));
+    if (localcall == true) std::cout << changedusernames << " Entries Modified" << std::endl; 
 
 
     // SAVE ALL PASSWORDS TO FILE
-    std::cout << "STARTING PASSWORD" << std::endl;
-    std::cout << savepasswordstofile(passcombomap, true) << std::endl;
+    if (localcall == true) std::cout << "STARTING PASSWORD..." << std::endl;
+    int changedpasswords = savepasswordstofile(passcombomap, !(localcall));
+    if (localcall == true) std::cout << changedpasswords << " Entries Modified" << std::endl;
 
 
     // COMMANDS
-    std::cout << "STARTING COMMANDS" << std::endl;
-    std::cout << savecommandstofile(commandmap, true) << std::endl;
+    if (localcall == true) std::cout << "STARTING COMMANDS..." << std::endl;
+    int changedcommands = savecommandstofile(commandmap, !(localcall));
+    if (localcall == true) std::cout << changedcommands << " Entries Modified" << std::endl;
+
+
+    // FOLDERS
+    if (localcall == true) std::cout << "STARTING FOLDERS..." << std::endl;
+    int changedfolders = savefoldertofile(filesmap, !(localcall));
+    if (localcall == true) std::cout << changedfolders << " Entries Modified" << std::endl;
+
+
+    // FILES CHANGED
+    if (localcall == true) std::cout << "STARTING FILES..." << std::endl;
+    int changedfiles = savefilesviewedtofile(filechangesmap, !(localcall));
+    if (localcall == true) std::cout << changedfiles << " Entries Modified" << std::endl;
+
+
+    // FILE EDITS MAP
+    if (localcall == true) std::cout << "STARTING TRANSITIONS..." << std::endl;
+    int changedtransitions = savefileeffectstofile(fileeditsmap, !(localcall));
+    if (localcall == true) std::cout << changedtransitions << " Entries Modified" << std::endl;
+
+
+    // EXTRA MAP SAVE
+    if (localcall == true) std::cout << "STARTING EXTRA MAP..." << std::endl;
+    int changedextramap = saveextraopttofile(extramap, !(localcall));
+    if (localcall == true) std::cout << changedextramap << " Entried Modified" << std::endl;
 
 
 
 
 
     // DETERMINE IF ANY ABOVE IS NULL||ERROR AND DO NOT CONTINUE
+    if (changedusernames != usercombomap.size()) {
+        logwarning("Error Occurred in Consistency (Process) [Username Mismatch]", true);
+        logwarning("Compared: " + inttostring(changedusernames) + " against " + inttostring(usercombomap.size()), true);
+        return 200;
+    }
+
+    if (changedpasswords != passcombomap.size()) {
+        logwarning("Error Occurred in Consistency (Process) [Password Mismatch]", true);
+        logwarning("Compared: " + inttostring(changedpasswords) + " against " + inttostring(passcombomap.size()), true);
+        return 201;
+    }
+
+    if (changedcommands != commandmap.size()) {
+        logwarning("Error Occurred in Consistency (Process) [Command Mismatch]", true);
+        logwarning("Compared: " + inttostring(changedcommands) + " against " + inttostring(commandmap.size()), true);
+        return 202;
+    }
+
+    if (changedfolders != filesmap.size()) {
+        logwarning("Error Occurred in Consistency (Process) [Folder Mismatch]", true);
+        logwarning("Compared: " + inttostring(changedfolders) + " against " + inttostring(filesmap.size()), true);
+        return 203;
+    }
+
+    if (changedfiles != filechangesmap.size()) {
+        logwarning("Error Occurred in Consistency (Process) [Files Mismatch]", true);
+        logwarning("Compared: " + inttostring(changedfiles) + " against " + inttostring(filechangesmap.size()), true);
+        return 204;
+    }
+
+    if (changedtransitions != fileeditsmap.size()) {
+        logwarning("Error Occurred in Consistency (Process) [Transition Mismatch]", true);
+        logwarning("Compared: " + inttostring(changedtransitions) + " against " + inttostring(fileeditsmap.size()), true);
+        return 205;
+    }
+    
+    if (changedextramap != extramap.size()) {
+        logwarning("Error Occurred in Consistency (Process) [Extra Effect Mismatch]", true);
+        logwarning("Compared: " + inttostring(changedextramap) + " against " + inttostring(extramap.size()), true);
+        return 206;
+    }
+
+
 
 
 
@@ -2768,31 +3125,34 @@ int processReport(std::string filename, std::string clientIP) {
     std::map<int, std::map<std::string, float>> errormap;
     errormap[0]["ERROR"] = -1;
     if (severitymaps == errormap) {
-        // DO NOT CONTINUE PROCESSING AND INSTEAD HOLD THE COG  
-
+        return 251;
     }
 
 
     // ELSE, CONTINUE WITH REPORT
     int ipaddrreturned = saveipaddrPREMIUMFILE(ipaddrmap, severitymaps, true);
-    if (ipaddrreturned != 0) {
-
+    if (ipaddrreturned != ipaddrmap.size()) {
+        logwarning("Error Occurred in Consistency (Process) [IP ADDR Mismatch!]", true);
+        logwarning("Compared: " + inttostring(ipaddrreturned) + " against " + inttostring(ipaddrmap.size()), true);
+        return 207;
     }
 
 
-    // CONTINUE HERE
-    // fix this
 
-
-
-    // THIS NEXT
-    if (clientIP == "" || clientIP == "ERROR") {
-        // NOT CONTINUE AND RETURN 0 IF EVERYTHING IS FINISHED CORRECTLY
+    // MOVE COG TO NEW POSITION
+    int time2 = time(NULL);
+    int mvresult = normalfinalizecog(filename, clientIP + "_" + std::to_string(time2), !(localcall), clientIP);
+    if (mvresult == 0) {
+        return 0;
+    } else {
+        return 250;
     }
 
-    // do something with this
+
     return 255;
 }
+
+
 
 
 
