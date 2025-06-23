@@ -749,7 +749,7 @@ void processCommand(const std::string& command) {
                 if (subco == "ADD ") {
 
                     std::cout << "IP:" << command.substr(7, command.length()) << std::endl;
-                    std::map<int, float> returnedvalues = saveiptoTIMEBASEDFILE(command.substr(7, command.length()), 10, false);
+                    std::map<int, float> returnedvalues = saveiptoTIMEBASEDFILE(command.substr(7, command.length()), 10, false, 1);
 
                 }
 
@@ -792,11 +792,7 @@ void processCommand(const std::string& command) {
                         std::cout << "ERROR" << std::endl;
                     }
                 }
-                
-                std::string catcommand = "cat /home/listfiles/iplistraw.txt";
-                system(catcommand.c_str());
 
-            
             } else {
                 std::cout << "No Valid Options Received" << std::endl;
             }
