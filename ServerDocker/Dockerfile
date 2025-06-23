@@ -13,6 +13,7 @@ RUN apt-get install -y openssl libssh-dev
 RUN apt-get install -y mariadb-server
 RUN apt-get install -y libcurl4
 RUN apt-get install -y libcurl4-openssl-dev
+RUN apt-get install -y docker.io
 
 # Expose Needed Ports
 EXPOSE 80       

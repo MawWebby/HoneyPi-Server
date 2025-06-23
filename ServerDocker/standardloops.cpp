@@ -461,7 +461,7 @@ int updatedocker() {
     }
 
     // RUN ServerUpdateBuddy
-    std::string startupdatebuddy = "docker run -d -v /var/run/docker.sock:/var/run/docker.sock --name UpdateBuddy mawwebby/honeypiserver:serverupdatebuddyV1";
+    std::string startupdatebuddy = "docker run -d -v /var/run/docker.sock:/var/run/docker.sock -v /home/pi/.docker:/root/.docker/ --name UpdateBuddy mawwebby/honeypiserver:serverupdatebuddyV1";
     if (system(startupdatebuddy.c_str()) != 0) {
         std::string removeupdatebuddy = "docker container rm UpdateBuddy";
         if (system(removeupdatebuddy.c_str()) != 0) {
