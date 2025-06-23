@@ -43,12 +43,12 @@ int main() {
     }
 
 
-    sleep(5);
+    sleep(15);
 
 
     // RESTART MAIN DOCKER CONTAINER
     std::cout << "UPDATE - ( 70%) - Starting New Server" << std::endl;
-    std::string dockernewcommand = "docker run -d -it -v /home/pi/.docker:/root/.docker/ -v /home/pi/honeynvme/current/listfiles:/home/listfiles -v /home/pi/honeynvme/serverdump:/home/serverdump -v /home/pi/honeynvme/current/htmlmain:/home/htmlmainweb -v /home/pi/honeynvme/cogs:/home/crashlogs -p 80:80 -p 443:443 -p 11829:11829 -p 11830:11830 -p 22221:22221 -v /var/run/docker.sock:/var/run/docker.sock --name honeypiserver --rm mawwebby/honeypiserver:latest &> /dev/null";
+    std::string dockernewcommand = "docker run -d -it -v /root/.docker:/root/.docker/ -v /home/pi/honeynvme/current/listfiles:/home/listfiles -v /home/pi/honeynvme/serverdump:/home/serverdump -v /home/pi/honeynvme/current/htmlmain:/home/htmlmainweb -v /home/pi/honeynvme/cogs:/home/crashlogs -p 80:80 -p 443:443 -p 11829:11829 -p 11830:11830 -p 22221:22221 -v /var/run/docker.sock:/var/run/docker.sock --name honeypiserver --rm mawwebby/honeypiserver:latest &> /dev/null";
     if (system(dockernewcommand.c_str()) != 0) {
         return -6;
     }

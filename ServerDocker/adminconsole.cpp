@@ -191,6 +191,7 @@ void processCommand(const std::string& command) {
     // SERVER STATUS COMMAND
     if (command == "status") {
         std::cout << "Server Status: " << serverStarted.load() << std::endl;
+        std::cout << "Version: " << honeyversion << std::endl;
         std::cout << std::endl;
         std::cout << "Thread Status" << std::endl;
         std::cout << "Port 80 Thread:    " << statusP80.load() << std::endl;

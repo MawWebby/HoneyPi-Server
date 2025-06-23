@@ -10,7 +10,7 @@ const bool debug = false;
 const bool testing = false;
 const bool newserverupdate = true;
 const bool EXCEPTION = true;
-std::string honeyversion = "0.7.0";
+std::string honeyversion = "0.7.5";
 const int heartbeattime = 10;
 
 
