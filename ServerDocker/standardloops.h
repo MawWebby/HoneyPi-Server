@@ -36,6 +36,8 @@ void readfrompacketlogger();
 // CONVERSIONS
 long long int stringtoint(std::string);
 std::string inttostring(long long int);
+float stringtofloat(std::string);
+std::string floattostring(float);
 
 // GENERATORS
 std::string generateRandomStringHoneyPI();
@@ -49,11 +51,8 @@ int remove11829packet(std::string);
 // REMOVE PERIODS AND IPADDRS
 std::string ipstring(std::string);
 
-// CONVERT STRING TO FLOAT
-float stringtofloat(std::string);
-
-// CONVERT FLOAT TO STRING
-std::string floattostring(float);
+// UPDATE SERVER
+int updatedocker();
 
 
 #endif

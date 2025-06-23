@@ -286,8 +286,9 @@ void processCommand(const std::string& command) {
     // UPDATE COMMAND
     if (command == "update") {
         if (useraccesslevel >= 2) {
-            updateSIGNAL.store(1);
             std::cout << "THE SERVER IS GOING TO UPDATE NOW!" << std::endl;
+            int updater = updatedocker();
+            std::cout << "UPDATER RETURNED " << updater << std::endl;
         } else {
             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }

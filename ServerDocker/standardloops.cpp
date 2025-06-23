@@ -447,3 +447,33 @@ std::string floattostring(float input) {
     returnvalue = std::to_string(input);
     return returnvalue;
 }
+
+
+
+
+// MAIN UPDATER FUNCTION (SERVER UPDATE BUDDY)
+int updatedocker() {
+    // Download Latest UpdateBuddy
+    std::cout << "STARTING SERVER UPDATE!" << std::endl;
+    std::string downloadupdatebuddy = "docker pull mawwebby/honeypiserver:serverupdatebuddyV1";
+    if (system(downloadupdatebuddy.c_str()) != 0) {
+        return -1;
+    }
+
+    // RUN ServerUpdateBuddy
+    std::string startupdatebuddy = "docker run -d -v /var/run/docker.sock:/var/run/docker.sock --name UpdateBuddy mawwebby/honeypiserver:serverupdatebuddyV1";
+    if (system(startupdatebuddy.c_str()) != 0) {
+        std::string removeupdatebuddy = "docker container rm UpdateBuddy";
+        if (system(removeupdatebuddy.c_str()) != 0) {
+            return -2;
+        } else {
+            if (system(startupdatebuddy.c_str()) != 0) {
+                return -3;
+            }
+        }
+    }
+
+    updateSIGNAL.store(1);
+
+    return 0;
+}
