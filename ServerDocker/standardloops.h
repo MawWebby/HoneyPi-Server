@@ -44,6 +44,7 @@ std::string generateRandomStringHoneyPI();
 std::string generateRandomStringRouterAPI();
 std::string generateRandomFileName();
 std::string generateRandomClientKey();
+std::string generateRandomID();
 
 // REMOVE PACKETS
 int remove11829packet(std::string);

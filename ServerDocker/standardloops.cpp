@@ -384,6 +384,26 @@ std::string generateRandomClientKey() {
     return random_string;
 }
 
+std::string generateRandomID() {
+    // Define the list of possible characters
+    const std::string CHARACTERS = charactermap;
+
+    // Create a random number generator
+    std::random_device rd;
+    std::mt19937 generator(rd());
+
+    // Create a distribution to uniformly select from all
+    // characters
+    std::uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
+
+    // Generate the random string
+    std::string random_string = "";
+    for (int i = 0; i < 32; ++i) {
+        random_string += CHARACTERS[distribution(generator)];
+    }
+
+    return random_string;
+}
 
 
 ///////////////////////////////
