@@ -3,8 +3,13 @@
 #include <unistd.h>
 #include <string>
 #include <iostream>
+#include "json.hpp"
+#include <fstream>
+
 
 std::string buddyversion = "1";
+std::string jsonFileLocation = "/home/serverfiles/jsonsstream.json";
+using json = nlohmann::json;
 
 // MADE FOR SERVER VERSIONS 0.X - 1.X
 // NORMAL RETURN VALUE
@@ -44,6 +49,20 @@ int main() {
 
 
     sleep(15);
+
+
+    // CHECKING JSON FILES
+    std::cout << "UPDATE - ( 30%) - Checking JSON Files!" << std::endl;
+    std::ifstream jsonFile;
+    jsonFile.open(jsonFileLocation.c_str());
+    if (jsonFile.is_open() != true) {
+        std::cout << "UNABLE TO OPEN JSON FILE!" << std::endl;
+        jsonFile.close();
+    }
+    json dataarray = json::parse(jsonFile);
+    jsonFile.close();
+    
+
 
 
     // RESTART MAIN DOCKER CONTAINER

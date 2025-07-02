@@ -14,6 +14,18 @@ RUN apt-get install -y mariadb-server
 RUN apt-get install -y libcurl4
 RUN apt-get install -y libcurl4-openssl-dev
 RUN apt-get install -y docker.io
+RUN apt-get install -y cmake make
+RUN mkdir /home/buildcache
+WORKDIR /home/buildcache
+RUN git clone https://github.com/trusch/libbcrypt
+RUN mkdir /home/buildcache/libbcrypt/build
+WORKDIR /home/buildcache/libbcrypt/build
+RUN cmake ..
+RUN make
+RUN sudo make install
+RUN sudo ldconfig
+RUN cd /home/buildcache && rm -r *
+RUN rm -r /home/buildcache
 
 # Expose Needed Ports
 EXPOSE 80       
@@ -66,7 +78,8 @@ Databases/encryption.cpp \
 handleapi.cpp \
 handlehttps.cpp \
 process.cpp \
--lmariadbcpp -lssl -lcrypto -lcurl
+Databases/jsonfunctions.cpp \
+-lmariadbcpp -lssl -lcrypto -lcurl -lbcrypt
 
 
 ENTRYPOINT ["/bin/bash"]

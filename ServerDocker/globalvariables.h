@@ -33,6 +33,7 @@
 #include "handleapi.h"
 #include "handlehttps.h"
 #include "process.h"
+#include "Databases/jsonfunctions.h"
 
 // SERVER SIGNALS
 extern std::atomic<int> stopSIGNAL;
@@ -78,6 +79,8 @@ extern std::map <std::string, std::string>honeypotauthtotoken;
 extern std::map <std::string, std::string>previoushoneypotauth;
 extern std::map <std::string, std::string>previoushoneypotauth2;
 
+// DATABASE LOCKS
+extern std::atomic<int> jsonDBLock;
 
 // PACKET SPAM
 extern int packetspam;

@@ -1,11 +1,9 @@
 #include "adminconsole.h"
 #include "globalvariables.h"
 
+// CONSOLE PARAMETERS
 int useraccesslevel = 0;
 std::string user = "-";
-
-// BACKUP OF DATABASES
-
 
 // USER LEVELS
 // USER 3 - MASTER USER
@@ -13,6 +11,7 @@ std::string user = "-";
 // USER 1 - ACTIVATE 
 // USER 0 - TEST COMMANDS ON SERVER
 
+// TIME VARIABLES
 int currentimunte;
 int currenthour;
 int currentdays;
@@ -95,6 +94,16 @@ void ipcommands() {
 
 
 
+void jsoncommands() {
+    std::cout << "JSON COMMANDS" << std::endl;
+    std::cout << "createAccount    | (NO ARGS) | Create a New Account and Store" << std::endl;
+    std::cout << "checkAPIKey      | (API KEY) | Check for API Key in JSON" << std::endl;
+    std::cout << "insertAPIKey     | (USER, API_KEY=[OPTIONAL]) | Insert API Key into JSON; If none is provided, one will be generated." << std::endl;
+}
+
+
+
+
 
 ////////////////////////////////////
 //// USER ACCESS LEVEL COMMANDS ////
@@ -124,6 +133,8 @@ void level2access() {
     std::cout << "testreport  | (NO ARGS) | Process the Test Report for Loop Code" << std::endl;
     std::cout << "+           | (NO ARGS) | Display the Plus/Minus Commands" << std::endl;
     std::cout << "-           | (NO ARGS) | Display the Plus/Minus Commands" << std::endl;
+    std::cout << "JSON        | (NO ARGS) | Display the JSON Commands" << std::endl;
+    jsoncommands();
 }
 
 void level1access() {
@@ -454,11 +465,44 @@ void processCommand(const std::string& command) {
         user = "-";
     }
 
+    // SHOW THE JSON COMMANDS
+    if (command == "json" || command == "JSON") {
+        if (useraccesslevel >= 2) {
+            jsoncommands();
+        } else {
+            std::cout << "Sorry, you do not have permission to run this command." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    // CREATE NEW ACCOUNT
+    if (command == "createAccount") {
+        if (useraccesslevel >= 2) {
+            std::cout << "Username:";
+            std::string userstring = "";
+            std::string passstring = "";
+            std::getline(std::cin, userstring);
+            std::cout << "Password:";
+            std::getline(std::cin, passstring);
+            int returnedvalue = createnewaccount(userstring, passstring, false);
+            if (returnedvalue == 1) {
+                std::cout << "OK" << std::endl;
+            } else {
+                std::cout << "ERROR:" << returnedvalue << std::endl;
+            }
+        } else {
+            std::cout << "Sorry, you do not have permission to run this command." << std::endl;
+        }
+        foundcommand = true;
+    }
+    
+
+
 
 
     // START ANALYZING FIRST WORD IF NOT FOUND
-    std::string firstseveral = "";
-    std::string firstfour = "";
+    std::string firstseveral = "";                      // 0-8
+    std::string firstfour = "";                         // 0-4
     if (command.length() >= 8 && foundcommand == false) {
         firstseveral = command.substr(0,8);
         firstfour = command.substr(0,4);
@@ -468,6 +512,68 @@ void processCommand(const std::string& command) {
         firstseveral = command;
         firstfour = command;
     }
+
+    // JSON COMMANDS
+    if (firstseveral == "checkAPI") {
+        if (useraccesslevel >= 2) {
+            if (command.length() == 76) {
+                std::string apikeyquestion = command.substr(12, 64);
+                std::map<int, std::string> returnauth = AUTH_checkAPIKey(apikeyquestion, false);
+                if (returnauth[0] == "0") {
+                    std::cout << "ERROR:" << returnauth[2] << std::endl;
+                } else if (returnauth[0] == "1") {
+                    std::cout << "FOUND:" << returnauth[1] << std::endl;
+                } else if (returnauth[0] == "2") {
+                    std::cout << "NOT FOUND" << std::endl;
+                } else {
+                    std::cout << "UNKNOWN ERROR OCCURRED!" << std::endl;
+                }
+            } else {
+                std::cout << "INVALID TYPE:" << command.length() << std::endl;
+            }
+        } else {
+            std::cout << "Sorry, you do not have permission to run this command." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+    if (firstseveral == "insertAP") {
+        if (useraccesslevel >= 2) {
+            if (command.length() >= 17) {
+                int option = command.find("API_KEY=");
+                std::string optionstd = "";
+                std::string useroption = "";
+                if (option != command.npos && option + 68 >= command.length()) {
+                    optionstd = command.substr(option + 5);
+                    useroption = command.substr(13, option - 1);
+                    if (optionstd.length() != 64) {
+                        std::cout << "INVALID:" << optionstd << ";(" << optionstd.length() << ")" << std::endl;
+                        optionstd = generateRandomStringHoneyPI();
+                    }
+                } else {
+                    useroption = command.substr(13);
+                    optionstd = generateRandomStringHoneyPI();
+                }
+
+
+                int returned = saveapikeytoprofile(optionstd, useroption, true);
+                if (returned != 1) {
+                    std::cout << "ERROR:" << returned << std::endl;
+                } else {
+                    std::cout << "OK:" << optionstd << std::endl;
+                }
+
+            } else {
+                std::cout << "INVALID TYPE:" << command.length() << std::endl;
+            }
+        } else {
+            std::cout << "Sorry, you do not have permission to run this command." << std::endl;
+        }
+        foundcommand = true;
+    }
+
+
+
 
     // TEST IPSTRING FUNCTION
     if (firstseveral == "ipstring") {

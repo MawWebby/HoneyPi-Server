@@ -9,3 +9,4 @@ ServerDocker/encryption.cpp
 ServerDocker/encryption.cpp
 ServerDocker/encryption2.cpp
 ServerDocker/encryption.cpp
+ServerUpdateBuddy/json.hpp
