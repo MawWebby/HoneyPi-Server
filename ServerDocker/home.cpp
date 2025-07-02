@@ -91,6 +91,9 @@ std::atomic<long long int> currenttime(0);
 std::atomic<long long int> timesincestartup(0);
 std::atomic<int> calculatingtime(0);
 
+// DB LOCKS
+std::atomic<int> jsonDBLock(0);
+
 // SERVER ERRORS
 std::atomic<int> generalservererrors(0);
 
@@ -759,8 +762,8 @@ bool serverupdateavailable() {
         loginfo("UPDATES - New Server Update Available!", true);
         return true;
     } else {
-        sendtolog("", true);
-        sendtolog("No New Version Found", true);
+        sendtolog("Done", true);
+        loginfo("UPDATES - No New Version Found", true);
         return false;
     }
     return false;
@@ -1653,14 +1656,12 @@ int setup() {
     // CHECK FOR SYSTEM UPDATES
     bool serverupdate = checkserverupdateavailable();
     if (serverupdate == true) {
-        std::cout << "updateduringsetup()" << std::endl;
-        // updateduringstartup(true, "pull_and_restart");
+        updatedocker();
     }
-    // FIX THIS - ADD NEW UPDATE SCRIPT WITHOUT SHUTTING DOWN (EVERYTHING DOWN ANYWAY)
 
     bool honeypiupdate = checkhoneypiupdateavailable();
-    if(honeypiupdate == true) {
-        std::cout << "FUTURE" << std::endl;
+    if(honeypiupdate != true) {
+        logwarning("ERROR Checking Updates for HoneyPots! (Non-Volatile)", true);
     }
     sleep(1);
 
@@ -1687,6 +1688,19 @@ int setup() {
 
 
 
+    // VALIDATE JSON FILES
+    loginfo("JSON_V2 - Validating JSON Files", true);
+    int returnedjsons = json_maintenance(true);
+    if (returnedjsons == 0 || returnedjsons == 1) {
+        loginfo("JSON_V2 - Completed Checks", true);
+    } else {
+        logwarning("JSON_V2 Returned " + inttostring(returnedjsons), true);
+        startupchecks = startupchecks + 1;
+    }   
+
+
+
+
     // CALL NEW HTML MAIN WEB PAGES
     loginfo("HTML    - Updating to Main Head...", false);
     int res256 = system(updatehtmlmainweb);
@@ -1696,6 +1710,15 @@ int setup() {
         sendtolog("ERROR", true);
         logcritical("HTML    - AN ERROR OCCURRED ATTEMPTING TO UPDATE WITH MAIN HEAD!", true);
     }
+
+
+
+
+    // CHECK STARTUPCHECKS
+    if (startupchecks != 0) {
+        return 100;
+    }
+
 
 
 
@@ -1814,7 +1837,7 @@ int setup() {
                                     int res251 = system(rmchar);
                                     if (res251 == 0) {
                                         sendtolog("COMPLETED!", true);
-                                        sleep(1);
+                                        sleep(0.2);
                                     } else {
                                         logcritical("ERROR", true);
                                         logcritical("AN ERROR OCCURRED IN " + filemessages[filerun] + " MIGRATION (5)!", true);
@@ -1846,7 +1869,7 @@ int setup() {
                         startupchecks = startupchecks + 1;
                     }
                 } else {
-                    sleep(1);
+                    sleep(0.3);
                 }
             }
         } else {
@@ -1887,8 +1910,10 @@ int setup() {
     loginfo("HTML    - Loading MAINHTML Into RAM...", true);
     int ram1 = loadHTMLINTORAM();
     if (ram1 != 0) {
-// FINISH THIS EVENTUALLY
+// FINISH THIS EVENTUALLY - FIX THIS
     }
+
+
 
 
     // LOAD MAIN SEVERITY CACHE INTO RAM
@@ -1925,19 +1950,19 @@ int setup() {
     
     // OPEN NETWORK SERVER PORTS (1/4)
     int PORT = 80;
-    loginfo("P80 - Opening Server Ports (1/4)", false);
+    loginfo("P80     - Opening Server Ports (1/4)", false);
     std::thread acceptingClientsThread80(handleConnections80);
     acceptingClientsThread80.detach();
     sendtolog("...Done", true);
 
     // OPEN NETWORK SERVER PORTS (2/4)
-    loginfo("P443 - Opening Server Ports (2/4)", false);
+    loginfo("P443    - Opening Server Ports (2/4)", false);
     port4 = createnetworkport443();
     sendtolog("...Done", true);
 
     // OPEN NETWORK SERVER PORTS (3/4)
     PORT = 11829;
-    loginfo("P11829 - Opening Server Ports (3/4)", false);
+    loginfo("P11829  - Opening Server Ports (3/4)", false);
     int server_fd2, new_socket2;
     ssize_t valread2;
     struct sockaddr_in address2;
@@ -1947,13 +1972,13 @@ int setup() {
     sleep(1);
 
     if((server_fd2 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        logcritical("P11829 - FAILED TO START SOCKET", true);
+        logcritical("P11829  - FAILED TO START SOCKET", true);
         exit(EXIT_FAILURE);
     }
 
     // Forcefully attaching socket to the port 11829
     if (setsockopt(server_fd2, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt2, sizeof(opt2))) {
-        logcritical("P11829 - FAILED TO SET SOCKET OPT", true);
+        logcritical("P11829  - FAILED TO SET SOCKET OPT", true);
         exit(EXIT_FAILURE);
     }
 
@@ -1964,11 +1989,11 @@ int setup() {
 
     // Binding the socket to the network address and port
     if (bind(server_fd2, (struct sockaddr*)&address2, sizeof(address2)) < 0) {
-        logcritical("P11829 - FAILED TO SET BIND", true);
+        logcritical("P11829  - FAILED TO SET BIND", true);
         exit(EXIT_FAILURE);
     }
     if (listen(server_fd2, 3) < 0) {
-        logcritical("P11829 - FAILED TO START LISTEN", true);
+        logcritical("P11829  - FAILED TO START LISTEN", true);
         exit(EXIT_FAILURE);
     }
 
@@ -1981,7 +2006,7 @@ int setup() {
 
 
     // SERVER PORT LISTEN THREAD (1/4) (11829)
-    loginfo("P11829 - Creating server thread on listen...", false);
+    loginfo("P11829  - Creating server thread on listen...", false);
 
     sleep(1);
     std::thread thread11829(handle11829Connections, server_fd2);
