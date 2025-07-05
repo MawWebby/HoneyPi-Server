@@ -46,6 +46,7 @@ extern std::atomic<int> statusP80;
 extern std::atomic<int> statusP443;
 extern std::atomic<int> statusP11829;
 extern std::atomic<int> serverErrors;
+extern std::atomic<int> debug;
 
 // STATUS NUMBERS
 extern std::atomic<long long int> apiRejects;
@@ -69,6 +70,7 @@ extern std::string updatesforHONEYPI;
 
 // SERVER VERSION
 extern std::string honeyversion;
+extern std::string jsonversion;
 
 // IP BLOCKING/PACKETS MAP
 extern std::map<std::string, int> ip11829;
@@ -81,6 +83,7 @@ extern std::map <std::string, std::string>previoushoneypotauth2;
 
 // DATABASE LOCKS
 extern std::atomic<int> jsonDBLock;
+extern std::atomic<int> processDBLock;
 
 // PACKET SPAM
 extern int packetspam;
