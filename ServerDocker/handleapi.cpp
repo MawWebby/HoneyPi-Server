@@ -80,6 +80,31 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
                     std::string newTOKEN;
 
                     // MAP OPERATIONS
+                    // VERSION 2
+                    if (apiKEY.length() == 64) {
+                        std::map<int, std::string> returnedAUTH = AUTH_checkAPIKey(apiKEY, true);
+                        if (returnedAUTH[0] == "1") {
+                            // PROCEED TO TEMP AND PUBLISH!
+                            // FIX THIS - SAVE NEW TOKEN TO TEMP FILE
+                            std::cout << "SUCCESS" << std::endl;
+                            newTOKEN = generateRandomStringHoneyPI();
+                            storetempapikey(newTOKEN, "");
+                        } else {
+                            std::cout << "ERROR1:" << returnedAUTH[2] << std::endl;
+                            send(clientID,apireject.c_str(),apireject.length(),0);
+                            analyzedPackets.fetch_add(1);
+                            apiRejects.fetch_add(1);
+                        }
+                    } else {
+                        std::cout << "ERROR2:" << apiKEY.length() << std::endl;
+                        send(clientID,apireject.c_str(),apireject.length(),0);
+                        analyzedPackets.fetch_add(1);
+                        apiRejects.fetch_add(1);
+                    }
+
+                    
+                    // FIX THIS - ADD PREVIOUS TEMP ONES!
+                    /*
                     if (honeypotauthtotoken.find(apiKEY)->second == "") {
                         newTOKEN = generateRandomStringHoneyPI();
                         honeypotauthtotoken[apiKEY] = newTOKEN;
@@ -98,6 +123,7 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
                             honeypotauthtotoken[apiKEY] = newTOKEN;
                         }
                     }
+                        */
                     
                     std::string data3 = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent-Length: 90\n\n{state: success; TOKEN: " + newTOKEN + "}";
                     send(clientID,data3.c_str(),data3.length(),0);

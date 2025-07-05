@@ -10,7 +10,8 @@ const bool debug = false;
 const bool testing = false;
 const bool newserverupdate = true;
 const bool EXCEPTION = true;
-std::string honeyversion = "0.7.5";
+std::string honeyversion = "0.7.7";
+std::string jsonversion = "1.0";
 const int heartbeattime = 10;
 
 
@@ -367,7 +368,7 @@ std::map <int, std::string> filemessages = {
     {11, "SERVER DUMP FILE"},
     {12, "LOG FILE"},                       // used
     {13, "FOLDERS ACCESSED FILE"},          // used
-    {14, "FILES ACCESED FILE"},             // used
+    {14, "FILES ACCESSED FILE"},             // used
     {15, "COMMANDS RAN FILE"},              // used
     {16, "ERRORS FILE"},                    
     {17, "IP ACCESSED SERVER FILE"},
@@ -1688,6 +1689,10 @@ int setup() {
 
 
 
+    sleep(1);
+
+
+
     // VALIDATE JSON FILES
     loginfo("JSON_V2 - Validating JSON Files", true);
     int returnedjsons = json_maintenance(true);
@@ -1698,6 +1703,9 @@ int setup() {
         startupchecks = startupchecks + 1;
     }   
 
+
+
+    sleep(3);
 
 
 
@@ -1730,6 +1738,8 @@ int setup() {
     int filerun = 0;
     int filerunmax = filelocations.size() - 1;
     bool completederr = false;
+
+    sleep(3);
 
     // MAIN MIGRATION/CHECK SCRIPT
     while (filerunmax >= filerun && completederr != true) {
@@ -1837,7 +1847,7 @@ int setup() {
                                     int res251 = system(rmchar);
                                     if (res251 == 0) {
                                         sendtolog("COMPLETED!", true);
-                                        sleep(0.2);
+                                        sleep(1);
                                     } else {
                                         logcritical("ERROR", true);
                                         logcritical("AN ERROR OCCURRED IN " + filemessages[filerun] + " MIGRATION (5)!", true);
@@ -1869,7 +1879,7 @@ int setup() {
                         startupchecks = startupchecks + 1;
                     }
                 } else {
-                    sleep(0.3);
+                    sleep(0.7);
                 }
             }
         } else {
@@ -1904,6 +1914,8 @@ int setup() {
         filerun = filerun + 1;
     }
 
+
+    sleep(3);
 
 
     // LOAD MAINHTML INTO RAM
@@ -2018,7 +2030,7 @@ int setup() {
 
 
     // SERVER PORT LISTEN THREAD (443)
-    loginfo("P443 - Creating server thread on listen...", false);
+    loginfo("P443    - Creating server thread on listen...", false);
 
     sleep(1);
     std::thread acceptingClientsThread443(handleConnections443, port4);
@@ -2082,7 +2094,7 @@ int main() {
 
 
 
-        loginfo("HoneyPi Server has started successfully", true);
+        loginfo("SERVER  - HoneyPi Server has started successfully", true);
         serverStarted = 1;
 
         // START ADMIN CONSOLE HERE
