@@ -99,6 +99,7 @@ void jsoncommands() {
     std::cout << "createAccount    | (NO ARGS) | Create a New Account and Store" << std::endl;
     std::cout << "checkAPIKey      | (API KEY) | Check for API Key in JSON" << std::endl;
     std::cout << "insertAPIKey     | (USER, API_KEY=[OPTIONAL]) | Insert API Key into JSON; If none is provided, one will be generated." << std::endl;
+    std::cout << "showAPIKeys      | (USER)    | Show the API Keys associated with an account" << std::endl;
 }
 
 
@@ -208,6 +209,7 @@ void processCommand(const std::string& command) {
         std::cout << "Port 80 Thread:    " << statusP80.load() << std::endl;
         std::cout << "Port 443 Thread:   " << statusP443.load() << std::endl;
         std::cout << "Port 11829 Thread: " << statusP11829.load() << std::endl;
+        std::cout << "JSON Locked:       " << jsonDBLock.load() << std::endl;
         std::cout << std::endl;
         std::cout << "Port Lock Status" << std::endl;
         std::cout << "Port 80 Lock:    " << lockP80.load() << std::endl;
@@ -548,11 +550,11 @@ void processCommand(const std::string& command) {
                     useroption = command.substr(13, option - 1);
                     if (optionstd.length() != 64) {
                         std::cout << "INVALID:" << optionstd << ";(" << optionstd.length() << ")" << std::endl;
-                        optionstd = generateRandomStringHoneyPI();
+                        optionstd = generateRandomStringPERMAPI();
                     }
                 } else {
                     useroption = command.substr(13);
-                    optionstd = generateRandomStringHoneyPI();
+                    optionstd = generateRandomStringPERMAPI();
                 }
 
 
@@ -572,6 +574,30 @@ void processCommand(const std::string& command) {
         foundcommand = true;
     }
 
+    if (firstseveral == "showAPIK") {
+        if (useraccesslevel >= 2) {
+            if (command.length() > 15) {
+                std::string usertotest = command.substr(12);
+                std::map<int, std::string> keys = showAPIKey(usertotest, false);
+                if (keys[0] == "OK") {
+                    std::cout << "OK for user " << usertotest << std::endl;
+                    std::cout << "[1]: " << keys[1] << std::endl;
+                    std::cout << "[2]: " << keys[2] << std::endl;
+                    std::cout << "[3]: " << keys[3] << std::endl;
+                    std::cout << "[4]: " << keys[4] << std::endl;
+                    std::cout << "[5]: " << keys[5] << std::endl;
+                } else {
+                    std::cout << "RETURNED for user " + usertotest + " : " + keys[0] + ":" + keys[1] << std::endl;
+                }
+            } else {
+                std::cout << "TOO SHORT" << std::endl;
+            }
+        } else {
+            std::cout << "Sorry, you do not have permission to run this command." << std::endl;
+        }
+        foundcommand = true;
+    }
+
 
 
 
@@ -581,14 +607,20 @@ void processCommand(const std::string& command) {
             if (command.length() > 15) {
                 std::cout << "RETURNED FROM IPSTRING: " << ipstring(command.substr(9, command.length() - 9)) << std::endl;
             }
+        } else {
+            std::cout << "Sorry! You do not have permission to access this command" << std::endl;
         }
+        foundcommand = true;
     }
 
     // READ FROM FILE THROUGH SYSTEM 
     if (firstfour == "cat ") {
-        //std::string restofcommand = "cat " + command.substr(4,command.length());
-        system(command.c_str());
-        foundcommand = true;
+        if (useraccesslevel >= 2) {
+            system(command.c_str());
+            foundcommand = true;
+        } else {
+            std::cout << "Sorry! You do not have permission to access this command" << std::endl;
+        }
     }
 
     // GENERATE RANDOM STRINGS FOR API TOKENS AND AMONG OTHER THINGS
