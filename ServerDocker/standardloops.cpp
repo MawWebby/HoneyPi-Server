@@ -317,6 +317,28 @@ std::string generateRandomStringHoneyPI() {
     return random_string;
 }
 
+std::string generateRandomStringPERMAPI() {
+
+    // Define the list of possible characters
+    const std::string CHARACTERS = charactermap;
+
+    // Create a random number generator
+    std::random_device rd;
+    std::mt19937 generator(rd());
+
+    // Create a distribution to uniformly select from all
+    // characters
+    std::uniform_int_distribution<> distribution(0, CHARACTERS.size() - 1);
+
+    // Generate the random string
+    std::string random_string = "";
+    for (int i = 0; i < 64; ++i) {
+        random_string += CHARACTERS[distribution(generator)];
+    }
+
+    return random_string;
+}
+
 std::string generateRandomStringRouterAPI() {
 
     // Define the list of possible characters

@@ -41,6 +41,7 @@ std::string floattostring(float);
 
 // GENERATORS
 std::string generateRandomStringHoneyPI();
+std::string generateRandomStringPERMAPI();
 std::string generateRandomStringRouterAPI();
 std::string generateRandomFileName();
 std::string generateRandomClientKey();
