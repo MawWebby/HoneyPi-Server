@@ -103,28 +103,6 @@ int processAPI(int clientID, std::string header1, std::string data1, std::string
                     }
 
                     
-                    // FIX THIS - ADD PREVIOUS TEMP ONES!
-                    /*
-                    if (honeypotauthtotoken.find(apiKEY)->second == "") {
-                        newTOKEN = generateRandomStringHoneyPI();
-                        honeypotauthtotoken[apiKEY] = newTOKEN;
-                    } else {
-                        if (honeypotauthtotoken.find(apiKEY)->second.length() == 64) {
-                            if (previoushoneypotauth.find(apiKEY)->second.length() != 64) {
-                                previoushoneypotauth[apiKEY] = honeypotauthtotoken[apiKEY];
-                            } else {
-                                previoushoneypotauth2[apiKEY] = previoushoneypotauth[apiKEY];
-                                previoushoneypotauth[apiKEY] = honeypotauthtotoken[apiKEY];
-                            }
-                            newTOKEN = honeypotauthtotoken.find(apiKEY)->second;
-                        } else {
-                            newTOKEN = generateRandomStringHoneyPI();
-                            previoushoneypotauth[apiKEY] = honeypotauthtotoken[apiKEY];
-                            honeypotauthtotoken[apiKEY] = newTOKEN;
-                        }
-                    }
-                        */
-                    
                     std::string data3 = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent-Length: 90\n\n{state: success; TOKEN: " + newTOKEN + "}";
                     send(clientID,data3.c_str(),data3.length(),0);
                     analyzedPackets.fetch_add(1);
