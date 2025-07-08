@@ -313,7 +313,8 @@ void processCommand(const std::string& command) {
     if (command == "backup") {
         if (useraccesslevel >= 2) {
             std::cout << "Starting Full System Backup" << std::endl;
-            startbackup(1);
+            int process = startbackup(1);
+            std::cout << "Backup returned " << process << std::endl;
         } else {
             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }
