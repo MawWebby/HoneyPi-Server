@@ -6,7 +6,7 @@
 
 
 // RUNTIME OPTIONS
-const bool debug = false;
+std::atomic<int> debug(0);
 const bool testing = false;
 const bool newserverupdate = true;
 const bool EXCEPTION = true;
@@ -94,6 +94,7 @@ std::atomic<int> calculatingtime(0);
 
 // DB LOCKS
 std::atomic<int> jsonDBLock(0);
+std::atomic<int> processDBLock(0);
 
 // SERVER ERRORS
 std::atomic<int> generalservererrors(0);

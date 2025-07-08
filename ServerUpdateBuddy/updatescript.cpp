@@ -3,13 +3,11 @@
 #include <unistd.h>
 #include <string>
 #include <iostream>
-#include "json.hpp"
 #include <fstream>
 
 
 std::string buddyversion = "1";
 std::string jsonFileLocation = "/home/serverfiles/jsonsstream.json";
-using json = nlohmann::json;
 
 // MADE FOR SERVER VERSIONS 0.X - 1.X
 // NORMAL RETURN VALUE
@@ -40,34 +38,23 @@ int main() {
 
 
     // DOWNLOADING NEW MAIN CONTAINER
-    std::cout << "UPDATE - ( 10%) - Downloading New Main Docker" << std::endl;
-    std::string downloadnewermaindocker = "docker pull mawwebby/honeypiserver:latest &> /dev/null";
+    std::cout << "UPDATE - ( 20%) - Downloading New Main Docker" << std::endl;
+    std::string downloadnewermaindocker = "docker pull -q mawwebby/honeypiserver:latest";
     if (system(downloadnewermaindocker.c_str()) != 0) {
         std::cout << "ERROR - UNABLE TO UPDATE! COULD NOT DOWNLOAD NEWER VERSION OF MAIN DOCKER!" << std::endl;
         return -1;
     }
 
+    std::cout << "FINISHED!" << std::endl;
+
 
     sleep(15);
-
-
-    // CHECKING JSON FILES
-    std::cout << "UPDATE - ( 30%) - Checking JSON Files!" << std::endl;
-    std::ifstream jsonFile;
-    jsonFile.open(jsonFileLocation.c_str());
-    if (jsonFile.is_open() != true) {
-        std::cout << "UNABLE TO OPEN JSON FILE!" << std::endl;
-        jsonFile.close();
-    }
-    json dataarray = json::parse(jsonFile);
-    jsonFile.close();
-    
 
 
 
     // RESTART MAIN DOCKER CONTAINER
     std::cout << "UPDATE - ( 70%) - Starting New Server" << std::endl;
-    std::string dockernewcommand = "docker run -d -it -v /root/.docker:/root/.docker/ -v /home/pi/honeynvme/current/listfiles:/home/listfiles -v /home/pi/honeynvme/serverdump:/home/serverdump -v /home/pi/honeynvme/current/htmlmain:/home/htmlmainweb -v /home/pi/honeynvme/cogs:/home/crashlogs -p 80:80 -p 443:443 -p 11829:11829 -p 11830:11830 -p 22221:22221 -v /var/run/docker.sock:/var/run/docker.sock --name honeypiserver --rm mawwebby/honeypiserver:latest &> /dev/null";
+    std::string dockernewcommand = "docker run -d -it -v /root/.docker:/root/.docker/ -v /home/pi/honeynvme/current/listfiles:/home/listfiles -v /home/pi/honeynvme/serverdump:/home/serverdump -v /home/pi/honeynvme/current/htmlmain:/home/htmlmainweb -v /home/pi/honeynvme/cogs:/home/crashlogs -p 80:80 -p 443:443 -p 11829:11829 -p 11830:11830 -p 22221:22221 -v /var/run/docker.sock:/var/run/docker.sock -v /home/pi/honeynvme/backups:/home/backups --name honeypiserver --rm mawwebby/honeypiserver:latest";
     if (system(dockernewcommand.c_str()) != 0) {
         return -6;
     }
