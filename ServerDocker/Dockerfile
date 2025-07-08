@@ -4,9 +4,9 @@ FROM debian:bookworm-slim
 # INSTALL NEEDED PACKAGES (DISABLE FOR SPEED BUILDING)
 RUN apt-get update
 RUN apt-get upgrade -y
-RUN apt-get install -y iputils-ping bash
+RUN apt-get install -y iputils-ping bash 
 RUN apt-get install -y g++
-RUN apt-get install -y sudo
+RUN apt-get install -y sudo zip unzip
 RUN apt-get install -y wget
 RUN apt-get install -y apt-utils
 RUN apt-get install -y openssl libssh-dev
@@ -51,6 +51,9 @@ RUN mkdir /home/htmlmainweb
 
 # MKDIR FOR ARCHIVE FILES
 RUN mkdir /home/archives
+
+# MKDIR FOR BACKUP FILES
+RUN mkdir /home/backups
 
 # MKDIRS FOR CRASHLOGS FOLDER
 RUN mkdir /home/crashlogs/encrypted
