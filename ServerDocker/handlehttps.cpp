@@ -853,13 +853,13 @@ void httpsconnectionthread(SSL *ssl, char client_ip[INET_ADDRSTRLEN], int client
                                                 }
 
                                                 std::cout << "RECEIVED CREDENTIALS user=" << username <<", pass=" << password << ";" << std::endl;
-                                                bool verified = mariadbVALIDATE_USER(username, password);
+                                                std::string verified = AUTH_checkUserPassCombo(username, password, true);
                                                 std::cout << "RECEIVED VERIFIED STATUS OF " << verified << std::endl;
-                                                if (verified == true) {
+                                                if (verified.length() == 22) {
                                                     // CREATE SESSION TOKEN AND REDIRECT
                                                     loginfo("SENDING TO ACCOUNT PAGE", true);
                                                     std::string sessiontoken = generateRandomClientKey();
-                                                    mariadbINSERT_SESSIONKEY(username, sessiontoken);
+                                                    int responsefromjson = storesessionkeywithID(sessiontoken, verified.substr(6,16), true);
                                                     sleep(1);
                                                     int contentlength = 0;
                                                     char doublequote = '"';

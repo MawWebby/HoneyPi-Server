@@ -872,19 +872,9 @@ int updatetoNewServer() {
 
     // CLEAR COG FOLDER
     loginfo("Emptying COGs in DB...", false);
-    int res98 = mariadbCLEARCOGS_READ();
-    if (res98 != 0) {
-        logcritical("ERROR!", true);
-        logcritical("UNABLE TO COMPLETE MARIADB COGs!", true);
-        logcritical("NOT CONTINUING SERVER UPDATE!", true);
-        logcritical("RESTORING SYSTEM TO OPERATIONAL STATUS!", true);
-        preventupdate.store(1);
-        sleep(2);
-        setup();
-        return 1;
-    } else {
-        sendtolog("done", true);
-    }
+    std::cout << "FUTURE - FIX THIS" << std::endl;
+
+    
 
     // DOWNLOAD GITHUB SCRIPT TO UPDATE SERVER
     loginfo("DOWNLOADING SERVER UPDATE...", false);
@@ -2191,7 +2181,7 @@ int main() {
             // ENCOUNTERED ERRORS LOG DUMP
 
 
-            
+            // FIX THIS - ADD ACTUALLY USEFUL TIMERS
 
 
             logcritical("ATTEMPTING TO KILL SERVER!!!", true);

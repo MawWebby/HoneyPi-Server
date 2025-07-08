@@ -60,8 +60,8 @@ RUN mkdir /home/crashlogs/encrypted
 RUN mkdir /home/crashlogs/finished
 
 # INSTALL MARIADB AND MARIADB CONNECTORS
-RUN wget https://dlm.mariadb.com/3848191/Connectors/cpp/connector-cpp-1.1.4/mariadb-connector-cpp_1.1.4-1+maria~bookworm_arm64.deb
-RUN dpkg -i mariadb-connector-cpp_1.1.4-1+maria~bookworm_arm64.deb
+#RUN wget https://dlm.mariadb.com/3848191/Connectors/cpp/connector-cpp-1.1.4/mariadb-connector-cpp_1.1.4-1+maria~bookworm_arm64.deb
+#RUN dpkg -i mariadb-connector-cpp_1.1.4-1+maria~bookworm_arm64.deb
 
 # Set Working Directory
 COPY . /usr/src/honeypi
@@ -73,7 +73,7 @@ WORKDIR /usr/src/honeypi
 RUN g++ -o run home.cpp \
 adminconsole.cpp \
 standardloops.cpp \
-mariadbfunctions.cpp \
+#mariadbfunctions.cpp \
 servermaintenance.cpp \
 network.cpp \ 
 backup.cpp \
@@ -82,7 +82,8 @@ handleapi.cpp \
 handlehttps.cpp \
 process.cpp \
 Databases/jsonfunctions.cpp \
--lmariadbcpp -lssl -lcrypto -lcurl -lbcrypt
+-lssl -lcrypto -lcurl -lbcrypt 
+# -lmariadbcpp 
 
 
 ENTRYPOINT ["/bin/bash"]
